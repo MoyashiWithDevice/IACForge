@@ -47,21 +47,24 @@ Examples include:
 - VM
 - Container
 - Application
+- ACL
+- Open Port
 
 ---
 
 ## Everything is a Relation.
 
-Relationships between entities are explicit.
+Peer-to-peer relationships between entities are explicit.
 
 Relations have their own identity and metadata.
 
 Examples include:
 
-- contains
 - connects
 - hosts
 - depends_on
+- applies_to
+- listens_on
 
 ---
 
@@ -69,9 +72,11 @@ Examples include:
 
 Every Entity has exactly one Owner.
 
+Ownership is declared in the child Entity's manifest by specifying the parent identifier.
+
 Ownership forms a tree.
 
-Everything else is represented as Relations.
+Peer-to-peer relationships are represented as Relations.
 
 This separation allows hierarchical navigation while preserving graph semantics.
 

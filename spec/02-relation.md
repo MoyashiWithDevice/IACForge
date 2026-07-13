@@ -2,11 +2,11 @@
 
 ## Overview
 
-A Relation represents a semantic connection between two or more Entities.
+A Relation represents a peer-to-peer semantic connection between two or more Entities.
 
-Relations describe how Entities are related.
+Relations describe how Entities are related in a non-hierarchical manner.
 
-Unlike Ownership, Relations do not define hierarchy.
+Ownership hierarchy is declared in the child Entity's `owner` property.
 
 Relations form the graph structure of the infrastructure model.
 
@@ -41,16 +41,6 @@ Implementations MAY introduce additional relation types.
 ## Standard Relation Types
 
 The following relation types are defined by the core specification.
-
-### contains
-
-Defines ownership.
-
-This relation forms the ownership tree.
-
-Every Entity MUST participate in exactly one incoming contains relation, except the root Entity.
-
----
 
 ### connects
 
@@ -208,6 +198,8 @@ Examples include:
 - monitors
 - managed_by
 - mounted_on
+- applies_to
+- listens_on
 
 ---
 

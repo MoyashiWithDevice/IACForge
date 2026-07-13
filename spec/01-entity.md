@@ -6,7 +6,7 @@ An Entity represents any identifiable object within an infrastructure model.
 
 Everything that exists in infrastructure is represented as an Entity.
 
-Examples include physical devices, virtual resources, network components, software, locations, and abstract concepts.
+Examples include physical devices, virtual resources, network components, software, locations, security constructs, and abstract concepts.
 
 The object model intentionally does not distinguish between physical and logical objects.
 
@@ -35,6 +35,10 @@ Changing an identifier SHOULD be treated as replacing the Entity.
 ## Ownership
 
 Every Entity MUST have exactly one Owner.
+
+The child Entity declares its owner by specifying the parent Entity identifier in the `owner` property.
+
+The root Entity does not specify an owner.
 
 Ownership defines hierarchy only.
 
@@ -84,11 +88,16 @@ Required
 
 Optional
 
+- owner
 - description
 - status
 - tags
 - labels
 - metadata
+
+The `owner` property specifies the parent Entity identifier for ownership hierarchy.
+
+The root Entity omits the `owner` property.
 
 Additional properties MAY be defined by individual Entity kinds.
 

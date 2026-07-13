@@ -74,7 +74,9 @@ Unknown references are validation errors.
 
 ## Ownership
 
-Ownership MUST be represented using the standard contains Relation.
+Ownership is declared in the child Entity's `owner` property.
+
+The root Entity does not specify an owner.
 
 Hierarchical nesting MUST NOT change semantics.
 

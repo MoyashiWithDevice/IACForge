@@ -49,11 +49,13 @@ Graphs are independent of providers.
 
 ## Ownership Tree
 
-Ownership is represented by the standard contains Relation.
+Ownership is declared in the child Entity's `owner` property.
+
+The root Entity does not specify an owner.
 
 Ownership forms exactly one tree.
 
-Every Entity except the root MUST have exactly one Owner.
+Every Entity except the root MUST have exactly one owner specified.
 
 The ownership tree exists for navigation only.
 
@@ -63,7 +65,7 @@ Ownership MUST NOT imply execution, communication, dependency, or connectivity.
 
 ## Semantic Graph
 
-All Relations other than contains form the semantic graph.
+All peer-to-peer Relations form the semantic graph.
 
 The semantic graph expresses:
 
@@ -109,7 +111,8 @@ The object model always resolves references to canonical Objects.
 The graph MUST satisfy the following conditions.
 
 - Every Object has an identifier.
-- Every Entity has exactly one Owner except the root.
+- Every Entity except the root has exactly one owner specified.
+- The `owner` property references an existing Entity.
 - Relations reference existing Objects.
 - Object identifiers are unique.
 - Ownership forms a tree.
