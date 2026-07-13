@@ -10,6 +10,12 @@ A View does not define rendering.
 
 A View defines perspective.
 
+Views are ephemeral.
+
+They are generated from the Graph.
+
+Views are never stored as the canonical model.
+
 ---
 
 ## Purpose
@@ -28,6 +34,37 @@ Examples include:
 - Security Zones
 - Service Dependencies
 - Inventory
+- Rack Layout
+- Application Dependency
+- Documentation
+
+---
+
+## View Pipeline
+
+Every View consists of three conceptual stages.
+
+Graph
+
+↓
+
+Query
+
+↓
+
+Projection
+
+↓
+
+Rendering
+
+The Query determines what is included.
+
+The Projection determines how Objects are interpreted.
+
+The View determines how that Graph should be interpreted.
+
+Rendering determines presentation.
 
 ---
 
@@ -121,6 +158,24 @@ Audience information is descriptive only.
 
 ---
 
+## Rendering Independence
+
+Views do not define rendering.
+
+The same View may be rendered as:
+
+- SVG
+- PNG
+- PDF
+- Mermaid
+- D2
+- Graphviz DOT
+- Markdown
+- HTML
+- JSON
+
+---
+
 ## Composition
 
 Multiple Views MAY consume the same Projection.
@@ -138,3 +193,11 @@ Views are not canonical data.
 Views SHOULD be regenerated whenever possible.
 
 Persisting Views is implementation-specific.
+
+---
+
+## Extensibility
+
+Implementations MAY define custom View types.
+
+Custom Views MUST preserve the semantics of the underlying Graph.
