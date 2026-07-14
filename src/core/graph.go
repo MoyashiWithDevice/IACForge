@@ -111,12 +111,29 @@ func (g *Graph) AddRelation(r *Relation) error {
 		return fmt.Errorf("%w: %s", ErrDuplicateRelationID, r.ID)
 	}
 	for _, pid := range r.ParticipantIDs() {
-		if _, ok := g.entities[pid]; !ok {
+		if !g.isValidReference(pid) {
 			return fmt.Errorf("%w: relation %s references entity %s", ErrInvalidReference, r.ID, pid)
 		}
 	}
 	g.relations[r.ID] = r
 	return nil
+}
+
+// isValidReference checks if a reference string points to a valid entity.
+// Supports both simple entity IDs and interface references (entity/interface format).
+func (g *Graph) isValidReference(ref string) bool {
+	// Direct entity reference
+	if _, ok := g.entities[ref]; ok {
+		return true
+	}
+	// Interface reference (entity/interface format)
+	if idx := strings.Index(ref, "/"); idx != -1 {
+		entityID := ref[:idx]
+		if _, ok := g.entities[entityID]; ok {
+			return true
+		}
+	}
+	return false
 }
 
 func (g *Graph) GetRelation(id string) (*Relation, bool) {
