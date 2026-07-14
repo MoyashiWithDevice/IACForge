@@ -40,6 +40,18 @@ func (g *Graph) AddEntity(e *Entity) error {
 	return nil
 }
 
+// ForceAddEntity adds an entity to the graph without validation.
+// Useful for loading partially-valid graphs for validation engine testing.
+func (g *Graph) ForceAddEntity(e *Entity) {
+	g.entities[e.ID] = e
+}
+
+// ForceAddRelation adds a relation to the graph without reference validation.
+// Useful for loading partially-valid graphs for validation engine testing.
+func (g *Graph) ForceAddRelation(r *Relation) {
+	g.relations[r.ID] = r
+}
+
 func (g *Graph) GetEntity(id string) (*Entity, bool) {
 	e, ok := g.entities[id]
 	return e, ok
@@ -250,10 +262,6 @@ func (g *Graph) Ancestors(entityID string) []*Entity {
 	var result []*Entity
 	current := entityID
 	visited := make(map[string]bool)
-
-	if visited[current] {
-		break
-	}
 
 	for {
 		visited[current] = true
