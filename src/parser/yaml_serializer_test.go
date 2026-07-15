@@ -53,7 +53,7 @@ func TestSerializeEntityWithAllProperties(t *testing.T) {
 	e.AddTag("compute")
 	e.SetLabel("region", "ap-northeast-1")
 	e.SetLabel("environment", "production")
-	e.Metadata = map[string]interface{}{"vendor": "dell"}
+	e.Extensions = map[string]interface{}{"vendor": "dell"}
 	e.SetProperty("platform", "proxmox")
 	e.SetProperty("cpu_cores", 32)
 	e.SetProperty("memory_gb", 128)
@@ -212,34 +212,41 @@ objects:
   - id: site-tokyo-01
     kind: site
     name: Tokyo Datacenter 1
-    status: active
-    labels:
-      region: ap-northeast-1
+    attributes:
+      status: active
+      labels:
+        region: ap-northeast-1
 
   - id: rack-a01
     kind: rack
     name: Rack A01
-    owner: site-tokyo-01
-    status: active
-    height_units: 42
+    attributes:
+      owner: site-tokyo-01
+      status: active
+    spec:
+      height_units: 42
 
   - id: srv-proxmox-01
     kind: server
     name: Proxmox Node 01
-    owner: rack-a01
-    status: active
-    platform: proxmox
-    cpu_cores: 32
-    memory_gb: 128
+    attributes:
+      owner: rack-a01
+      status: active
+    spec:
+      platform: proxmox
+      cpu_cores: 32
+      memory_gb: 128
 
   - id: vm-web-01
     kind: vm
     name: Web Server 01
-    owner: srv-proxmox-01
-    status: active
-    cpu_cores: 4
-    memory_gb: 8
-    os: ubuntu
+    attributes:
+      owner: srv-proxmox-01
+      status: active
+    spec:
+      cpu_cores: 4
+      memory_gb: 8
+      os: ubuntu
 
   - id: rel-hosts-server-vm
     type: hosts

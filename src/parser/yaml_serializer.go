@@ -104,33 +104,38 @@ func (s *Serializer) buildDocument(g *core.Graph) map[string]interface{} {
 func (s *Serializer) buildEntity(e *core.Entity) map[string]interface{} {
 	obj := make(map[string]interface{})
 
-	// Required fields
+	// Required fields at top level
 	obj["id"] = e.ID
 	obj["kind"] = string(e.Kind)
 	obj["name"] = e.Name
 
-	// Optional fields (in order)
+	// Build attributes sub-key
+	attrs := make(map[string]interface{})
 	if e.Owner != "" {
-		obj["owner"] = e.Owner
+		attrs["owner"] = e.Owner
 	}
 	if e.Description != "" {
-		obj["description"] = e.Description
+		attrs["description"] = e.Description
 	}
 	if e.Status != "" {
-		obj["status"] = string(e.Status)
+		attrs["status"] = string(e.Status)
 	}
 	if len(e.Tags) > 0 {
-		obj["tags"] = e.Tags
+		attrs["tags"] = e.Tags
 	}
 	if len(e.Labels) > 0 {
-		obj["labels"] = sortMap(e.Labels)
+		attrs["labels"] = sortMap(e.Labels)
 	}
-	if len(e.Metadata) > 0 {
-		obj["metadata"] = sortInterfaceMap(e.Metadata)
+	if len(e.Extensions) > 0 {
+		attrs["extensions"] = sortInterfaceMap(e.Extensions)
+	}
+	if len(attrs) > 0 {
+		obj["attributes"] = attrs
 	}
 
-	// Kind-specific properties (sorted by key)
+	// Build spec sub-key for kind-specific properties
 	if len(e.Properties) > 0 {
+		spec := make(map[string]interface{})
 		sortedKeys := make([]string, 0, len(e.Properties))
 		for k := range e.Properties {
 			sortedKeys = append(sortedKeys, k)
@@ -138,8 +143,9 @@ func (s *Serializer) buildEntity(e *core.Entity) map[string]interface{} {
 		sort.Strings(sortedKeys)
 
 		for _, k := range sortedKeys {
-			obj[k] = e.Properties[k]
+			spec[k] = e.Properties[k]
 		}
+		obj["spec"] = spec
 	}
 
 	return obj
@@ -149,11 +155,11 @@ func (s *Serializer) buildEntity(e *core.Entity) map[string]interface{} {
 func (s *Serializer) buildRelation(r *core.Relation) map[string]interface{} {
 	obj := make(map[string]interface{})
 
-	// Required fields
+	// Required fields at top level
 	obj["id"] = r.ID
 	obj["type"] = string(r.Type)
 
-	// Participants
+	// Participants at top level
 	if r.Direction == core.DirectionSymmetric {
 		obj["participants"] = r.Participants.List
 	} else {
@@ -167,25 +173,30 @@ func (s *Serializer) buildRelation(r *core.Relation) map[string]interface{} {
 		obj["participants"] = participants
 	}
 
-	// Optional fields (in order)
+	// Build attributes sub-key
+	attrs := make(map[string]interface{})
 	if r.Description != "" {
-		obj["description"] = r.Description
+		attrs["description"] = r.Description
 	}
 	if r.Status != "" {
-		obj["status"] = string(r.Status)
+		attrs["status"] = string(r.Status)
 	}
 	if len(r.Tags) > 0 {
-		obj["tags"] = r.Tags
+		attrs["tags"] = r.Tags
 	}
 	if len(r.Labels) > 0 {
-		obj["labels"] = sortMap(r.Labels)
+		attrs["labels"] = sortMap(r.Labels)
 	}
-	if len(r.Metadata) > 0 {
-		obj["metadata"] = sortInterfaceMap(r.Metadata)
+	if len(r.Extensions) > 0 {
+		attrs["extensions"] = sortInterfaceMap(r.Extensions)
+	}
+	if len(attrs) > 0 {
+		obj["attributes"] = attrs
 	}
 
-	// Relation-specific properties (sorted by key)
+	// Build spec sub-key for relation-type-specific properties
 	if len(r.Properties) > 0 {
+		spec := make(map[string]interface{})
 		sortedKeys := make([]string, 0, len(r.Properties))
 		for k := range r.Properties {
 			sortedKeys = append(sortedKeys, k)
@@ -193,8 +204,9 @@ func (s *Serializer) buildRelation(r *core.Relation) map[string]interface{} {
 		sort.Strings(sortedKeys)
 
 		for _, k := range sortedKeys {
-			obj[k] = r.Properties[k]
+			spec[k] = r.Properties[k]
 		}
+		obj["spec"] = spec
 	}
 
 	return obj

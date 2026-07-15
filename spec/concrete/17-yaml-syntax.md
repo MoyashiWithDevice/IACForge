@@ -27,7 +27,7 @@ objects:
 
 An Entity is defined with the following structure.
 
-### Required Properties
+### Required Top-Level Properties
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -35,7 +35,9 @@ An Entity is defined with the following structure.
 | kind | string | Entity kind |
 | name | string | Human-readable name |
 
-### Optional Properties
+### Attributes Section
+
+The `attributes` sub-key contains optional properties common to all entities.
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -44,7 +46,11 @@ An Entity is defined with the following structure.
 | status | enum | - | Lifecycle state |
 | tags | list[string] | - | Labels |
 | labels | map[string] | - | Key-value metadata |
-| metadata | map[string] | - | Extension data |
+| extensions | map[string] | - | Extension data |
+
+### Spec Section
+
+The `spec` sub-key contains kind-specific properties (platform, cpu_cores, memory_gb, etc.).
 
 ### Basic Entity
 
@@ -62,22 +68,24 @@ objects:
   - id: srv-proxmox-01
     kind: server
     name: Proxmox Node 01
-    description: "Primary Proxmox server"
-    status: active
-    tags:
-      - production
-      - compute
-    labels:
-      region: ap-northeast-1
-      environment: production
-    metadata:
-      vendor: dell
-      model: r740xd
-    platform: proxmox
-    cpu_cores: 32
-    memory_gb: 128
-    storage_gb: 2000
-    ip_address: 10.0.1.10
+    attributes:
+      description: "Primary Proxmox server"
+      status: active
+      tags:
+        - production
+        - compute
+      labels:
+        region: ap-northeast-1
+        environment: production
+      extensions:
+        vendor: dell
+        model: r740xd
+    spec:
+      platform: proxmox
+      cpu_cores: 32
+      memory_gb: 128
+      storage_gb: 2000
+      ip_address: 10.0.1.10
 ```
 
 ---
@@ -86,7 +94,7 @@ objects:
 
 A Relation is defined with the following structure.
 
-### Required Properties
+### Required Top-Level Properties
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -116,7 +124,9 @@ participants:
   target: rack-a01
 ```
 
-### Optional Properties
+### Attributes Section
+
+The `attributes` sub-key contains optional properties common to all relations.
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -124,24 +134,31 @@ participants:
 | status | enum | - | Lifecycle state |
 | tags | list[string] | - | Labels |
 | labels | map[string] | - | Key-value metadata |
-| metadata | map[string] | - | Extension data |
+| extensions | map[string] | - | Extension data |
+
+### Spec Section
+
+The `spec` sub-key contains relation-type-specific properties (connection_type, bandwidth_mbps, etc.).
 
 ### Relation with All Properties
 
 ```yaml
 objects:
-  - id: rel-hosts-server-vm
-    type: hosts
-    description: "Server hosts VM"
-    status: active
-    tags:
-      - hosting
-    labels:
-      source_type: server
-      target_type: vm
+  - id: rel-connects-srv-sw
+    type: connects
+    attributes:
+      description: "Physical connection between server and switch"
+      status: active
+      tags:
+        - networking
+      labels:
+        speed: 10g
+    spec:
+      connection_type: physical
+      bandwidth_mbps: 10000
     participants:
-      source: srv-proxmox-01
-      target: vm-web-01
+      - srv-proxmox-01/eno1
+      - sw-core-01/port1
 ```
 
 ---
@@ -188,170 +205,202 @@ objects:
   - id: site-tokyo-01
     kind: site
     name: Tokyo Datacenter 1
-    status: active
-    labels:
-      region: ap-northeast-1
+    attributes:
+      status: active
+      labels:
+        region: ap-northeast-1
 
   # Racks
   - id: rack-a01
     kind: rack
     name: Rack A01
-    owner: site-tokyo-01
-    status: active
-    labels:
-      row: A
-    height_units: 42
+    attributes:
+      owner: site-tokyo-01
+      status: active
+      labels:
+        row: A
+    spec:
+      height_units: 42
 
   # Servers
   - id: srv-proxmox-01
     kind: server
     name: Proxmox Node 01
-    owner: rack-a01
-    status: active
-    platform: proxmox
-    cpu_cores: 32
-    memory_gb: 128
-    storage_gb: 2000
-    ip_address: 10.0.1.10
+    attributes:
+      owner: rack-a01
+      status: active
+    spec:
+      platform: proxmox
+      cpu_cores: 32
+      memory_gb: 128
+      storage_gb: 2000
+      ip_address: 10.0.1.10
 
   - id: srv-proxmox-02
     kind: server
     name: Proxmox Node 02
-    owner: rack-a01
-    status: active
-    platform: proxmox
-    cpu_cores: 32
-    memory_gb: 128
-    storage_gb: 2000
-    ip_address: 10.0.1.11
+    attributes:
+      owner: rack-a01
+      status: active
+    spec:
+      platform: proxmox
+      cpu_cores: 32
+      memory_gb: 128
+      storage_gb: 2000
+      ip_address: 10.0.1.11
 
   # Interfaces
   - id: eno1
     kind: interface
     name: eno1
-    owner: srv-proxmox-01
-    type: ethernet
-    speed_mbps: 10000
-    mac_address: "aa:bb:cc:dd:ee:f0"
-    ip_address: 10.0.1.10
+    attributes:
+      owner: srv-proxmox-01
+    spec:
+      type: ethernet
+      speed_mbps: 10000
+      mac_address: "aa:bb:cc:dd:ee:f0"
+      ip_address: 10.0.1.10
 
   - id: eno2
     kind: interface
     name: eno2
-    owner: srv-proxmox-01
-    type: ethernet
-    speed_mbps: 10000
-    mac_address: "aa:bb:cc:dd:ee:f1"
+    attributes:
+      owner: srv-proxmox-01
+    spec:
+      type: ethernet
+      speed_mbps: 10000
+      mac_address: "aa:bb:cc:dd:ee:f1"
 
   - id: sw-port1
     kind: interface
     name: port1
-    owner: sw-core-01
-    type: ethernet
-    speed_mbps: 10000
+    attributes:
+      owner: sw-core-01
+    spec:
+      type: ethernet
+      speed_mbps: 10000
 
   # Network
   - id: mgmt-network-01
     kind: network
     name: Management Network
-    cidr: 10.0.0.0/24
-    gateway: 10.0.0.1
-    network_type: management
+    spec:
+      cidr: 10.0.0.0/24
+      gateway: 10.0.0.1
+      network_type: management
 
   # VMs
   - id: vm-web-01
     kind: vm
     name: Web Server 01
-    owner: srv-proxmox-01
-    status: active
-    cpu_cores: 4
-    memory_gb: 8
-    disk_gb: 100
-    os: ubuntu
-    os_version: "22.04"
-    ip_address: 10.0.2.10
+    attributes:
+      owner: srv-proxmox-01
+      status: active
+    spec:
+      cpu_cores: 4
+      memory_gb: 8
+      disk_gb: 100
+      os: ubuntu
+      os_version: "22.04"
+      ip_address: 10.0.2.10
 
   # Applications
   - id: app-web-server
     kind: application
     name: Nginx Web Server
-    owner: vm-web-01
-    status: active
-    version: "1.24.0"
-    port: 443
-    protocol: https
+    attributes:
+      owner: vm-web-01
+      status: active
+    spec:
+      version: "1.24.0"
+      port: 443
+      protocol: https
 
   # Open Ports
   - id: port-443-nginx
     kind: open_port
     name: Nginx HTTPS
-    owner: app-web-server
-    port: 443
-    protocol: tcp
-    state: listening
-    address: 0.0.0.0
-    process: nginx
+    attributes:
+      owner: app-web-server
+    spec:
+      port: 443
+      protocol: tcp
+      state: listening
+      address: 0.0.0.0
+      process: nginx
 
   - id: port-5432-postgres
     kind: open_port
     name: PostgreSQL
-    owner: vm-web-01
-    port: 5432
-    protocol: tcp
-    state: listening
-    address: 10.0.2.10
-    process: postgres
+    attributes:
+      owner: vm-web-01
+    spec:
+      port: 5432
+      protocol: tcp
+      state: listening
+      address: 10.0.2.10
+      process: postgres
 
   # ACLs
   - id: acl-web-ingress
     kind: acl
     name: Web Server Ingress ACL
-    owner: vm-web-01
-    status: active
-    direction: inbound
-    default_action: deny
+    attributes:
+      owner: vm-web-01
+      status: active
+    spec:
+      direction: inbound
+      default_action: deny
 
   # ACL Rules
   - id: acl-rule-allow-https
     kind: acl_rule
     name: Allow HTTPS
-    owner: acl-web-ingress
-    action: allow
-    protocol: tcp
-    source_address: 0.0.0.0/0
-    destination_port: "443"
-    enabled: true
+    attributes:
+      owner: acl-web-ingress
+    spec:
+      action: allow
+      protocol: tcp
+      source_address: 0.0.0.0/0
+      destination_port: "443"
+      enabled: true
 
   - id: acl-rule-allow-ssh
     kind: acl_rule
     name: Allow SSH from Management
-    owner: acl-web-ingress
-    action: allow
-    protocol: tcp
-    source_address: 10.0.0.0/24
-    destination_port: "22"
-    enabled: true
+    attributes:
+      owner: acl-web-ingress
+    spec:
+      action: allow
+      protocol: tcp
+      source_address: 10.0.0.0/24
+      destination_port: "22"
+      enabled: true
 
   # Cluster
   - id: cluster-prod-01
     kind: cluster
     name: Production Cluster 01
-    status: active
-    cluster_type: hyperconverged
-    ha_enabled: true
+    attributes:
+      status: active
+    spec:
+      cluster_type: hyperconverged
+      ha_enabled: true
 
   # Cables
   - id: cable-001
     kind: cable
     name: Patch Cable SRV01-SW01
-    cable_type: cat6a
-    length_meters: 3.0
+    spec:
+      cable_type: cat6a
+      length_meters: 3.0
 
   # Connection Relations (connects)
   - id: rel-connects-srv-sw
     type: connects
-    connection_type: physical
-    bandwidth_mbps: 10000
+    spec:
+      connection_type: physical
+      bandwidth_mbps: 10000
     participants:
       - srv-proxmox-01/eno1
       - sw-core-01/port1
@@ -483,5 +532,6 @@ objects:
     kind: site
     name: Tokyo Datacenter 1
     # Primary location
-    status: active
+    attributes:
+      status: active
 ```

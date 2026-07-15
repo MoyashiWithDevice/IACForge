@@ -133,7 +133,7 @@ Optional
 - status
 - tags
 - labels
-- metadata
+- extensions
 
 ---
 
@@ -163,11 +163,11 @@ Additional statuses MAY be introduced by extensions.
 
 ---
 
-## Metadata
+## Extensions
 
-Metadata is ignored by the core specification.
+Extensions are ignored by the core specification.
 
-Extensions MAY interpret metadata.
+Extensions MAY interpret extensions.
 
 ---
 

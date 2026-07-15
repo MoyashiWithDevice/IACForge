@@ -2,23 +2,29 @@ objects:
   - id: eno1
     kind: interface
     name: eno1
-    owner: srv-proxmox-01
-    type: ethernet
-    speed_mbps: 10000
-    mac_address: "aa:bb:cc:dd:ee:f0"
-    ip_address: 10.0.1.10
+    attributes:
+      owner: srv-proxmox-01
+    spec:
+      type: ethernet
+      speed_mbps: 10000
+      mac_address: "aa:bb:cc:dd:ee:f0"
+      ip_address: 10.0.1.10
 
   - id: eno2
     kind: interface
     name: eno2
-    owner: srv-proxmox-01
-    type: ethernet
-    speed_mbps: 10000
-    mac_address: "aa:bb:cc:dd:ee:f1"
+    attributes:
+      owner: srv-proxmox-01
+    spec:
+      type: ethernet
+      speed_mbps: 10000
+      mac_address: "aa:bb:cc:dd:ee:f1"
 
   - id: sw-port1
     kind: interface
     name: port1
-    owner: sw-core-01
-    type: ethernet
-    speed_mbps: 10000
+    attributes:
+      owner: sw-core-01
+    spec:
+      type: ethernet
+      speed_mbps: 10000

@@ -44,7 +44,13 @@ kind
 
 name
 
-Optional properties follow the Entity specification.
+An Entity object MAY contain an `attributes:` mapping.
+
+Attributes hold optional common properties shared across all kinds (e.g. `owner`, `tags`).
+
+An Entity object MAY contain a `spec:` mapping.
+
+Spec holds kind-specific properties defined by the Entity kind.
 
 ---
 
@@ -58,7 +64,13 @@ type
 
 participants
 
-Optional properties follow the Relation specification.
+A Relation object MAY contain an `attributes:` mapping.
+
+Attributes hold optional common properties shared across all relation types.
+
+A Relation object MAY contain a `spec:` mapping.
+
+Spec holds relation-type-specific properties defined by the relation type.
 
 ---
 

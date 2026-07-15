@@ -93,7 +93,7 @@ Optional
 - status
 - tags
 - labels
-- metadata
+- extensions
 
 The `owner` property specifies the parent Entity identifier for ownership hierarchy.
 
@@ -149,13 +149,29 @@ Keys SHOULD be unique within an Entity.
 
 ---
 
-## Metadata
+## Extensions
 
-Metadata contains implementation-specific information.
+Extensions contain implementation-specific information organized into two sub-keys:
 
-The core specification MUST ignore metadata.
+- `attributes` - Key-value pairs for general metadata (labels, platform info, etc.)
+- `spec` - Structured data specific to providers or renderers
 
-Providers, renderers, and external integrations MAY interpret metadata.
+The core specification MUST ignore extensions.
+
+Providers, renderers, and external integrations MAY interpret extensions.
+
+Example:
+
+```yaml
+extensions:
+  attributes:
+    platform: proxmox
+    environment: production
+  spec:
+    proxmox:
+      vmid: 100
+      pool: production
+```
 
 ---
 
@@ -178,7 +194,7 @@ Implementation
 
 platform
 provider
-metadata
+extensions
 
 These values never replace the Entity kind.
 

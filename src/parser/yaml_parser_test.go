@@ -48,22 +48,24 @@ objects:
   - id: srv-proxmox-01
     kind: server
     name: Proxmox Node 01
-    description: "Primary Proxmox server"
-    status: active
-    tags:
-      - production
-      - compute
-    labels:
-      region: ap-northeast-1
-      environment: production
-    metadata:
-      vendor: dell
-      model: r740xd
-    platform: proxmox
-    cpu_cores: 32
-    memory_gb: 128
-    storage_gb: 2000
-    ip_address: 10.0.1.10
+    attributes:
+      description: "Primary Proxmox server"
+      status: active
+      tags:
+        - production
+        - compute
+      labels:
+        region: ap-northeast-1
+        environment: production
+      extensions:
+        vendor: dell
+        model: r740xd
+    spec:
+      platform: proxmox
+      cpu_cores: 32
+      memory_gb: 128
+      storage_gb: 2000
+      ip_address: 10.0.1.10
 `
 
 	parser := NewParser()
@@ -89,8 +91,8 @@ objects:
 	if e.Labels["region"] != "ap-northeast-1" {
 		t.Errorf("expected label region=ap-northeast-1, got %s", e.Labels["region"])
 	}
-	if e.Metadata["vendor"] != "dell" {
-		t.Errorf("expected metadata vendor=dell, got %v", e.Metadata["vendor"])
+	if e.Extensions["vendor"] != "dell" {
+		t.Errorf("expected extensions vendor=dell, got %v", e.Extensions["vendor"])
 	}
 
 	// Check kind-specific properties
@@ -112,12 +114,14 @@ objects:
   - id: rack-a01
     kind: rack
     name: Rack A01
-    owner: site-tokyo-01
+    attributes:
+      owner: site-tokyo-01
 
   - id: srv-proxmox-01
     kind: server
     name: Proxmox Node 01
-    owner: rack-a01
+    attributes:
+      owner: rack-a01
 `
 
 	parser := NewParser()
@@ -215,7 +219,8 @@ objects:
   - id: eno1
     kind: interface
     name: eno1
-    owner: srv-proxmox-01
+    attributes:
+      owner: srv-proxmox-01
 
   - id: sw-core-01
     kind: switch
@@ -224,7 +229,8 @@ objects:
   - id: sw-port1
     kind: interface
     name: port1
-    owner: sw-core-01
+    attributes:
+      owner: sw-core-01
 
   - id: rel-connects-srv-sw
     type: connects
@@ -268,16 +274,17 @@ objects:
 
   - id: rel-hosts-vm
     type: hosts
-    description: "Server hosts VM"
-    status: active
-    tags:
-      - hosting
-    labels:
-      source_type: server
-      target_type: vm
     participants:
       source: srv-01
       target: vm-01
+    attributes:
+      description: "Server hosts VM"
+      status: active
+      tags:
+        - hosting
+      labels:
+        source_type: server
+        target_type: vm
 `
 
 	parser := NewParser()
@@ -312,54 +319,63 @@ objects:
   - id: site-tokyo-01
     kind: site
     name: Tokyo Datacenter 1
-    status: active
-    labels:
-      region: ap-northeast-1
+    attributes:
+      status: active
+      labels:
+        region: ap-northeast-1
 
   # Racks
   - id: rack-a01
     kind: rack
     name: Rack A01
-    owner: site-tokyo-01
-    status: active
-    labels:
-      row: A
-    height_units: 42
+    attributes:
+      owner: site-tokyo-01
+      status: active
+      labels:
+        row: A
+    spec:
+      height_units: 42
 
   # Servers
   - id: srv-proxmox-01
     kind: server
     name: Proxmox Node 01
-    owner: rack-a01
-    status: active
-    platform: proxmox
-    cpu_cores: 32
-    memory_gb: 128
-    storage_gb: 2000
-    ip_address: 10.0.1.10
+    attributes:
+      owner: rack-a01
+      status: active
+    spec:
+      platform: proxmox
+      cpu_cores: 32
+      memory_gb: 128
+      storage_gb: 2000
+      ip_address: 10.0.1.10
 
   # VMs
   - id: vm-web-01
     kind: vm
     name: Web Server 01
-    owner: srv-proxmox-01
-    status: active
-    cpu_cores: 4
-    memory_gb: 8
-    disk_gb: 100
-    os: ubuntu
-    os_version: "22.04"
-    ip_address: 10.0.2.10
+    attributes:
+      owner: srv-proxmox-01
+      status: active
+    spec:
+      cpu_cores: 4
+      memory_gb: 8
+      disk_gb: 100
+      os: ubuntu
+      os_version: "22.04"
+      ip_address: 10.0.2.10
 
   # Applications
   - id: app-web-server
     kind: application
     name: Nginx Web Server
-    owner: vm-web-01
-    status: active
-    version: "1.24.0"
-    port: 443
-    protocol: https
+    attributes:
+      owner: vm-web-01
+      status: active
+    spec:
+      version: "1.24.0"
+      port: 443
+      protocol: https
 
   # Hosting Relations
   - id: rel-hosts-server-vm

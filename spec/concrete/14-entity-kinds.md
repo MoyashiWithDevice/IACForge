@@ -28,7 +28,7 @@ Every Entity shares the following common properties regardless of kind.
 - status
 - tags
 - labels
-- metadata
+- extensions
 
 Individual Entity Kinds MAY define additional properties.
 

@@ -34,10 +34,10 @@ func (m *DerivedObjectManager) CreateDerivedEntity(
 	e := core.NewEntity(id, kind, name)
 	e.SetProperty("derived", true)
 
-	if e.Metadata == nil {
-		e.Metadata = make(map[string]interface{})
+	if e.Extensions == nil {
+		e.Extensions = make(map[string]interface{})
 	}
-	e.Metadata["provenance"] = &Provenance{
+	e.Extensions["provenance"] = &Provenance{
 		SourceIDs:    sourceIDs,
 		ProjectionID: projectionID,
 		Timestamp:    time.Now().UTC().Format(time.RFC3339),
@@ -79,12 +79,12 @@ func (m *DerivedObjectManager) Count() int {
 	return len(m.objects)
 }
 
-// GetProvenance extracts provenance from an entity's metadata.
+// GetProvenance extracts provenance from an entity's extensions.
 func GetProvenance(e *core.Entity) (*Provenance, bool) {
-	if e.Metadata == nil {
+	if e.Extensions == nil {
 		return nil, false
 	}
-	p, ok := e.Metadata["provenance"]
+	p, ok := e.Extensions["provenance"]
 	if !ok {
 		return nil, false
 	}

@@ -67,7 +67,7 @@ type Relation struct {
 	Status      Status                 `yaml:"status,omitempty"`
 	Tags        []string               `yaml:"tags,omitempty"`
 	Labels      map[string]string      `yaml:"labels,omitempty"`
-	Metadata    map[string]interface{} `yaml:"metadata,omitempty"`
+	Extensions  map[string]interface{} `yaml:"extensions,omitempty"`
 	Properties  map[string]interface{} `yaml:"properties,omitempty"`
 }
 

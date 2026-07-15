@@ -28,7 +28,7 @@ Every Relation shares the following properties regardless of type.
 - status
 - tags
 - labels
-- metadata
+- extensions
 
 Individual Relation Types MAY define additional properties.
 

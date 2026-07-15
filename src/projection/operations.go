@@ -721,10 +721,10 @@ func (ctx *OperationContext) copyEntity(e *core.Entity) error {
 			copy.Labels[k] = v
 		}
 	}
-	if e.Metadata != nil {
-		copy.Metadata = make(map[string]interface{})
-		for k, v := range e.Metadata {
-			copy.Metadata[k] = v
+	if e.Extensions != nil {
+		copy.Extensions = make(map[string]interface{})
+		for k, v := range e.Extensions {
+			copy.Extensions[k] = v
 		}
 	}
 	if e.Properties != nil {
@@ -755,10 +755,10 @@ func (ctx *OperationContext) copyRelation(r *core.Relation) error {
 			copy.Labels[k] = v
 		}
 	}
-	if r.Metadata != nil {
-		copy.Metadata = make(map[string]interface{})
-		for k, v := range r.Metadata {
-			copy.Metadata[k] = v
+	if r.Extensions != nil {
+		copy.Extensions = make(map[string]interface{})
+		for k, v := range r.Extensions {
+			copy.Extensions[k] = v
 		}
 	}
 	if r.Properties != nil {

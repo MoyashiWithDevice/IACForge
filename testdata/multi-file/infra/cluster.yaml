@@ -2,6 +2,8 @@ objects:
   - id: cluster-prod-01
     kind: cluster
     name: Production Cluster 01
-    status: active
-    cluster_type: hyperconverged
-    ha_enabled: true
+    attributes:
+      status: active
+    spec:
+      cluster_type: hyperconverged
+      ha_enabled: true

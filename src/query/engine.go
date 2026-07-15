@@ -296,8 +296,8 @@ func (e *Engine) getObjectField(entity *core.Entity, field string) interface{} {
 		return entity.Tags
 	case "labels":
 		return entity.Labels
-	case "metadata":
-		return entity.Metadata
+	case "extensions":
+		return entity.Extensions
 	default:
 		// Check properties
 		if val, ok := entity.GetProperty(field); ok {
@@ -332,8 +332,8 @@ func (e *Engine) getRelationField(rel *core.Relation, field string) interface{} 
 		return rel.Tags
 	case "labels":
 		return rel.Labels
-	case "metadata":
-		return rel.Metadata
+	case "extensions":
+		return rel.Extensions
 	default:
 		// Check properties
 		if val, ok := rel.GetProperty(field); ok {

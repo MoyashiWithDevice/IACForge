@@ -1,12 +1,17 @@
 objects:
+  # Connection Relations (connects)
+  - id: rel-connects-srv-sw
+    type: connects
+    participants:
+      - srv-proxmox-01/eno1
+      - sw-core-01/port1
+    spec:
+      connection_type: physical
+      bandwidth_mbps: 10000
+
+  # Hosting Relations (hosts)
   - id: rel-hosts-server-vm
     type: hosts
     participants:
       source: srv-proxmox-01
       target: vm-web-01
-
-  - id: rel-belongsto-vm-cluster
-    type: belongs_to
-    participants:
-      source: vm-web-01
-      target: cluster-prod-01

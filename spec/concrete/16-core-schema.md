@@ -86,7 +86,7 @@ Every Object (Entity or Relation) shares the following common properties.
 | status | enum | - | Lifecycle state |
 | tags | list[string] | - | Unordered labels |
 | labels | map[string] | - | Key-value metadata |
-| metadata | map[string] | - | Implementation-specific data |
+| extensions | map[string] | - | Implementation-specific data |
 
 ---
 

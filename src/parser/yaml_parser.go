@@ -203,7 +203,7 @@ type rawRelation struct {
 
 // parseEntity parses an entity from its YAML representation.
 func (p *Parser) parseEntity(obj map[string]interface{}) (*core.Entity, error) {
-	// Required fields
+	// Required fields at top level
 	id, err := getString(obj, "id")
 	if err != nil {
 		return nil, fmt.Errorf("entity missing required field 'id': %w", err)
@@ -221,48 +221,39 @@ func (p *Parser) parseEntity(obj map[string]interface{}) (*core.Entity, error) {
 
 	entity := core.NewEntity(id, core.EntityKind(kindStr), name)
 
-	// Optional fields
-	if owner, ok := getStringOptional(obj, "owner"); ok {
-		entity.SetOwner(owner)
-	}
-
-	if description, ok := getStringOptional(obj, "description"); ok {
-		entity.Description = description
-	}
-
-	if statusStr, ok := getStringOptional(obj, "status"); ok {
-		entity.SetStatus(core.Status(statusStr))
-	}
-
-	if tags, ok := getSliceOptional(obj, "tags"); ok {
-		for _, tag := range tags {
-			if tagStr, ok := tag.(string); ok {
-				entity.AddTag(tagStr)
+	// Parse attributes sub-key
+	if attrs, ok := getMapOptional(obj, "attributes"); ok {
+		if owner, ok := getStringOptional(attrs, "owner"); ok {
+			entity.SetOwner(owner)
+		}
+		if description, ok := getStringOptional(attrs, "description"); ok {
+			entity.Description = description
+		}
+		if statusStr, ok := getStringOptional(attrs, "status"); ok {
+			entity.SetStatus(core.Status(statusStr))
+		}
+		if tags, ok := getSliceOptional(attrs, "tags"); ok {
+			for _, tag := range tags {
+				if tagStr, ok := tag.(string); ok {
+					entity.AddTag(tagStr)
+				}
 			}
+		}
+		if labels, ok := getMapOptional(attrs, "labels"); ok {
+			for k, v := range labels {
+				if vStr, ok := v.(string); ok {
+					entity.SetLabel(k, vStr)
+				}
+			}
+		}
+		if extensions, ok := getMapOptional(attrs, "extensions"); ok {
+			entity.Extensions = extensions
 		}
 	}
 
-	if labels, ok := getMapOptional(obj, "labels"); ok {
-		for k, v := range labels {
-			if vStr, ok := v.(string); ok {
-				entity.SetLabel(k, vStr)
-			}
-		}
-	}
-
-	if metadata, ok := getMapOptional(obj, "metadata"); ok {
-		entity.Metadata = metadata
-	}
-
-	// Parse kind-specific properties
-	knownFields := map[string]bool{
-		"id": true, "kind": true, "name": true, "owner": true,
-		"description": true, "status": true, "tags": true,
-		"labels": true, "metadata": true,
-	}
-
-	for k, v := range obj {
-		if !knownFields[k] {
+	// Parse spec sub-key for kind-specific properties
+	if spec, ok := getMapOptional(obj, "spec"); ok {
+		for k, v := range spec {
 			entity.SetProperty(k, v)
 		}
 	}
@@ -272,7 +263,7 @@ func (p *Parser) parseEntity(obj map[string]interface{}) (*core.Entity, error) {
 
 // parseRelation parses a relation from its YAML representation.
 func (p *Parser) parseRelation(obj map[string]interface{}, entities map[string]*core.Entity) (*core.Relation, error) {
-	// Required fields
+	// Required fields at top level
 	id, err := getString(obj, "id")
 	if err != nil {
 		return nil, fmt.Errorf("relation missing required field 'id': %w", err)
@@ -299,44 +290,36 @@ func (p *Parser) parseRelation(obj map[string]interface{}, entities map[string]*
 		Properties:  make(map[string]interface{}),
 	}
 
-	// Optional fields
-	if description, ok := getStringOptional(obj, "description"); ok {
-		relation.Description = description
-	}
-
-	if statusStr, ok := getStringOptional(obj, "status"); ok {
-		relation.SetStatus(core.Status(statusStr))
-	}
-
-	if tags, ok := getSliceOptional(obj, "tags"); ok {
-		for _, tag := range tags {
-			if tagStr, ok := tag.(string); ok {
-				relation.AddTag(tagStr)
+	// Parse attributes sub-key
+	if attrs, ok := getMapOptional(obj, "attributes"); ok {
+		if description, ok := getStringOptional(attrs, "description"); ok {
+			relation.Description = description
+		}
+		if statusStr, ok := getStringOptional(attrs, "status"); ok {
+			relation.SetStatus(core.Status(statusStr))
+		}
+		if tags, ok := getSliceOptional(attrs, "tags"); ok {
+			for _, tag := range tags {
+				if tagStr, ok := tag.(string); ok {
+					relation.AddTag(tagStr)
+				}
 			}
+		}
+		if labels, ok := getMapOptional(attrs, "labels"); ok {
+			for k, v := range labels {
+				if vStr, ok := v.(string); ok {
+					relation.SetLabel(k, vStr)
+				}
+			}
+		}
+		if extensions, ok := getMapOptional(attrs, "extensions"); ok {
+			relation.Extensions = extensions
 		}
 	}
 
-	if labels, ok := getMapOptional(obj, "labels"); ok {
-		for k, v := range labels {
-			if vStr, ok := v.(string); ok {
-				relation.SetLabel(k, vStr)
-			}
-		}
-	}
-
-	if metadata, ok := getMapOptional(obj, "metadata"); ok {
-		relation.Metadata = metadata
-	}
-
-	// Parse relation-specific properties
-	knownFields := map[string]bool{
-		"id": true, "type": true, "participants": true,
-		"description": true, "status": true, "tags": true,
-		"labels": true, "metadata": true,
-	}
-
-	for k, v := range obj {
-		if !knownFields[k] {
+	// Parse spec sub-key for relation-type-specific properties
+	if spec, ok := getMapOptional(obj, "spec"); ok {
+		for k, v := range spec {
 			relation.SetProperty(k, v)
 		}
 	}

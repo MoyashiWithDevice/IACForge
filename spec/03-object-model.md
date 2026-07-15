@@ -21,7 +21,7 @@ Objects are identifiable elements within a graph.
 Every Object has:
 
 - identity
-- metadata
+- extensions
 - lifecycle
 
 Objects are divided into two categories.
