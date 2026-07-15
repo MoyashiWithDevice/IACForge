@@ -90,6 +90,133 @@ objects:
 
 ---
 
+## Nested Entity Definitions
+
+Child entities can be defined inline within their parent entity's definition,
+instead of as separate top-level objects. This provides a more concise and
+hierarchical representation of the infrastructure.
+
+### Nesting Rules
+
+Each entity kind defines which child kinds can be nested and under which key.
+
+| Parent Kind | Nest Key | Child Kind |
+|-------------|----------|------------|
+| site | racks | rack |
+| site | clusters | cluster |
+| rack | servers | server |
+| rack | switches | switch |
+| rack | routers | router |
+| rack | firewalls | firewall |
+| server | networks | network |
+| server | vms | vm |
+| switch | interfaces | interface |
+| router | interfaces | interface |
+| firewall | interfaces | interface |
+| firewall | acls | acl |
+| vm | networks | network |
+| vm | applications | application |
+| network | interfaces | interface |
+| application | open_ports | open_port |
+| acl | acl_rules | acl_rule |
+
+### Syntax
+
+Nested children are defined as lists under the appropriate nest key.
+The nest key can appear either inside the `spec` section or at the entity
+definition level.
+
+```yaml
+objects:
+  - id: srv-proxmox-01
+    kind: server
+    name: Proxmox Node 01
+    spec:
+      cpu_cores: 32
+      networks:
+        - id: net-private
+          name: private
+          spec:
+            cidr: 172.31.0.0/24
+          interfaces:
+            - id: eth1
+              spec:
+                ip_address: 172.31.0.15
+                type: ethernet
+      vms:
+        - id: vm-web-01
+          name: Web Server 01
+          spec:
+            cpu_cores: 4
+            memory_gb: 8
+```
+
+### Optional Fields in Nested Definitions
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| id | optional | Auto-generated from parent ID if omitted |
+| kind | optional | Inferred from the nest key |
+| name | optional | Defaults to ID if omitted |
+| spec | optional | Kind-specific properties |
+
+### ID Auto-Generation
+
+When a nested entity omits its `id`, one is generated using the pattern:
+`{parent-id}-{child-kind}`
+
+If that ID is already in use (e.g., multiple children of the same kind),
+a numeric suffix is appended: `{parent-id}-{child-kind}-{n}`
+
+### Ownership
+
+Nested entities automatically receive their parent's ID as their `owner`.
+The `owner` field should NOT be specified in nested definitions.
+
+### Reference Syntax for Nested Entities
+
+Nested entities can be referenced by their ID:
+
+```yaml
+participants:
+  source: eth1
+  target: sw-core-01/port1
+```
+
+Or by path notation:
+
+```yaml
+participants:
+  source: srv-proxmox-01/net-private/eth1
+  target: sw-core-01/port1
+```
+
+### Mixed Definitions
+
+Flat and nested definitions can be mixed in the same file:
+
+```yaml
+objects:
+  # Flat definition
+  - id: rack-a01
+    kind: rack
+    name: Rack A01
+    attributes:
+      owner: site-tokyo-01
+
+  # Nested definition
+  - id: srv-proxmox-01
+    kind: server
+    name: Proxmox Node 01
+    spec:
+      networks:
+        - id: net-private
+          interfaces:
+            - id: eth1
+```
+
+---
+
 ## Relation Syntax
 
 A Relation is defined with the following structure.

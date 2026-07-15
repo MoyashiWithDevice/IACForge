@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"IACForge/src/core"
 	"IACForge/src/core/kinds"
@@ -205,6 +206,20 @@ func registerEntityRules(e *Engine) {
 		Severity: SeverityError,
 		Scope:    ScopeEntity,
 	}, ruleValidACLRULEParent)
+
+	e.RegisterRule(&Rule{
+		ID:       "no-slash-in-id",
+		Name:     "No Slash in Entity ID",
+		Severity: SeverityError,
+		Scope:    ScopeEntity,
+	}, ruleNoSlashInID)
+
+	e.RegisterRule(&Rule{
+		ID:       "valid-nesting-parent",
+		Name:     "Valid Nesting Parent",
+		Severity: SeverityError,
+		Scope:    ScopeOwnership,
+	}, ruleValidNestingParent)
 }
 
 func registerRelationRules(e *Engine) {
@@ -834,6 +849,52 @@ func ruleDanglingReference(ctx *Context) []Finding {
 					ObjectType: ObjectTypeEntity,
 				})
 			}
+		}
+	}
+
+	return findings
+}
+
+func ruleNoSlashInID(ctx *Context) []Finding {
+	g := ctx.Graph.(*core.Graph)
+	var findings []Finding
+
+	for _, e := range g.Entities() {
+		if strings.Contains(e.ID, "/") {
+			findings = append(findings, Finding{
+				Severity:   SeverityError,
+				Message:    fmt.Sprintf("entity %q has invalid ID containing slash", e.ID),
+				ObjectID:   e.ID,
+				ObjectType: ObjectTypeEntity,
+			})
+		}
+	}
+
+	return findings
+}
+
+func ruleValidNestingParent(ctx *Context) []Finding {
+	g := ctx.Graph.(*core.Graph)
+	s := ctx.Schema.(*schema.Schema)
+	var findings []Finding
+
+	for _, e := range g.Entities() {
+		if e.IsRoot() {
+			continue
+		}
+		parent, ok := g.GetEntity(e.Owner)
+		if !ok {
+			continue
+		}
+
+		_, ok = s.FindNestingByChildKind(parent.Kind, e.Kind)
+		if !ok {
+			findings = append(findings, Finding{
+				Severity:   SeverityWarning,
+				Message:    fmt.Sprintf("entity %q (kind=%q) is owned by %q (kind=%q) but this parent-child nesting is not defined in the schema", e.ID, e.Kind, parent.ID, parent.Kind),
+				ObjectID:   e.ID,
+				ObjectType: ObjectTypeEntity,
+			})
 		}
 	}
 

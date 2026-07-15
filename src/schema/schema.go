@@ -58,10 +58,18 @@ type ParticipantConstraints struct {
 	MaxParticipants int              `yaml:"max_participants,omitempty"`
 }
 
+// NestingDefinition defines a nestable child relationship for an entity kind.
+type NestingDefinition struct {
+	NestKey    string            `yaml:"nest_key"`
+	ChildKind  core.EntityKind   `yaml:"child_kind"`
+	ChildKeys  map[string]core.EntityKind `yaml:"child_keys,omitempty"`
+}
+
 // EntityKindDefinition defines an entity kind in the schema.
 type EntityKindDefinition struct {
 	Description string              `yaml:"description,omitempty"`
 	Properties  []PropertyDefinition `yaml:"properties,omitempty"`
+	NestingDefs []NestingDefinition `yaml:"nesting_defs,omitempty"`
 }
 
 // RelationTypeDefinition defines a relation type in the schema.
@@ -131,6 +139,37 @@ func (s *Schema) GetEntityKindDef(kind core.EntityKind) (*EntityKindDefinition, 
 func (s *Schema) GetRelationTypeDef(relType core.RelationType) (*RelationTypeDefinition, bool) {
 	def, ok := s.RelationTypes[relType]
 	return def, ok
+}
+
+// GetNestingDefs returns the nesting definitions for the given entity kind.
+func (s *Schema) GetNestingDefs(kind core.EntityKind) []NestingDefinition {
+	def, ok := s.EntityKinds[kind]
+	if !ok {
+		return nil
+	}
+	return def.NestingDefs
+}
+
+// FindNestingByNestKey finds the nesting definition for a given parent kind and nest key.
+func (s *Schema) FindNestingByNestKey(parentKind core.EntityKind, nestKey string) (*NestingDefinition, bool) {
+	defs := s.GetNestingDefs(parentKind)
+	for i := range defs {
+		if defs[i].NestKey == nestKey {
+			return &defs[i], true
+		}
+	}
+	return nil, false
+}
+
+// FindNestingByChildKind finds the nesting definition for a given parent kind and child kind.
+func (s *Schema) FindNestingByChildKind(parentKind core.EntityKind, childKind core.EntityKind) (*NestingDefinition, bool) {
+	defs := s.GetNestingDefs(parentKind)
+	for i := range defs {
+		if defs[i].ChildKind == childKind {
+			return &defs[i], true
+		}
+	}
+	return nil, false
 }
 
 // ValidateProperty validates a property value against its definition.

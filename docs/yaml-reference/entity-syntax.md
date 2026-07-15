@@ -68,3 +68,115 @@
     storage_gb: 2000
     ip_address: 10.0.1.10
 ```
+
+---
+
+## ネスト定義（Nested Entity Definition）
+
+子エンティティを親エンティティの定義内で直接定義できます。
+
+### ネスト可能ないたずら
+
+| 親 Kind | ネストキー | 子 Kind |
+|---------|-----------|---------|
+| site | racks | rack |
+| site | clusters | cluster |
+| rack | servers | server |
+| rack | switches | switch |
+| rack | routers | router |
+| rack | firewalls | firewall |
+| server | networks | network |
+| server | vms | vm |
+| switch | interfaces | interface |
+| router | interfaces | interface |
+| firewall | interfaces | interface |
+| firewall | acls | acl |
+| vm | networks | network |
+| vm | applications | application |
+| network | interfaces | interface |
+| application | open_ports | open_port |
+| acl | acl_rules | acl_rule |
+
+### 基本構文
+
+```yaml
+objects:
+  - id: srv-proxmox-01
+    kind: server
+    name: Proxmox Node 01
+    spec:
+      cpu_cores: 32
+      networks:
+        - id: net-private
+          name: private
+          spec:
+            cidr: 172.31.0.0/24
+          interfaces:
+            - id: eth1
+              spec:
+                ip_address: 172.31.0.15
+                type: ethernet
+```
+
+### 省略可能なフィールド
+
+| フィールド | 必須 | 備考 |
+|-----------|------|------|
+| id | 任意 | 省略時は自動生成（`{parentID}-{childKind}`） |
+| kind | 任意 | ネストキーから自動推測 |
+| name | 任意 | 省略時はIDが使用される |
+| spec | 任意 | Kind固有プロパティ |
+
+### ID自動生成
+
+ネストされたエンティティが`id`を省略した場合、以下のパターンで自動生成されます：
+`{parent-id}-{child-kind}`
+
+既に同じIDが存在する場合（同一Kindの複数子）、サフィックスが追加されます：
+`{parent-id}-{child-kind}-{n}`
+
+### 所有権
+
+ネストされたエンティティは自動的に親のIDを`owner`として受け取ります。ネスト定義で`owner`フィールドを指定しないでください。
+
+### 参照構文
+
+ネストされたエンティティはIDで参照できます：
+
+```yaml
+participants:
+  source: eth1
+  target: sw-core-01/port1
+```
+
+パス表記でも参照できます：
+
+```yaml
+participants:
+  source: srv-proxmox-01/net-private/eth1
+  target: sw-core-01/port1
+```
+
+### フラットとネストの混在
+
+同じファイル内でフラット定義とネスト定義を混在できます：
+
+```yaml
+objects:
+  # フラット定義
+  - id: rack-a01
+    kind: rack
+    name: Rack A01
+    attributes:
+      owner: site-tokyo-01
+
+  # ネスト定義
+  - id: srv-proxmox-01
+    kind: server
+    name: Proxmox Node 01
+    spec:
+      networks:
+        - id: net-private
+          interfaces:
+            - id: eth1
+```

@@ -30,6 +30,14 @@
 - IDはそのスコープ内でユニークである必要があります
 - IDは記述的で安定していることが望ましいです
 - IDは命名規則（kebab-case推奨）に従うことが望ましいです
+- IDにスラッシュ（`/`）を含めることはできません
+
+## ネスト定義の検証
+
+| Rule | Level | Description |
+|------|-------|-------------|
+| no-slash-in-id | error | IDにスラッシュを含めることはできません |
+| valid-nesting-parent | warning | 親子関係がスキーマのネスト定義と一致すること |
 
 ---
 
@@ -79,6 +87,13 @@
 | valid_reference | Referencesは既存のObjectsを指す |
 | unique_id | Object識別子はユニークである |
 | relation_exists | Relationsは既存のObjectsを参照する |
+
+### Nesting制約
+
+| Constraint | Description |
+|------------|-------------|
+| no-slash-in-id | IDにスラッシュを含めることはできません |
+| valid-nesting-parent | 親子関係がスキーマのネスト定義と一致すること |
 
 ### Cardinality制約
 

@@ -31,6 +31,10 @@ func registerEntityKinds(s *Schema) {
 			{Name: "longitude", Type: PropertyTypeNumber, Required: false, Description: "Geographic longitude"},
 			{Name: "timezone", Type: PropertyTypeString, Required: false, Description: "Timezone identifier"},
 		},
+		NestingDefs: []NestingDefinition{
+			{NestKey: "racks", ChildKind: kinds.Rack},
+			{NestKey: "clusters", ChildKind: kinds.Cluster},
+		},
 	})
 
 	s.AddEntityKind(kinds.Rack, &EntityKindDefinition{
@@ -39,6 +43,12 @@ func registerEntityKinds(s *Schema) {
 			{Name: "height_units", Type: PropertyTypeInteger, Required: false, Default: 42, Description: "Rack height in rack units (U)"},
 			{Name: "power_capacity_watts", Type: PropertyTypeInteger, Required: false, Description: "Total power capacity in watts"},
 			{Name: "max_load_kg", Type: PropertyTypeNumber, Required: false, Description: "Maximum weight capacity in kg"},
+		},
+		NestingDefs: []NestingDefinition{
+			{NestKey: "servers", ChildKind: kinds.Server},
+			{NestKey: "switches", ChildKind: kinds.Switch},
+			{NestKey: "routers", ChildKind: kinds.Router},
+			{NestKey: "firewalls", ChildKind: kinds.Firewall},
 		},
 	})
 
@@ -55,6 +65,10 @@ func registerEntityKinds(s *Schema) {
 			{Name: "ip_address", Type: PropertyTypeString, Required: false, Description: "Primary management IP address"},
 			{Name: "mac_address", Type: PropertyTypeString, Required: false, Description: "Primary MAC address"},
 			{Name: "bios_version", Type: PropertyTypeString, Required: false, Description: "BIOS/UEFI version"},
+		},
+		NestingDefs: []NestingDefinition{
+			{NestKey: "networks", ChildKind: kinds.Network},
+			{NestKey: "vms", ChildKind: kinds.VM},
 		},
 	})
 
@@ -97,6 +111,9 @@ func registerEntityKinds(s *Schema) {
 			{Name: "vlan_id", Type: PropertyTypeInteger, Required: false, Description: "Associated VLAN ID"},
 			{Name: "network_type", Type: PropertyTypeString, Required: false, Description: "Network type (management, storage, vm, public)"},
 		},
+		NestingDefs: []NestingDefinition{
+			{NestKey: "interfaces", ChildKind: kinds.Interface},
+		},
 	})
 
 	s.AddEntityKind(kinds.VLAN, &EntityKindDefinition{
@@ -117,6 +134,9 @@ func registerEntityKinds(s *Schema) {
 			{Name: "managed", Type: PropertyTypeBoolean, Required: false, Default: true, Description: "Whether switch is managed"},
 			{Name: "stackable", Type: PropertyTypeBoolean, Required: false, Default: false, Description: "Whether switch supports stacking"},
 		},
+		NestingDefs: []NestingDefinition{
+			{NestKey: "interfaces", ChildKind: kinds.Interface},
+		},
 	})
 
 	s.AddEntityKind(kinds.Router, &EntityKindDefinition{
@@ -126,6 +146,9 @@ func registerEntityKinds(s *Schema) {
 			{Name: "model", Type: PropertyTypeString, Required: false, Description: "Hardware model"},
 			{Name: "serial_number", Type: PropertyTypeString, Required: false, Description: "Serial number"},
 			{Name: "interfaces", Type: PropertyTypeInteger, Required: false, Description: "Number of interfaces"},
+		},
+		NestingDefs: []NestingDefinition{
+			{NestKey: "interfaces", ChildKind: kinds.Interface},
 		},
 	})
 
@@ -137,6 +160,10 @@ func registerEntityKinds(s *Schema) {
 			{Name: "serial_number", Type: PropertyTypeString, Required: false, Description: "Serial number"},
 			{Name: "throughput_gbps", Type: PropertyTypeNumber, Required: false, Description: "Maximum throughput in Gbps"},
 		},
+		NestingDefs: []NestingDefinition{
+			{NestKey: "interfaces", ChildKind: kinds.Interface},
+			{NestKey: "acls", ChildKind: kinds.ACL},
+		},
 	})
 
 	s.AddEntityKind(kinds.ACL, &EntityKindDefinition{
@@ -145,6 +172,9 @@ func registerEntityKinds(s *Schema) {
 			{Name: "default_action", Type: PropertyTypeString, Required: false, Default: "deny", Constraints: &Constraint{Enum: []string{"allow", "deny"}}, Description: "Default action when no rule matches"},
 			{Name: "direction", Type: PropertyTypeString, Required: false, Constraints: &Constraint{Enum: []string{"inbound", "outbound", "both"}}, Description: "Traffic direction"},
 			{Name: "protocol", Type: PropertyTypeString, Required: false, Default: "any", Description: "Protocol filter (tcp, udp, icmp, any)"},
+		},
+		NestingDefs: []NestingDefinition{
+			{NestKey: "acl_rules", ChildKind: kinds.ACLRule},
 		},
 	})
 
@@ -172,6 +202,10 @@ func registerEntityKinds(s *Schema) {
 			{Name: "os", Type: PropertyTypeString, Required: false, Description: "Operating system"},
 			{Name: "os_version", Type: PropertyTypeString, Required: false, Description: "Operating system version"},
 		},
+		NestingDefs: []NestingDefinition{
+			{NestKey: "networks", ChildKind: kinds.Network},
+			{NestKey: "applications", ChildKind: kinds.Application},
+		},
 	})
 
 	s.AddEntityKind(kinds.Container, &EntityKindDefinition{
@@ -192,6 +226,9 @@ func registerEntityKinds(s *Schema) {
 			{Name: "port", Type: PropertyTypeInteger, Required: false, Description: "Primary listening port"},
 			{Name: "protocol", Type: PropertyTypeString, Required: false, Description: "Network protocol (http, https, tcp, udp)"},
 			{Name: "url", Type: PropertyTypeString, Required: false, Description: "Application URL if applicable"},
+		},
+		NestingDefs: []NestingDefinition{
+			{NestKey: "open_ports", ChildKind: kinds.OpenPort},
 		},
 	})
 

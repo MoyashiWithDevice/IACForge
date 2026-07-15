@@ -10,17 +10,28 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"IACForge/src/core"
+	"IACForge/src/schema"
 )
 
 // Serializer serializes a Graph to YAML syntax.
 type Serializer struct {
 	indent int
+	schema *schema.Schema
 }
 
-// NewSerializer creates a new YAML serializer.
+// NewSerializer creates a new YAML serializer with the core schema.
 func NewSerializer() *Serializer {
 	return &Serializer{
 		indent: 2,
+		schema: schema.CoreSchema(),
+	}
+}
+
+// NewSerializerWithSchema creates a new YAML serializer with a custom schema.
+func NewSerializerWithSchema(s *schema.Schema) *Serializer {
+	return &Serializer{
+		indent: 2,
+		schema: s,
 	}
 }
 
@@ -75,14 +86,58 @@ func (s *Serializer) SerializeTo(g *core.Graph, w io.Writer) error {
 func (s *Serializer) buildDocument(g *core.Graph) map[string]interface{} {
 	objects := make([]interface{}, 0)
 
-	// Add entities (sorted by ID for deterministic output)
+	// Build a map of children grouped by parent ID and nest key
+	childrenByParent := make(map[string][]childEntry)
+
+	for _, e := range g.Entities() {
+		if e.IsRoot() {
+			continue
+		}
+		parent, ok := g.GetEntity(e.Owner)
+		if !ok {
+			continue
+		}
+		nd, ok := s.schema.FindNestingByChildKind(parent.Kind, e.Kind)
+		if !ok {
+			continue
+		}
+		childrenByParent[e.Owner] = append(childrenByParent[e.Owner], childEntry{
+			entity:  e,
+			nestKey: nd.NestKey,
+		})
+	}
+
+	// Sort children by nest key, then by ID for deterministic output
+	for parentID := range childrenByParent {
+		entries := childrenByParent[parentID]
+		sort.Slice(entries, func(i, j int) bool {
+			if entries[i].nestKey != entries[j].nestKey {
+				return entries[i].nestKey < entries[j].nestKey
+			}
+			return entries[i].entity.ID < entries[j].entity.ID
+		})
+		childrenByParent[parentID] = entries
+	}
+
+	// Collect set of entity IDs that are nested children (to exclude from top-level)
+	nestedIDs := make(map[string]bool)
+	for _, entries := range childrenByParent {
+		for _, entry := range entries {
+			nestedIDs[entry.entity.ID] = true
+		}
+	}
+
+	// Add entities that are not nested children (roots and non-nestable owned entities)
 	entities := g.Entities()
 	sort.Slice(entities, func(i, j int) bool {
 		return entities[i].ID < entities[j].ID
 	})
 
 	for _, e := range entities {
-		objects = append(objects, s.buildEntity(e))
+		if nestedIDs[e.ID] {
+			continue
+		}
+		objects = append(objects, s.buildEntityWithChildren(e, childrenByParent, false))
 	}
 
 	// Add relations (sorted by ID for deterministic output)
@@ -100,18 +155,34 @@ func (s *Serializer) buildDocument(g *core.Graph) map[string]interface{} {
 	}
 }
 
-// buildEntity constructs the YAML representation of an entity.
-func (s *Serializer) buildEntity(e *core.Entity) map[string]interface{} {
+// childEntry holds a nested child entity and its nest key.
+type childEntry struct {
+	entity  *core.Entity
+	nestKey string
+}
+
+// buildEntityWithChildren constructs the YAML representation of an entity,
+// including nested children in the spec section.
+// When isNested is true, the output omits owner and kind (inferred from context).
+func (s *Serializer) buildEntityWithChildren(e *core.Entity, childrenByParent map[string][]childEntry, isNested bool) map[string]interface{} {
 	obj := make(map[string]interface{})
 
-	// Required fields at top level
+	// Always include id
 	obj["id"] = e.ID
-	obj["kind"] = string(e.Kind)
-	obj["name"] = e.Name
 
-	// Build attributes sub-key
+	// Only output kind for top-level entities (nested kind is inferred from nest key)
+	if !isNested {
+		obj["kind"] = string(e.Kind)
+	}
+
+	// Always include name for top-level entities; for nested, only if different from id
+	if !isNested || e.Name != e.ID {
+		obj["name"] = e.Name
+	}
+
+	// Build attributes sub-key (omit owner for nested entities)
 	attrs := make(map[string]interface{})
-	if e.Owner != "" {
+	if !isNested && e.Owner != "" {
 		attrs["owner"] = e.Owner
 	}
 	if e.Description != "" {
@@ -134,17 +205,41 @@ func (s *Serializer) buildEntity(e *core.Entity) map[string]interface{} {
 	}
 
 	// Build spec sub-key for kind-specific properties
-	if len(e.Properties) > 0 {
-		spec := make(map[string]interface{})
-		sortedKeys := make([]string, 0, len(e.Properties))
-		for k := range e.Properties {
-			sortedKeys = append(sortedKeys, k)
-		}
-		sort.Strings(sortedKeys)
+	spec := make(map[string]interface{})
+	sortedKeys := make([]string, 0, len(e.Properties))
+	for k := range e.Properties {
+		sortedKeys = append(sortedKeys, k)
+	}
+	sort.Strings(sortedKeys)
+	for _, k := range sortedKeys {
+		spec[k] = e.Properties[k]
+	}
 
-		for _, k := range sortedKeys {
-			spec[k] = e.Properties[k]
+	// Group children by nest key and recurse
+	directChildren := childrenByParent[e.ID]
+	if len(directChildren) > 0 {
+		nestKeyGroups := make(map[string][]childEntry)
+		for _, c := range directChildren {
+			nestKeyGroups[c.nestKey] = append(nestKeyGroups[c.nestKey], c)
 		}
+
+		nestKeys := make([]string, 0, len(nestKeyGroups))
+		for k := range nestKeyGroups {
+			nestKeys = append(nestKeys, k)
+		}
+		sort.Strings(nestKeys)
+
+		for _, nestKey := range nestKeys {
+			group := nestKeyGroups[nestKey]
+			nestedList := make([]interface{}, 0, len(group))
+			for _, ce := range group {
+				nestedList = append(nestedList, s.buildEntityWithChildren(ce.entity, childrenByParent, true))
+			}
+			spec[nestKey] = nestedList
+		}
+	}
+
+	if len(spec) > 0 {
 		obj["spec"] = spec
 	}
 

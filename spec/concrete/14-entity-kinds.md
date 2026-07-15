@@ -53,6 +53,13 @@ A physical location where infrastructure is deployed.
 
 - owned by: root (no owner specified)
 
+#### Nestable Children
+
+| Nest Key | Child Kind |
+|----------|------------|
+| racks | rack |
+| clusters | cluster |
+
 #### Typical Relations
 
 - (none)
@@ -89,6 +96,15 @@ A physical rack enclosure within a site.
 #### Typical Ownership
 
 - owned by: site
+
+#### Nestable Children
+
+| Nest Key | Child Kind |
+|----------|------------|
+| servers | server |
+| switches | switch |
+| routers | router |
+| firewalls | firewall |
 
 #### Typical Relations
 
@@ -130,6 +146,13 @@ A physical or virtual compute host.
 #### Typical Ownership
 
 - owned by: rack, site
+
+#### Nestable Children
+
+| Nest Key | Child Kind |
+|----------|------------|
+| networks | network |
+| vms | vm |
 
 #### Typical Relations
 
@@ -261,6 +284,12 @@ A logical network or broadcast domain.
 - belongs_to → site
 - belongs_to → cluster
 
+#### Nestable Children
+
+| Nest Key | Child Kind |
+|----------|------------|
+| interfaces | interface |
+
 #### Example
 
 ```yaml
@@ -312,6 +341,12 @@ A network switch.
 
 - owned by: rack
 
+#### Nestable Children
+
+| Nest Key | Child Kind |
+|----------|------------|
+| interfaces | interface |
+
 #### Typical Relations
 
 - belongs_to → rack
@@ -338,6 +373,12 @@ A network router.
 
 - owned by: rack
 
+#### Nestable Children
+
+| Nest Key | Child Kind |
+|----------|------------|
+| interfaces | interface |
+
 #### Typical Relations
 
 - belongs_to → rack
@@ -362,6 +403,13 @@ A network firewall.
 #### Typical Ownership
 
 - owned by: rack
+
+#### Nestable Children
+
+| Nest Key | Child Kind |
+|----------|------------|
+| interfaces | interface |
+| acls | acl |
 
 #### Typical Relations
 
@@ -389,6 +437,12 @@ Rules are evaluated top-to-bottom; the first matching rule determines the action
 #### Typical Ownership
 
 - owned by: firewall, interface, server, vm, container
+
+#### Nestable Children
+
+| Nest Key | Child Kind |
+|----------|------------|
+| acl_rules | acl_rule |
 
 #### Typical Relations
 
@@ -490,6 +544,13 @@ A virtual machine.
 
 - owned by: server
 
+#### Nestable Children
+
+| Nest Key | Child Kind |
+|----------|------------|
+| networks | network |
+| applications | application |
+
 #### Typical Relations
 
 - belongs_to → server
@@ -553,6 +614,12 @@ A software application or service.
 - belongs_to → container
 - depends_on → vm
 - depends_on → application
+
+#### Nestable Children
+
+| Nest Key | Child Kind |
+|----------|------------|
+| open_ports | open_port |
 
 #### Example
 

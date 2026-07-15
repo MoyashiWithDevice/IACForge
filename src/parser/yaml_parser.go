@@ -5,11 +5,13 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 
 	"IACForge/src/core"
+	"IACForge/src/schema"
 )
 
 // ParseError represents a parsing error with location information.
@@ -25,13 +27,23 @@ func (e *ParseError) Error() string {
 
 // Parser parses YAML syntax into a Graph.
 type Parser struct {
-	graph *core.Graph
+	graph  *core.Graph
+	schema *schema.Schema
 }
 
-// NewParser creates a new YAML parser.
+// NewParser creates a new YAML parser with the core schema.
 func NewParser() *Parser {
 	return &Parser{
-		graph: core.NewGraph(),
+		graph:  core.NewGraph(),
+		schema: schema.CoreSchema(),
+	}
+}
+
+// NewParserWithSchema creates a new YAML parser with a custom schema.
+func NewParserWithSchema(s *schema.Schema) *Parser {
+	return &Parser{
+		graph:  core.NewGraph(),
+		schema: s,
 	}
 }
 
@@ -154,7 +166,7 @@ func (p *Parser) Load(path string) (*core.Graph, error) {
 
 // parseObjects processes a list of object definitions.
 func (p *Parser) parseObjects(objects []map[string]interface{}) error {
-	// First pass: parse all entities
+	// First pass: parse all entities (including nested ones)
 	entities := make(map[string]*core.Entity)
 	var relations []*rawRelation
 
@@ -164,11 +176,14 @@ func (p *Parser) parseObjects(objects []map[string]interface{}) error {
 		}
 
 		if _, hasKind := obj["kind"]; hasKind {
-			entity, err := p.parseEntity(obj)
+			entity, nestedEntities, err := p.parseEntity(obj, "")
 			if err != nil {
 				return fmt.Errorf("object at index %d: %w", i, err)
 			}
 			entities[entity.ID] = entity
+			for _, ne := range nestedEntities {
+				entities[ne.ID] = ne
+			}
 		} else if _, hasType := obj["type"]; hasType {
 			relations = append(relations, &rawRelation{index: i, data: obj})
 		}
@@ -202,24 +217,45 @@ type rawRelation struct {
 }
 
 // parseEntity parses an entity from its YAML representation.
-func (p *Parser) parseEntity(obj map[string]interface{}) (*core.Entity, error) {
+// Returns the entity, any nested child entities, and an error.
+func (p *Parser) parseEntity(obj map[string]interface{}, parentID string) (*core.Entity, []*core.Entity, error) {
 	// Required fields at top level
 	id, err := getString(obj, "id")
 	if err != nil {
-		return nil, fmt.Errorf("entity missing required field 'id': %w", err)
+		if parentID == "" {
+			return nil, nil, fmt.Errorf("entity missing required field 'id': %w", err)
+		}
+		// Nested entity without id: will be auto-generated
+		id = ""
 	}
 
 	kindStr, err := getString(obj, "kind")
 	if err != nil {
-		return nil, fmt.Errorf("entity missing required field 'kind': %w", err)
+		return nil, nil, fmt.Errorf("entity missing required field 'kind': %w", err)
 	}
 
-	name, err := getString(obj, "name")
-	if err != nil {
-		return nil, fmt.Errorf("entity missing required field 'name': %w", err)
+	name, nameProvided := getStringOptional(obj, "name")
+	kind := core.EntityKind(kindStr)
+
+	// For nested entities: if id is empty, auto-generate from parent
+	if id == "" && parentID != "" {
+		id = p.generateNestedID(parentID, kind)
 	}
 
-	entity := core.NewEntity(id, core.EntityKind(kindStr), name)
+	if !nameProvided {
+		if parentID == "" {
+			return nil, nil, fmt.Errorf("entity missing required field 'name'")
+		}
+		// Nested entities default name to id
+		name = id
+	}
+
+	entity := core.NewEntity(id, kind, name)
+
+	// Set owner from parent
+	if parentID != "" {
+		entity.SetOwner(parentID)
+	}
 
 	// Parse attributes sub-key
 	if attrs, ok := getMapOptional(obj, "attributes"); ok {
@@ -251,14 +287,117 @@ func (p *Parser) parseEntity(obj map[string]interface{}) (*core.Entity, error) {
 		}
 	}
 
-	// Parse spec sub-key for kind-specific properties
-	if spec, ok := getMapOptional(obj, "spec"); ok {
-		for k, v := range spec {
-			entity.SetProperty(k, v)
+	// Parse spec sub-key for kind-specific properties and nested entities
+	var nestedEntities []*core.Entity
+	nestingDefs := p.schema.GetNestingDefs(kind)
+	nestKeySet := make(map[string]bool)
+	for _, nd := range nestingDefs {
+		nestKeySet[nd.NestKey] = true
+	}
+
+	// First, check for nesting keys at the entity definition level (outside spec)
+	for k, v := range obj {
+		if nestKeySet[k] && k != "kind" && k != "id" && k != "name" && k != "attributes" && k != "spec" {
+			children, err := p.parseNestedEntities(v, id, k, kind)
+			if err != nil {
+				return nil, nil, fmt.Errorf("nested key %q: %w", k, err)
+			}
+			nestedEntities = append(nestedEntities, children...)
 		}
 	}
 
-	return entity, nil
+	// Then, parse spec sub-key for kind-specific properties and nested entities
+	if spec, ok := getMapOptional(obj, "spec"); ok {
+		for k, v := range spec {
+			if nestKeySet[k] {
+				children, err := p.parseNestedEntities(v, id, k, kind)
+				if err != nil {
+					return nil, nil, fmt.Errorf("nested key %q in spec: %w", k, err)
+				}
+				nestedEntities = append(nestedEntities, children...)
+			} else {
+				entity.SetProperty(k, v)
+			}
+		}
+	}
+
+	return entity, nestedEntities, nil
+}
+
+// generateNestedID generates an ID for a nested entity that doesn't specify one.
+// Uses the parent ID prefix and a counter-based suffix.
+func (p *Parser) generateNestedID(parentID string, childKind core.EntityKind) string {
+	prefix := string(childKind)
+	return parentID + "-" + prefix
+}
+
+// parseNestedEntities parses a list of nested child entities under a parent.
+func (p *Parser) parseNestedEntities(value interface{}, parentID string, nestKey string, parentKind core.EntityKind) ([]*core.Entity, error) {
+	children, ok := value.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("expected list for nest key %q, got %T", nestKey, value)
+	}
+
+	nestingDef, ok := p.schema.FindNestingByNestKey(parentKind, nestKey)
+	if !ok {
+		return nil, fmt.Errorf("no nesting definition for parent kind %q and nest key %q", parentKind, nestKey)
+	}
+
+	var result []*core.Entity
+	usedIDs := make(map[string]bool)
+
+	for i, child := range children {
+		childObj, ok := child.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("child at index %d in %q: expected map, got %T", i, nestKey, child)
+		}
+
+		// Determine child kind: use explicit kind or inferred from nesting
+		childKind := nestingDef.ChildKind
+		if explicitKind, ok := getStringOptional(childObj, "kind"); ok {
+			childKind = core.EntityKind(explicitKind)
+		}
+
+		// Build child object with kind injected
+		childObjWithKind := make(map[string]interface{})
+		for k, v := range childObj {
+			childObjWithKind[k] = v
+		}
+		childObjWithKind["kind"] = string(childKind)
+
+		// Generate child ID if not provided
+		if _, hasID := childObj["id"]; !hasID {
+			childID := p.generateUniqueNestedID(parentID, childKind, usedIDs)
+			childObjWithKind["id"] = childID
+			usedIDs[childID] = true
+		} else {
+			usedIDs[childObj["id"].(string)] = true
+		}
+
+		entity, nestedEntities, err := p.parseEntity(childObjWithKind, parentID)
+		if err != nil {
+			return nil, fmt.Errorf("child at index %d in %q: %w", i, nestKey, err)
+		}
+
+		result = append(result, entity)
+		result = append(result, nestedEntities...)
+	}
+
+	return result, nil
+}
+
+// generateUniqueNestedID generates a unique ID for a nested entity.
+func (p *Parser) generateUniqueNestedID(parentID string, childKind core.EntityKind, usedIDs map[string]bool) string {
+	base := parentID + "-" + string(childKind)
+	if !usedIDs[base] {
+		return base
+	}
+	for i := 2; ; i++ {
+		candidate := base + "-" + strconv.Itoa(i)
+		if !usedIDs[candidate] {
+			return candidate
+		}
+	}
 }
 
 // parseRelation parses a relation from its YAML representation.
@@ -419,6 +558,7 @@ func getMapOptional(obj map[string]interface{}, key string) (map[string]interfac
 }
 
 // ResolveReferences checks that all references in the graph point to existing objects.
+// It supports both simple ID references and path-based references.
 func ResolveReferences(g *core.Graph) []error {
 	var errs []error
 
@@ -434,16 +574,66 @@ func ResolveReferences(g *core.Graph) []error {
 	// Check relation participants
 	for _, r := range g.Relations() {
 		for _, pid := range r.ParticipantIDs() {
-			// Handle interface references (entity/interface format)
-			entityID := pid
-			if idx := strings.Index(pid, "/"); idx != -1 {
-				entityID = pid[:idx]
-			}
-			if _, ok := g.GetEntity(entityID); !ok {
-				errs = append(errs, fmt.Errorf("relation %s references non-existent entity %s", r.ID, pid))
+			if _, err := resolvePathReference(g, pid); err != nil {
+				errs = append(errs, fmt.Errorf("relation %s: %w", r.ID, err))
 			}
 		}
 	}
 
 	return errs
+}
+
+// resolvePathReference resolves a reference string to an entity ID.
+// Resolution strategy:
+// 1. Direct ID match
+// 2. Path notation: last segment is the entity ID, parent segments are verified
+// 3. Legacy interface notation: entityID/interfaceName (still supported for backward compat)
+func resolvePathReference(g *core.Graph, ref string) (*core.Entity, error) {
+	// 1. Direct ID match
+	if e, ok := g.GetEntity(ref); ok {
+		return e, nil
+	}
+
+	// 2. Path notation (contains "/")
+	if idx := strings.Index(ref, "/"); idx != -1 {
+		segments := strings.Split(ref, "/")
+		lastSegment := segments[len(segments)-1]
+		entityID := lastSegment
+
+		// Try the last segment as a direct entity ID
+		if e, ok := g.GetEntity(entityID); ok {
+			// Verify parent relationship if there are more than 2 segments
+			if len(segments) > 2 {
+				if err := verifyPathOwnership(g, segments); err != nil {
+					return nil, err
+				}
+			}
+			return e, nil
+		}
+
+		// Legacy interface reference: first segment is entity, rest is interface name
+		entityID = segments[0]
+		if e, ok := g.GetEntity(entityID); ok {
+			return e, nil
+		}
+	}
+
+	return nil, fmt.Errorf("reference %q could not be resolved", ref)
+}
+
+// verifyPathOwnership verifies that the ownership chain in the path is valid.
+func verifyPathOwnership(g *core.Graph, segments []string) error {
+	for i := 1; i < len(segments); i++ {
+		childID := segments[i]
+		parentID := segments[i-1]
+
+		child, ok := g.GetEntity(childID)
+		if !ok {
+			return fmt.Errorf("entity %q not found in path", childID)
+		}
+		if child.Owner != parentID {
+			return fmt.Errorf("entity %q is not owned by %q", childID, parentID)
+		}
+	}
+	return nil
 }
