@@ -53,18 +53,19 @@ objects:
 | rack | routers | router |
 | rack | firewalls | firewall |
 | server | networks | network |
-| server | interfaces | interface |
 | server | vms | vm |
 | switch | interfaces | interface |
 | router | interfaces | interface |
 | firewall | interfaces | interface |
 | firewall | acls | acl |
 | vm | networks | network |
-| vm | interfaces | interface |
 | vm | applications | application |
 | network | interfaces | interface |
 | application | open_ports | open_port |
 | acl | acl_rules | acl_rule |
+
+> **注意**: serverとvmはinterfaceを直接子要素としない。interfaceはnetworkを経由してのみ子要素となる。
+> 階層: server > network > interface, vm > network > interface
 
 ### 3. 必須項目
 
@@ -140,37 +141,44 @@ objects:
 - [ ] `NestingDefinition`構造体の追加
 - [ ] `EntityKindDefinition`に`NestingDefs`フィールド追加
 - [ ] `core_schema.go`に全エンティティ種別のネスト定義を追加
+- **完了条件**: `CoreSchema()`が全エンティティ種別に対して正しい`NestingDefs`を返し、テストがパスすること
 
 ### Phase 2: パーサー変更
 - [ ] `parseEntity`の拡張（ネスト定義の解析）
 - [ ] `parseNestedEntity`関数の追加
 - [ ] ID自動生成ロジック（未指定時）
 - [ ] 所有権の自動設定
+- **完了条件**: ネスト定義付きYAMLをパースし、全子エンティティが正しいownerIDとkindでフラットなエンティティリストとしてグラフに追加されること
 
 ### Phase 3: 参照解決
 - [ ] `resolvePathReference`関数の追加
 - [ ] `ResolveReferences`の拡張
 - [ ] パス表記の検証ロジック
+- **完了条件**: ID参照とパス参照の両方が正しく解決され、存在しない参照はエラーとして検出されること
 
 ### Phase 4: シリアライザー変更
 - [ ] `buildDocument`の拡張（ネスト出力）
 - [ ] `buildEntityWithChildren`関数の追加
 - [ ] フラット→ネスト変換ロジック
+- **完了条件**: フラットなグラフからネスト構造のYAMLが生成され、ネストされたエンティティには`owner`フィールドが含まれないこと
 
 ### Phase 5: 検証ルール
 - [ ] ネスト定義の整合性チェック
 - [ ] IDのスラッシュ禁止チェック
 - [ ] 親子関係の検証
+- **完了条件**: 不正なネスト定義（不正な親子関係、IDにスラッシュ含む等）がエラーとして検出されること
 
 ### Phase 6: テスト
 - [ ] ネスト定義のパーステスト
 - [ ] フラット→ネスト変換テスト
 - [ ] 参照解決テスト
 - [ ] 統合テスト
+- **完了条件**: 全テストがパスし、`go test ./...`が成功すること
 
 ### Phase 7: 仕様書更新
 - [ ] `spec/concrete/17-yaml-syntax.md`の更新
 - [ ] `spec/concrete/14-entity-kinds.md`の更新
+- **完了条件**: 仕様書にネスト定義の構文と使用例が記載され、実装と一致すること
 
 ## 注意事項
 
