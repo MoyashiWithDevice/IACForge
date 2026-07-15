@@ -1,0 +1,9 @@
+objects:
+  - id: sw-core-01
+    kind: switch
+    name: Core Switch 01
+    owner: rack-a01
+    status: active
+    manufacturer: cisco
+    model: Catalyst 9300
+    ports: 48

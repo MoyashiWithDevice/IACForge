@@ -1,0 +1,12 @@
+objects:
+  - id: rel-hosts-server-vm
+    type: hosts
+    participants:
+      source: srv-proxmox-01
+      target: vm-web-01
+
+  - id: rel-belongsto-vm-cluster
+    type: belongs_to
+    participants:
+      source: vm-web-01
+      target: cluster-prod-01

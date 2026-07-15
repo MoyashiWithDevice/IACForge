@@ -538,3 +538,75 @@ func TestParseCompleteExampleFile(t *testing.T) {
 		}
 	}
 }
+
+func TestParseDir(t *testing.T) {
+	parser := NewParser()
+	g, err := parser.ParseDir("../../testdata/multi-file/infra/")
+	if err != nil {
+		t.Fatalf("failed to parse directory: %v", err)
+	}
+
+	if g.EntityCount() != 11 {
+		t.Errorf("expected 11 entities, got %d", g.EntityCount())
+	}
+	if g.RelationCount() != 2 {
+		t.Errorf("expected 2 relations, got %d", g.RelationCount())
+	}
+
+	// Verify cross-file ownership: site in site.yaml owns rack in rack.yaml
+	rack, ok := g.GetEntity("rack-a01")
+	if !ok {
+		t.Fatal("entity rack-a01 not found")
+	}
+	if rack.Owner != "site-tokyo-01" {
+		t.Errorf("expected owner site-tokyo-01, got %s", rack.Owner)
+	}
+
+	// Verify cross-file ownership: server in servers.yaml owns interface in interfaces.yaml
+	eno1, ok := g.GetEntity("eno1")
+	if !ok {
+		t.Fatal("entity eno1 not found")
+	}
+	if eno1.Owner != "srv-proxmox-01" {
+		t.Errorf("expected owner srv-proxmox-01, got %s", eno1.Owner)
+	}
+
+	// Verify paths are built correctly across files
+	if rack.Path() != "/site-tokyo-01/rack-a01" {
+		t.Errorf("expected path /site-tokyo-01/rack-a01, got %s", rack.Path())
+	}
+
+	// Verify cross-file relation: hosts relation between server and VM
+	rel, ok := g.GetRelation("rel-hosts-server-vm")
+	if !ok {
+		t.Fatal("relation rel-hosts-server-vm not found")
+	}
+	if rel.Source() != "srv-proxmox-01" {
+		t.Errorf("expected source srv-proxmox-01, got %s", rel.Source())
+	}
+	if rel.Target() != "vm-web-01" {
+		t.Errorf("expected target vm-web-01, got %s", rel.Target())
+	}
+}
+
+func TestLoadFile(t *testing.T) {
+	parser := NewParser()
+	g, err := parser.Load("../../testdata/complete-example.yaml")
+	if err != nil {
+		t.Fatalf("failed to load file: %v", err)
+	}
+	if g.EntityCount() != 18 {
+		t.Errorf("expected 18 entities, got %d", g.EntityCount())
+	}
+}
+
+func TestLoadDir(t *testing.T) {
+	parser := NewParser()
+	g, err := parser.Load("../../testdata/multi-file/infra/")
+	if err != nil {
+		t.Fatalf("failed to load directory: %v", err)
+	}
+	if g.EntityCount() != 11 {
+		t.Errorf("expected 11 entities, got %d", g.EntityCount())
+	}
+}

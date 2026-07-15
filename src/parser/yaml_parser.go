@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -88,6 +89,67 @@ func (p *Parser) ParseReader(r io.Reader) (*core.Graph, error) {
 	}
 
 	return p.graph, nil
+}
+
+// ParseDir reads all YAML files from a directory recursively and merges them into a single Graph.
+// File names are sorted to ensure deterministic loading order.
+func (p *Parser) ParseDir(dir string) (*core.Graph, error) {
+	p.graph = core.NewGraph()
+
+	var allObjects []map[string]interface{}
+
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		ext := strings.ToLower(filepath.Ext(path))
+		if ext != ".yaml" && ext != ".yml" {
+			return nil
+		}
+
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("failed to read %s: %w", path, err)
+		}
+
+		var doc struct {
+			Objects []map[string]interface{} `yaml:"objects"`
+		}
+		if err := yaml.Unmarshal(data, &doc); err != nil {
+			return fmt.Errorf("failed to parse %s: %w", path, err)
+		}
+
+		allObjects = append(allObjects, doc.Objects...)
+		return nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to walk directory %s: %w", dir, err)
+	}
+
+	if err := p.parseObjects(allObjects); err != nil {
+		return nil, err
+	}
+
+	if err := p.graph.BuildOwnershipPaths(); err != nil {
+		return nil, fmt.Errorf("failed to build ownership paths: %w", err)
+	}
+
+	return p.graph, nil
+}
+
+// Load is a convenience function that loads a path (file or directory) into a Graph.
+func (p *Parser) Load(path string) (*core.Graph, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to access %s: %w", path, err)
+	}
+	if info.IsDir() {
+		return p.ParseDir(path)
+	}
+	return p.ParseFile(path)
 }
 
 // parseObjects processes a list of object definitions.

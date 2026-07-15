@@ -1,0 +1,22 @@
+objects:
+  - id: srv-proxmox-01
+    kind: server
+    name: Proxmox Node 01
+    owner: rack-a01
+    status: active
+    platform: proxmox
+    cpu_cores: 32
+    memory_gb: 128
+    storage_gb: 2000
+    ip_address: 10.0.1.10
+
+  - id: srv-proxmox-02
+    kind: server
+    name: Proxmox Node 02
+    owner: rack-a01
+    status: active
+    platform: proxmox
+    cpu_cores: 32
+    memory_gb: 128
+    storage_gb: 2000
+    ip_address: 10.0.1.11

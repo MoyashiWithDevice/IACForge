@@ -3,7 +3,11 @@ package extension
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"plugin"
 	"sort"
+	"strings"
 
 	"IACForge/src/core"
 )
@@ -124,6 +128,60 @@ func (m *Manager) LoadOrder() []string {
 	result := make([]string, len(m.loadOrder))
 	copy(result, m.loadOrder)
 	return result
+}
+
+// LoadFromDir loads all plugins from the specified directory.
+// Each plugin must be a Go plugin (.so file) that exports an Extension() function.
+// The directory is scanned for .so files, and each is loaded as a plugin.
+// After loading all plugins, LoadAll is called to resolve dependencies and apply them.
+func (m *Manager) LoadFromDir(dir string) error {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return fmt.Errorf("failed to read extension directory %s: %w", dir, err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		if !strings.HasSuffix(entry.Name(), ".so") {
+			continue
+		}
+
+		pluginPath := filepath.Join(dir, entry.Name())
+		ext, err := loadPlugin(pluginPath)
+		if err != nil {
+			return fmt.Errorf("failed to load plugin %s: %w", pluginPath, err)
+		}
+
+		if err := m.Register(ext); err != nil {
+			return fmt.Errorf("failed to register plugin %s: %w", pluginPath, err)
+		}
+	}
+
+	return m.LoadAll()
+}
+
+// loadPlugin loads a single Go plugin from the given path and extracts the Extension.
+func loadPlugin(path string) (*Extension, error) {
+	p, err := plugin.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("plugin.Open failed: %w", err)
+	}
+
+	extFunc, err := p.Lookup("Extension")
+	if err != nil {
+		return nil, fmt.Errorf("plugin does not export Extension function: %w", err)
+	}
+
+	// Assert that Extension is a function
+	fn, ok := extFunc.(func() *Extension)
+	if !ok {
+		return nil, fmt.Errorf("Extension is not of type func() *Extension")
+	}
+
+	return fn(), nil
 }
 
 // Namespaces returns all registered namespaces.

@@ -1,0 +1,7 @@
+objects:
+  - id: site-tokyo-01
+    kind: site
+    name: Tokyo Datacenter 1
+    status: active
+    labels:
+      region: ap-northeast-1

@@ -1,6 +1,8 @@
 package extension
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"IACForge/src/core"
@@ -729,6 +731,58 @@ func TestIntegrationGraphIntegrity(t *testing.T) {
 		if !s.HasEntityKind(k) {
 			t.Errorf("core kind %q should still be in schema", k)
 		}
+	}
+}
+
+// --- LoadFromDir Tests ---
+
+func TestLoadFromDirEmpty(t *testing.T) {
+	dir := t.TempDir()
+	m := NewManager()
+	if err := m.LoadFromDir(dir); err != nil {
+		t.Fatalf("LoadFromDir on empty directory failed: %v", err)
+	}
+	if len(m.Extensions()) != 0 {
+		t.Errorf("expected 0 extensions, got %d", len(m.Extensions()))
+	}
+}
+
+func TestLoadFromDirNonexistent(t *testing.T) {
+	m := NewManager()
+	if err := m.LoadFromDir("/nonexistent/path"); err == nil {
+		t.Fatal("expected error for nonexistent directory")
+	}
+}
+
+func TestLoadFromDirSkipsNonPlugins(t *testing.T) {
+	dir := t.TempDir()
+	// Create a non-.so file
+	if err := os.WriteFile(filepath.Join(dir, "readme.txt"), []byte("not a plugin"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	m := NewManager()
+	if err := m.LoadFromDir(dir); err != nil {
+		t.Fatalf("LoadFromDir failed: %v", err)
+	}
+	if len(m.Extensions()) != 0 {
+		t.Errorf("expected 0 extensions, got %d", len(m.Extensions()))
+	}
+}
+
+func TestLoadFromDirSkipsSubdirs(t *testing.T) {
+	dir := t.TempDir()
+	// Create a subdirectory
+	if err := os.Mkdir(filepath.Join(dir, "subdir"), 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	m := NewManager()
+	if err := m.LoadFromDir(dir); err != nil {
+		t.Fatalf("LoadFromDir failed: %v", err)
+	}
+	if len(m.Extensions()) != 0 {
+		t.Errorf("expected 0 extensions, got %d", len(m.Extensions()))
 	}
 }
 

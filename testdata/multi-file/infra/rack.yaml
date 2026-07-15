@@ -1,0 +1,9 @@
+objects:
+  - id: rack-a01
+    kind: rack
+    name: Rack A01
+    owner: site-tokyo-01
+    status: active
+    labels:
+      row: A
+    height_units: 42
