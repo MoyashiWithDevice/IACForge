@@ -129,11 +129,12 @@ A physical or virtual compute host.
 
 #### Typical Ownership
 
-- owned by: rack
+- owned by: rack, site
 
 #### Typical Relations
 
 - belongs_to → rack
+- belongs_to → site
 - hosts → vm
 - hosts → container
 

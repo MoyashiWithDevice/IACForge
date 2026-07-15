@@ -29,9 +29,11 @@ Represents a physical or logical connection between Entities.
   participants:
     - srv-proxmox-01/eno1
     - sw-core-01/port1
-  connection_type: physical
-  bandwidth_mbps: 10000
-  status: active
+  attributes:
+    status: active
+  spec:
+    connection_type: physical
+    bandwidth_mbps: 10000
 ```
 
 ---
@@ -53,14 +55,16 @@ Represents an execution or hosting relationship.
   participants:
     source: srv-proxmox-01
     target: vm-web-01
-  status: active
+  attributes:
+    status: active
 
 - id: rel-hosts-vm-app
   type: hosts
   participants:
     source: vm-web-01
     target: app-web-server
-  status: active
+  attributes:
+    status: active
 ```
 
 ---
@@ -89,9 +93,11 @@ Represents a directional dependency between Entities.
   participants:
     source: app-web-server
     target: app-database
-  dependency_type: runtime
-  critical: true
-  status: active
+  attributes:
+    status: active
+  spec:
+    dependency_type: runtime
+    critical: true
 ```
 
 ---
@@ -113,14 +119,16 @@ Represents logical membership or association.
   participants:
     source: vm-web-01
     target: cluster-prod-01
-  status: active
+  attributes:
+    status: active
 
 - id: rel-belongsto-intf-network
   type: belongs_to
   participants:
     source: vm-web-01/eth0
     target: mgmt-network-01
-  status: active
+  attributes:
+    status: active
 ```
 
 ---
@@ -151,8 +159,9 @@ Represents data replication between Entities.
   participants:
     source: app-database-primary
     target: app-database-replica
-  replication_type: asynchronous
-  lag_seconds: 0.5
+  spec:
+    replication_type: asynchronous
+    lag_seconds: 0.5
 ```
 
 ---
@@ -182,9 +191,10 @@ Represents a backup relationship.
   participants:
     source: vm-web-01
     target: vol-web-backup
-  backup_type: incremental
-  schedule: "0 2 * * *"
-  retention_days: 30
+  spec:
+    backup_type: incremental
+    schedule: "0 2 * * *"
+    retention_days: 30
 ```
 
 ---
@@ -213,8 +223,9 @@ Represents a monitoring relationship.
   participants:
     source: app-prometheus
     target: srv-proxmox-01
-  monitor_type: snmp
-  interval_seconds: 30
+  spec:
+    monitor_type: snmp
+    interval_seconds: 30
 ```
 
 ---
@@ -242,7 +253,8 @@ Represents a management relationship.
   participants:
     source: vm-web-01
     target: app-ansible
-  management_type: configuration
+  spec:
+    management_type: configuration
 ```
 
 ---
@@ -272,9 +284,10 @@ Represents a mounting relationship (storage).
   participants:
     source: vol-web-data
     target: vm-web-01
-  mount_point: /data
-  filesystem: ext4
-  options: "rw,noatime"
+  spec:
+    mount_point: /data
+    filesystem: ext4
+    options: "rw,noatime"
 ```
 
 ---
@@ -296,7 +309,8 @@ Represents that an ACL is applied to a network target.
   participants:
     source: acl-web-ingress
     target: vm-web-01/eth0
-  status: active
+  attributes:
+    status: active
 ```
 
 ---
@@ -318,7 +332,8 @@ Represents that an open port is listening on a network interface or address.
   participants:
     source: port-443-nginx
     target: vm-web-01/eth0
-  status: active
+  attributes:
+    status: active
 ```
 
 ---

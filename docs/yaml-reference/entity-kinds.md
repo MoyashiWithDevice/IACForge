@@ -23,12 +23,13 @@ A physical location where infrastructure is deployed.
 - id: site-tokyo-01
   kind: site
   name: Tokyo Datacenter 1
-  status: active
-  tags:
-    - production
-  labels:
-    region: asia-pacific
-    tier: primary
+  attributes:
+    status: active
+    tags:
+      - production
+    labels:
+      region: asia-pacific
+      tier: primary
 ```
 
 ---
@@ -49,12 +50,14 @@ A physical rack enclosure within a site.
 - id: rack-a01
   kind: rack
   name: Rack A01
-  owner: site-tokyo-01
-  status: active
-  labels:
-    row: A
-    zone: dc-1
-  height_units: 42
+  attributes:
+    owner: site-tokyo-01
+    status: active
+    labels:
+      row: A
+      zone: dc-1
+  spec:
+    height_units: 42
 ```
 
 ---
@@ -82,13 +85,15 @@ A physical or virtual compute host.
 - id: srv-proxmox-01
   kind: server
   name: Proxmox Node 01
-  owner: rack-a01
-  status: active
-  platform: proxmox
-  cpu_cores: 32
-  memory_gb: 128
-  storage_gb: 2000
-  ip_address: 10.0.1.10
+  attributes:
+    owner: rack-a01
+    status: active
+  spec:
+    platform: proxmox
+    cpu_cores: 32
+    memory_gb: 128
+    storage_gb: 2000
+    ip_address: 10.0.1.10
 ```
 
 ---
@@ -111,11 +116,13 @@ A network interface on a device.
 - id: eno1
   kind: interface
   name: eno1
-  owner: srv-proxmox-01
-  type: ethernet
-  speed_mbps: 10000
-  mac_address: "aa:bb:cc:dd:ee:f0"
-  ip_address: 10.0.1.10
+  attributes:
+    owner: srv-proxmox-01
+  spec:
+    type: ethernet
+    speed_mbps: 10000
+    mac_address: "aa:bb:cc:dd:ee:f0"
+    ip_address: 10.0.1.10
 ```
 
 ---
@@ -137,8 +144,9 @@ A physical cable connecting two or more interfaces.
 - id: cable-001
   kind: cable
   name: Patch Cable SRV01-SW01
-  cable_type: cat6a
-  length_meters: 3.0
+  spec:
+    cable_type: cat6a
+    length_meters: 3.0
 ```
 
 ---
@@ -159,10 +167,12 @@ A power distribution unit (PDU) or power feed.
 - id: pdu-rack-01
   kind: power_distribution
   name: PDU Rack A01
-  owner: rack-a01
-  capacity_amps: 30
-  voltage: 240
-  phases: 3
+  attributes:
+    owner: rack-a01
+  spec:
+    capacity_amps: 30
+    voltage: 240
+    phases: 3
 ```
 
 ---
@@ -187,12 +197,13 @@ A logical network or broadcast domain.
 - id: mgmt-network-01
   kind: network
   name: Management Network
-  cidr: 10.0.0.0/24
-  gateway: 10.0.0.1
-  network_type: management
-  dns_servers:
-    - 8.8.8.8
-    - 8.8.4.4
+  spec:
+    cidr: 10.0.0.0/24
+    gateway: 10.0.0.1
+    network_type: management
+    dns_servers:
+      - 8.8.8.8
+      - 8.8.4.4
 ```
 
 ---
@@ -213,9 +224,11 @@ A virtual LAN configuration.
 - id: vlan-100
   kind: vlan
   name: Production VLAN
-  owner: mgmt-network-01
-  vlan_id: 100
-  associated_network: mgmt-network-01
+  attributes:
+    owner: mgmt-network-01
+  spec:
+    vlan_id: 100
+    associated_network: mgmt-network-01
 ```
 
 ---
@@ -239,12 +252,14 @@ A network switch.
 - id: sw-core-01
   kind: switch
   name: Core Switch 01
-  owner: rack-a01
-  status: active
-  manufacturer: cisco
-  model: Catalyst 9300
-  ports: 48
-  managed: true
+  attributes:
+    owner: rack-a01
+    status: active
+  spec:
+    manufacturer: cisco
+    model: Catalyst 9300
+    ports: 48
+    managed: true
 ```
 
 ---
@@ -266,10 +281,12 @@ A network router.
 - id: rt-core-01
   kind: router
   name: Core Router 01
-  owner: rack-a01
-  manufacturer: mikrotik
-  model: CCR1036
-  interfaces: 36
+  attributes:
+    owner: rack-a01
+  spec:
+    manufacturer: mikrotik
+    model: CCR1036
+    interfaces: 36
 ```
 
 ---
@@ -291,10 +308,12 @@ A network firewall.
 - id: fw-core-01
   kind: firewall
   name: Core Firewall 01
-  owner: rack-a01
-  manufacturer: paloalto
-  model: PA-3260
-  throughput_gbps: 10.0
+  attributes:
+    owner: rack-a01
+  spec:
+    manufacturer: paloalto
+    model: PA-3260
+    throughput_gbps: 10.0
 ```
 
 ---
@@ -315,12 +334,14 @@ An Access Control List containing ordered rules for filtering network traffic.
 - id: acl-web-ingress
   kind: acl
   name: Web Server Ingress ACL
-  owner: vm-web-01
-  status: active
-  direction: inbound
-  default_action: deny
-  labels:
-    environment: production
+  attributes:
+    owner: vm-web-01
+    status: active
+    labels:
+      environment: production
+  spec:
+    direction: inbound
+    default_action: deny
 ```
 
 ---
@@ -345,22 +366,26 @@ A single rule within an Access Control List.
 - id: acl-rule-allow-https
   kind: acl_rule
   name: Allow HTTPS
-  owner: acl-web-ingress
-  action: allow
-  protocol: tcp
-  source_address: 0.0.0.0/0
-  destination_port: "443"
-  enabled: true
+  attributes:
+    owner: acl-web-ingress
+  spec:
+    action: allow
+    protocol: tcp
+    source_address: 0.0.0.0/0
+    destination_port: "443"
+    enabled: true
 
 - id: acl-rule-allow-ssh
   kind: acl_rule
   name: Allow SSH from Management
-  owner: acl-web-ingress
-  action: allow
-  protocol: tcp
-  source_address: 10.0.0.0/24
-  destination_port: "22"
-  enabled: true
+  attributes:
+    owner: acl-web-ingress
+  spec:
+    action: allow
+    protocol: tcp
+    source_address: 10.0.0.0/24
+    destination_port: "22"
+    enabled: true
 ```
 
 ---
@@ -387,14 +412,16 @@ A virtual machine.
 - id: vm-web-01
   kind: vm
   name: Web Server 01
-  owner: srv-proxmox-01
-  status: active
-  cpu_cores: 4
-  memory_gb: 8
-  disk_gb: 100
-  os: ubuntu
-  os_version: "22.04"
-  ip_address: 10.0.2.10
+  attributes:
+    owner: srv-proxmox-01
+    status: active
+  spec:
+    cpu_cores: 4
+    memory_gb: 8
+    disk_gb: 100
+    os: ubuntu
+    os_version: "22.04"
+    ip_address: 10.0.2.10
 ```
 
 ---
@@ -417,14 +444,16 @@ A containerized workload.
 - id: ctr-nginx-01
   kind: container
   name: Nginx Container
-  owner: vm-web-01
-  image: nginx
-  image_tag: "1.24"
-  cpu_limit: "1.0"
-  memory_limit: "256Mi"
-  ports:
-    - 80
-    - 443
+  attributes:
+    owner: vm-web-01
+  spec:
+    image: nginx
+    image_tag: "1.24"
+    cpu_limit: "1.0"
+    memory_limit: "256Mi"
+    ports:
+      - 80
+      - 443
 ```
 
 ---
@@ -446,11 +475,13 @@ A software application or service.
 - id: app-web-server
   kind: application
   name: Nginx Web Server
-  owner: vm-web-01
-  status: active
-  version: "1.24.0"
-  port: 443
-  protocol: https
+  attributes:
+    owner: vm-web-01
+    status: active
+  spec:
+    version: "1.24.0"
+    port: 443
+    protocol: https
 ```
 
 ---
@@ -474,22 +505,26 @@ A listening or open network port on a host, VM, container, or application.
 - id: port-443-nginx
   kind: open_port
   name: Nginx HTTPS
-  owner: app-web-server
-  port: 443
-  protocol: tcp
-  state: listening
-  address: 0.0.0.0
-  process: nginx
+  attributes:
+    owner: app-web-server
+  spec:
+    port: 443
+    protocol: tcp
+    state: listening
+    address: 0.0.0.0
+    process: nginx
 
 - id: port-5432-postgres
   kind: open_port
   name: PostgreSQL
-  owner: vm-web-01
-  port: 5432
-  protocol: tcp
-  state: listening
-  address: 10.0.2.10
-  process: postgres
+  attributes:
+    owner: vm-web-01
+  spec:
+    port: 5432
+    protocol: tcp
+    state: listening
+    address: 10.0.2.10
+    process: postgres
 ```
 
 ---
@@ -515,13 +550,15 @@ A storage system or array.
 - id: storage-nas-01
   kind: storage
   name: NAS Storage 01
-  owner: rack-a01
-  manufacturer: synology
-  model: DS1621+
-  total_capacity_gb: 48000
-  usable_capacity_gb: 32000
-  raid_level: raid6
-  protocol: nfs
+  attributes:
+    owner: rack-a01
+  spec:
+    manufacturer: synology
+    model: DS1621+
+    total_capacity_gb: 48000
+    usable_capacity_gb: 32000
+    raid_level: raid6
+    protocol: nfs
 ```
 
 ---
@@ -543,11 +580,13 @@ A logical storage volume.
 - id: vol-web-data
   kind: volume
   name: Web Data Volume
-  owner: storage-nas-01
-  capacity_gb: 500
-  filesystem: ext4
-  mount_point: /data
-  thin_provisioned: false
+  attributes:
+    owner: storage-nas-01
+  spec:
+    capacity_gb: 500
+    filesystem: ext4
+    mount_point: /data
+    thin_provisioned: false
 ```
 
 ---
@@ -570,10 +609,12 @@ A logical grouping of compute resources.
 - id: cluster-prod-01
   kind: cluster
   name: Production Cluster 01
-  status: active
-  cluster_type: hyperconverged
-  ha_enabled: true
-  drs_enabled: true
+  attributes:
+    status: active
+  spec:
+    cluster_type: hyperconverged
+    ha_enabled: true
+    drs_enabled: true
 ```
 
 ---
@@ -592,8 +633,10 @@ A logical availability zone within a site.
 - id: az-tokyo-a
   kind: availability_zone
   name: Tokyo Zone A
-  owner: site-tokyo-01
-  redundancy: 2n
+  attributes:
+    owner: site-tokyo-01
+  spec:
+    redundancy: 2n
 ```
 
 ---

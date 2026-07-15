@@ -12,7 +12,9 @@
 | kind | string | Entity kind（小文字・単数形） |
 | name | string | 人間が読める名前 |
 
-## 任意の共通プロパティ
+## 任意の共通プロパティ（`attributes:` 配下）
+
+必須プロパティ以外の共通プロパティは、`attributes:` サブキーの配下に配置します。
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -21,7 +23,7 @@
 | status | enum | - | ライフサイクル状態 |
 | tags | list[string] | - | グループ用ラベル |
 | labels | map[string] | - | マシン可読メタデータ |
-| metadata | map[string] | - | 拡張データ |
+| extensions | map[string] | - | 拡張データ |
 
 ## ステータス値
 
@@ -47,20 +49,22 @@
 - id: srv-proxmox-01
   kind: server
   name: Proxmox Node 01
-  description: "Primary Proxmox server"
-  status: active
-  tags:
-    - production
-    - compute
-  labels:
-    region: ap-northeast-1
-    environment: production
-  metadata:
-    vendor: dell
-    model: r740xd
-  platform: proxmox
-  cpu_cores: 32
-  memory_gb: 128
-  storage_gb: 2000
-  ip_address: 10.0.1.10
+  attributes:
+    description: "Primary Proxmox server"
+    status: active
+    tags:
+      - production
+      - compute
+    labels:
+      region: ap-northeast-1
+      environment: production
+    extensions:
+      vendor: dell
+      model: r740xd
+  spec:
+    platform: proxmox
+    cpu_cores: 32
+    memory_gb: 128
+    storage_gb: 2000
+    ip_address: 10.0.1.10
 ```

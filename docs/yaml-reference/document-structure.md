@@ -23,8 +23,9 @@ objects:
   - id: site-tokyo-01
     kind: site
     name: Tokyo Datacenter 1
-    # プライマリロケーション
-    status: active
+    attributes:
+      # プライマリロケーション
+      status: active
 ```
 
 ## 記述順序

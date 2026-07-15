@@ -12,7 +12,7 @@
 | type | string | Relation type |
 | participants | list[string] or map | Entity参照 |
 
-## 任意の共通プロパティ
+## 任意の共通プロパティ（`attributes:` 以下）
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -20,7 +20,7 @@
 | status | enum | - | ライフサイクル状態 |
 | tags | list[string] | - | ラベル |
 | labels | map[string] | - | メタデータ |
-| metadata | map[string] | - | 拡張データ |
+| extensions | map[string] | - | 拡張データ |
 
 ## Participantフォーマット
 
@@ -49,14 +49,18 @@ participants:
 ```yaml
 - id: rel-hosts-server-vm
   type: hosts
-  description: "Server hosts VM"
-  status: active
-  tags:
-    - hosting
-  labels:
-    source_type: server
-    target_type: vm
   participants:
     source: srv-proxmox-01
     target: vm-web-01
+  attributes:
+    description: "Server hosts VM"
+    status: active
+    tags:
+      - hosting
+    labels:
+      source_type: server
+      target_type: vm
+    extensions:
+      custom_key: custom_value
+  spec: {}
 ```
