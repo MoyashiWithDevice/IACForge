@@ -50,7 +50,7 @@ The `attributes` sub-key contains optional properties common to all entities.
 
 ### Spec Section
 
-The `spec` sub-key contains kind-specific properties (platform, cpu_cores, memory_gb, etc.).
+The `spec` sub-key contains kind-specific properties (platform, cpu, memory_gb, etc.).
 
 ### Basic Entity
 
@@ -82,10 +82,17 @@ objects:
         model: r740xd
     spec:
       platform: proxmox
-      cpu_cores: 32
+      cpu:
+        - cores: 16
+          architecture: x86_64
+        - cores: 16
+          architecture: x86_64
       memory_gb: 128
-      storage_gb: 2000
-      ip_address: 10.0.1.10
+      storage:
+        - size_gb: 500
+          type: ssd
+        - size_gb: 500
+          type: ssd
 ```
 
 ---
@@ -132,7 +139,9 @@ objects:
     kind: server
     name: Proxmox Node 01
     spec:
-      cpu_cores: 32
+      cpu:
+        - cores: 16
+          architecture: x86_64
       networks:
         - id: net-private
           name: private
@@ -147,7 +156,9 @@ objects:
         - id: vm-web-01
           name: Web Server 01
           spec:
-            cpu_cores: 4
+            cpu:
+              - cores: 4
+                architecture: x86_64
             memory_gb: 8
 ```
 
@@ -390,10 +401,17 @@ objects:
       status: active
     spec:
       platform: proxmox
-      cpu_cores: 32
+      cpu:
+        - cores: 16
+          architecture: x86_64
+        - cores: 16
+          architecture: x86_64
       memory_gb: 128
-      storage_gb: 2000
-      ip_address: 10.0.1.10
+      storage:
+        - size_gb: 500
+          type: ssd
+        - size_gb: 500
+          type: ssd
 
   - id: srv-proxmox-02
     kind: server
@@ -403,10 +421,17 @@ objects:
       status: active
     spec:
       platform: proxmox
-      cpu_cores: 32
+      cpu:
+        - cores: 16
+          architecture: x86_64
+        - cores: 16
+          architecture: x86_64
       memory_gb: 128
-      storage_gb: 2000
-      ip_address: 10.0.1.11
+      storage:
+        - size_gb: 500
+          type: ssd
+        - size_gb: 500
+          type: ssd
 
   # Network with Interfaces
   - id: mgmt-network-01
@@ -437,12 +462,15 @@ objects:
       owner: srv-proxmox-01
       status: active
     spec:
-      cpu_cores: 4
+      cpu:
+        - cores: 4
+          architecture: x86_64
       memory_gb: 8
-      storage_gb: 100
+      storage:
+        - size_gb: 100
+          type: ssd
       os: ubuntu
       os_version: "22.04"
-      ip_address: 10.0.2.10
 
   # Applications
   - id: app-web-server

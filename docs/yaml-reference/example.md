@@ -36,10 +36,17 @@ objects:
       status: active
     spec:
       platform: proxmox
-      cpu_cores: 32
+      cpu:
+        - cores: 16
+          architecture: x86_64
+        - cores: 16
+          architecture: x86_64
       memory_gb: 128
-      storage_gb: 2000
-      ip_address: 10.0.1.10
+      storage:
+        - size_gb: 500
+          type: ssd
+        - size_gb: 500
+          type: ssd
 
   - id: srv-proxmox-02
     kind: server
@@ -49,10 +56,17 @@ objects:
       status: active
     spec:
       platform: proxmox
-      cpu_cores: 32
+      cpu:
+        - cores: 16
+          architecture: x86_64
+        - cores: 16
+          architecture: x86_64
       memory_gb: 128
-      storage_gb: 2000
-      ip_address: 10.0.1.11
+      storage:
+        - size_gb: 500
+          type: ssd
+        - size_gb: 500
+          type: ssd
 
   # Switches
   - id: sw-core-01
@@ -114,12 +128,15 @@ objects:
       owner: srv-proxmox-01
       status: active
     spec:
-      cpu_cores: 4
+      cpu:
+        - cores: 4
+          architecture: x86_64
       memory_gb: 8
-      storage_gb: 100
+      storage:
+        - size_gb: 100
+          type: ssd
       os: ubuntu
       os_version: "22.04"
-      ip_address: 10.0.2.10
 
   # Applications
   - id: app-web-server

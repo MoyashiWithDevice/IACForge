@@ -71,15 +71,29 @@ A physical or virtual compute host.
 | manufacturer | string | no | - | Hardware manufacturer |
 | model | string | no | - | Hardware model |
 | serial_number | string | no | - | Serial number |
-| cpu_cores | integer | no | - | Total CPU cores |
+| cpu | list[object] | no | - | CPU configurations |
 | memory_gb | number | no | - | Total memory in GB |
-| storage_gb | number | no | - | Total local storage in GB |
+| storage | list[object] | no | - | Local storage devices |
 | platform | string | no | - | Virtualization platform (proxmox, vmware, kubernetes) |
-| ip_address | string | no | - | Primary management IP address |
-| mac_address | string | no | - | Primary MAC address |
 | bios_version | string | no | - | BIOS/UEFI version |
 
+##### cpu Properties
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| cores | integer | no | - | Number of CPU cores |
+| architecture | string | no | - | CPU architecture (x86_64, arm64) |
+
+##### storage Properties
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| size_gb | number | no | - | Storage size in GB |
+| type | string | no | - | Storage type (ssd, hdd, nvme) |
+
 **Ownership:** rack
+
+**Note:** IP addresses are not direct properties of server. Use interface entities to assign IP addresses.
 
 ```yaml
 - id: srv-proxmox-01
@@ -90,10 +104,17 @@ A physical or virtual compute host.
     status: active
   spec:
     platform: proxmox
-    cpu_cores: 32
+    cpu:
+      - cores: 16
+        architecture: x86_64
+      - cores: 16
+        architecture: x86_64
     memory_gb: 128
-    storage_gb: 2000
-    ip_address: 10.0.1.10
+    storage:
+      - size_gb: 500
+        type: ssd
+      - size_gb: 500
+        type: ssd
 ```
 
 ---
@@ -409,15 +430,29 @@ A virtual machine.
 
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
-| cpu_cores | integer | no | - | Number of virtual CPUs |
+| cpu | list[object] | no | - | Virtual CPU configurations |
 | memory_gb | number | no | - | Memory in GB |
-| storage_gb | number | no | - | Virtual disk size in GB |
-| ip_address | string | no | - | IP address if assigned |
-| mac_address | string | no | - | MAC address if assigned |
+| storage | list[object] | no | - | Virtual disk configurations |
 | os | string | no | - | Operating system |
 | os_version | string | no | - | Operating system version |
 
+##### cpu Properties
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| cores | integer | no | - | Number of virtual CPU cores |
+| architecture | string | no | - | CPU architecture (x86_64, arm64) |
+
+##### storage Properties
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| size_gb | number | no | - | Disk size in GB |
+| type | string | no | - | Disk type (ssd, hdd, nvme) |
+
 **Ownership:** server
+
+**Note:** IP addresses are not direct properties of vm. Use interface entities to assign IP addresses.
 
 ```yaml
 - id: vm-web-01
@@ -427,12 +462,15 @@ A virtual machine.
     owner: srv-proxmox-01
     status: active
   spec:
-    cpu_cores: 4
+    cpu:
+      - cores: 4
+        architecture: x86_64
     memory_gb: 8
-    storage_gb: 100
+    storage:
+      - size_gb: 100
+        type: ssd
     os: ubuntu
     os_version: "22.04"
-    ip_address: 10.0.2.10
 ```
 
 ---

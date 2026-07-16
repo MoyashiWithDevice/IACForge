@@ -63,10 +63,17 @@
       model: r740xd
   spec:
     platform: proxmox
-    cpu_cores: 32
+    cpu:
+      - cores: 16
+        architecture: x86_64
+      - cores: 16
+        architecture: x86_64
     memory_gb: 128
-    storage_gb: 2000
-    ip_address: 10.0.1.10
+    storage:
+      - size_gb: 500
+        type: ssd
+      - size_gb: 500
+        type: ssd
 ```
 
 ---
@@ -105,7 +112,9 @@ objects:
     kind: server
     name: Proxmox Node 01
     spec:
-      cpu_cores: 32
+      cpu:
+        - cores: 16
+          architecture: x86_64
       networks:
         - id: net-private
           name: private

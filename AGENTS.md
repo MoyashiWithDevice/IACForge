@@ -36,7 +36,7 @@ IACForgeは、インフラストラクチャをモデルとして定義し、様
 ### 命名規則
 - Entity Kind: 小文字、単数形（例: `server`, `vm`, `interface`）
 - Relation Type: スネークケース（例: `connects`, `hosts`, `depends_on`）
-- プロパティ: スネークケース（例: `cpu_cores`, `memory_gb`）
+- プロパティ: スネークケース（例: `cpu`, `memory_gb`, `storage`）
 - ID: ケバブケース推奨（例: `srv-proxmox-01`）
 
 ### ファイル構造

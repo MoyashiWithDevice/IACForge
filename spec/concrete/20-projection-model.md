@@ -241,7 +241,7 @@ operations:
     group_by:
       - labels.rack
     aggregations:
-      - property: cpu_cores
+      - property: cpu.cores
         function: sum
         target_property: total_cpu_cores
       - property: memory_gb
@@ -336,7 +336,7 @@ operations:
       - property: server_count
         expression: "count(children.servers)"
       - property: total_cpu_cores
-        expression: "sum(children.servers.cpu_cores)"
+        expression: "sum(children.servers.cpu.cores)"
       - property: annotation_timestamp
         function: timestamp
 ```

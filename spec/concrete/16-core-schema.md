@@ -365,17 +365,41 @@ entity_kinds:
         type: string
         required: false
         description: "Virtualization platform"
-      - name: cpu_cores
-        type: integer
+      - name: cpu
+        type: list
         required: false
-        constraints:
-          min: 1
-          max: 1024
+        description: "CPU configurations"
+        properties:
+          - name: cores
+            type: integer
+            required: false
+            constraints:
+              min: 1
+              max: 1024
+            description: "Number of CPU cores"
+          - name: architecture
+            type: string
+            required: false
+            description: "CPU architecture (x86_64, arm64)"
       - name: memory_gb
         type: number
         required: false
         constraints:
           min: 0.5
+        description: "Total memory in GB"
+      - name: storage
+        type: list
+        required: false
+        description: "Local storage devices"
+        properties:
+          - name: size_gb
+            type: number
+            required: false
+            description: "Storage size in GB"
+          - name: type
+            type: string
+            required: false
+            description: "Storage type (ssd, hdd, nvme)"
 
 relation_types:
   connects:

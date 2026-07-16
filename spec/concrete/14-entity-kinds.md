@@ -192,8 +192,9 @@ A physical or virtual compute host.
       type: ssd
     - size_gb: 500
       type: ssd
-  ip_address: 10.0.1.10
 ```
+
+**Note:** IP addresses are not direct properties of server. Use interface entities to assign IP addresses.
 
 ---
 
@@ -631,13 +632,18 @@ A virtual machine.
 - id: vm-web-01
   kind: vm
   name: Web Server 01
-  cpu_cores: 4
+  cpu:
+    - cores: 4
+      architecture: x86_64
   memory_gb: 8
-  storage_gb: 100
+  storage:
+    - size_gb: 100
+      type: ssd
   os: ubuntu
   os_version: "22.04"
-  ip_address: 10.0.2.10
 ```
+
+**Note:** IP addresses are not direct properties of vm. Use interface entities to assign IP addresses.
 
 ---
 

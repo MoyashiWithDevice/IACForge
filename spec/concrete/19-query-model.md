@@ -78,10 +78,10 @@ The Where clause filters Objects based on conditions.
 | ne | Not equals | `status: {ne: offline}` |
 | in | In list | `kind: [server, vm]` |
 | nin | Not in list | `kind: {nin: [cable]}` |
-| gt | Greater than | `cpu_cores: {gt: 8}` |
+| gt | Greater than | `cpu.cores: {gt: 8}` |
 | ge | Greater than or equal | `memory_gb: {gte: 16}` |
-| lt | Less than | `storage_gb: {lt: 1000}` |
-| le | Less than or equal | `storage_gb: {lte: 2000}` |
+| lt | Less than | `storage.size_gb: {lt: 1000}` |
+| le | Less than or equal | `storage.size_gb: {lte: 2000}` |
 | contains | String contains | `name: {contains: web}` |
 | starts_with | String starts with | `name: {starts_with: srv}` |
 | ends_with | String ends with | `name: {ends_with: 01}` |
@@ -95,7 +95,7 @@ The Where clause filters Objects based on conditions.
 where:
   status: active
   kind: server
-  cpu_cores: {ge: 16}
+  cpu.cores: {ge: 16}
   tags: {contains: production}
   labels:
     region: ap-northeast-1
@@ -220,7 +220,7 @@ project:
   properties:
     - name
     - status
-    - cpu_cores
+    - cpu.cores
     - memory_gb
 
 # Return paths
@@ -254,10 +254,10 @@ project:
 | Function | Description | Example |
 |----------|-------------|---------|
 | count | Count Objects | `{count: true}` |
-| sum | Sum numeric property | `{sum: cpu_cores}` |
+| sum | Sum numeric property | `{sum: cpu.cores}` |
 | avg | Average numeric property | `{avg: memory_gb}` |
-| min | Minimum value | `{min: storage_gb}` |
-| max | Maximum value | `{max: storage_gb}` |
+| min | Minimum value | `{min: storage.size_gb}` |
+| max | Maximum value | `{max: storage.size_gb}` |
 | group_by | Group results | `{group_by: kind}` |
 
 ```yaml
@@ -266,7 +266,7 @@ project:
   aggregation:
     count: true
     group_by: kind
-    sum: cpu_cores
+    sum: cpu.cores
     avg: memory_gb
 ```
 
@@ -397,7 +397,7 @@ select:
     - kind: vm
 where:
   status: active
-  cpu_cores: {ge: 4}
+  cpu.cores: {ge: 4}
   memory_gb: {ge: 8}
 ```
 
