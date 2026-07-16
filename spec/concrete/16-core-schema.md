@@ -154,6 +154,27 @@ Each property is defined with:
 | default | any | no | Default value |
 | description | string | no | Human-readable description |
 | constraints | map | no | Validation constraints |
+| properties | list[object] | no | Sub-properties for structured lists (list[object]) |
+
+### Structured Lists
+
+When a property has type `list[object]`, the `properties` field defines the schema for each list element. Each element must be a map conforming to the defined sub-properties.
+
+#### Example
+
+```yaml
+properties:
+  - name: cpu
+    type: list
+    description: "CPU configurations"
+    properties:
+      - name: cores
+        type: integer
+        description: "Number of CPU cores"
+      - name: architecture
+        type: string
+        description: "CPU architecture"
+```
 
 ### Constraint Types
 

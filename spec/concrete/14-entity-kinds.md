@@ -135,11 +135,25 @@ A physical or virtual compute host.
 | manufacturer | string | no | - | Hardware manufacturer |
 | model | string | no | - | Hardware model |
 | serial_number | string | no | - | Serial number |
-| cpu_cores | integer | no | - | Total CPU cores |
+| cpu | list[object] | no | - | CPU configurations |
 | memory_gb | number | no | - | Total memory in GB |
-| storage_gb | number | no | - | Total local storage in GB |
+| storage | list[object] | no | - | Local storage devices |
 | platform | string | no | - | Virtualization platform (e.g., proxmox, vmware, kubernetes) |
 | bios_version | string | no | - | BIOS/UEFI version |
+
+##### cpu Properties
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| cores | integer | no | - | Number of CPU cores |
+| architecture | string | no | - | CPU architecture (x86_64, arm64) |
+
+##### storage Properties
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| size_gb | number | no | - | Storage size in GB |
+| type | string | no | - | Storage type (ssd, hdd, nvme) |
 
 #### Typical Ownership
 
@@ -167,9 +181,17 @@ A physical or virtual compute host.
   name: Proxmox Node 01
   status: active
   platform: proxmox
-  cpu_cores: 32
+  cpu:
+    - cores: 16
+      architecture: x86_64
+    - cores: 16
+      architecture: x86_64
   memory_gb: 128
-  storage_gb: 2000
+  storage:
+    - size_gb: 500
+      type: ssd
+    - size_gb: 500
+      type: ssd
   ip_address: 10.0.1.10
 ```
 
@@ -261,7 +283,7 @@ When defining interfaces as nested children of a network, the following properti
 | type | string | no | ethernet | Interface type (ethernet, fiber, wireless) |
 | speed_mbps | integer | no | - | Interface speed in Mbps |
 | mac_address | string | no | - | MAC address |
-| ip_address | string | no | - | IP address if configured |
+| ip_address | list[string] | no | - | IP addresses if configured |
 | mtu | integer | no | 1500 | Maximum transmission unit |
 
 #### Interface Nestable Children
@@ -521,11 +543,25 @@ A virtual machine.
 
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
-| cpu_cores | integer | no | - | Number of virtual CPUs |
+| cpu | list[object] | no | - | Virtual CPU configurations |
 | memory_gb | number | no | - | Memory in GB |
-| storage_gb | number | no | - | Virtual disk size in GB |
+| storage | list[object] | no | - | Virtual disk configurations |
 | os | string | no | - | Operating system |
 | os_version | string | no | - | Operating system version |
+
+##### cpu Properties
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| cores | integer | no | - | Number of virtual CPU cores |
+| architecture | string | no | - | CPU architecture (x86_64, arm64) |
+
+##### storage Properties
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| size_gb | number | no | - | Disk size in GB |
+| type | string | no | - | Disk type (ssd, hdd, nvme) |
 
 #### Typical Ownership
 

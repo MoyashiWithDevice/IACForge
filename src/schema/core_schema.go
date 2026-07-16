@@ -58,9 +58,15 @@ func registerEntityKinds(s *Schema) {
 			{Name: "manufacturer", Type: PropertyTypeString, Required: false, Description: "Hardware manufacturer"},
 			{Name: "model", Type: PropertyTypeString, Required: false, Description: "Hardware model"},
 			{Name: "serial_number", Type: PropertyTypeString, Required: false, Description: "Serial number"},
-			{Name: "cpu_cores", Type: PropertyTypeInteger, Required: false, Constraints: &Constraint{Min: intPtr(1), Max: intPtr(1024)}, Description: "Total CPU cores"},
+			{Name: "cpu", Type: PropertyTypeList, Required: false, Description: "CPU configurations", Properties: []PropertyDefinition{
+				{Name: "cores", Type: PropertyTypeInteger, Required: false, Constraints: &Constraint{Min: intPtr(1), Max: intPtr(1024)}, Description: "Number of CPU cores"},
+				{Name: "architecture", Type: PropertyTypeString, Required: false, Description: "CPU architecture (x86_64, arm64)"},
+			}},
 			{Name: "memory_gb", Type: PropertyTypeNumber, Required: false, Constraints: &Constraint{Min: intPtr(0.5)}, Description: "Total memory in GB"},
-			{Name: "storage_gb", Type: PropertyTypeNumber, Required: false, Description: "Total local storage in GB"},
+			{Name: "storage", Type: PropertyTypeList, Required: false, Description: "Local storage devices", Properties: []PropertyDefinition{
+				{Name: "size_gb", Type: PropertyTypeNumber, Required: false, Description: "Storage size in GB"},
+				{Name: "type", Type: PropertyTypeString, Required: false, Description: "Storage type (ssd, hdd, nvme)"},
+			}},
 			{Name: "platform", Type: PropertyTypeString, Required: false, Description: "Virtualization platform"},
 			{Name: "bios_version", Type: PropertyTypeString, Required: false, Description: "BIOS/UEFI version"},
 		},
@@ -76,7 +82,7 @@ func registerEntityKinds(s *Schema) {
 			{Name: "type", Type: PropertyTypeString, Required: false, Default: "ethernet", Description: "Interface type (ethernet, fiber, wireless)"},
 			{Name: "speed_mbps", Type: PropertyTypeInteger, Required: false, Description: "Interface speed in Mbps"},
 			{Name: "mac_address", Type: PropertyTypeString, Required: false, Description: "MAC address"},
-			{Name: "ip_address", Type: PropertyTypeString, Required: false, Description: "IP address if configured"},
+			{Name: "ip_address", Type: PropertyTypeList, Required: false, Description: "IP addresses if configured"},
 			{Name: "mtu", Type: PropertyTypeInteger, Required: false, Default: 1500, Description: "Maximum transmission unit"},
 		},
 		NestingDefs: []NestingDefinition{
@@ -196,9 +202,15 @@ func registerEntityKinds(s *Schema) {
 	s.AddEntityKind(kinds.VM, &EntityKindDefinition{
 		Description: "Virtual machine",
 		Properties: []PropertyDefinition{
-			{Name: "cpu_cores", Type: PropertyTypeInteger, Required: false, Description: "Number of virtual CPUs"},
+			{Name: "cpu", Type: PropertyTypeList, Required: false, Description: "Virtual CPU configurations", Properties: []PropertyDefinition{
+				{Name: "cores", Type: PropertyTypeInteger, Required: false, Description: "Number of virtual CPU cores"},
+				{Name: "architecture", Type: PropertyTypeString, Required: false, Description: "CPU architecture (x86_64, arm64)"},
+			}},
 			{Name: "memory_gb", Type: PropertyTypeNumber, Required: false, Description: "Memory in GB"},
-			{Name: "storage_gb", Type: PropertyTypeNumber, Required: false, Description: "Virtual disk size in GB"},
+			{Name: "storage", Type: PropertyTypeList, Required: false, Description: "Virtual disk configurations", Properties: []PropertyDefinition{
+				{Name: "size_gb", Type: PropertyTypeNumber, Required: false, Description: "Disk size in GB"},
+				{Name: "type", Type: PropertyTypeString, Required: false, Description: "Disk type (ssd, hdd, nvme)"},
+			}},
 			{Name: "os", Type: PropertyTypeString, Required: false, Description: "Operating system"},
 			{Name: "os_version", Type: PropertyTypeString, Required: false, Description: "Operating system version"},
 		},

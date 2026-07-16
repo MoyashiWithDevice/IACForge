@@ -33,12 +33,13 @@ type Constraint struct {
 
 // PropertyDefinition defines a property within an entity kind or relation type.
 type PropertyDefinition struct {
-	Name         string       `yaml:"name"`
-	Type         PropertyType `yaml:"type"`
-	Required     bool         `yaml:"required"`
-	Default      interface{}  `yaml:"default,omitempty"`
-	Description  string       `yaml:"description,omitempty"`
-	Constraints  *Constraint  `yaml:"constraints,omitempty"`
+	Name         string              `yaml:"name"`
+	Type         PropertyType        `yaml:"type"`
+	Required     bool                `yaml:"required"`
+	Default      interface{}         `yaml:"default,omitempty"`
+	Description  string              `yaml:"description,omitempty"`
+	Constraints  *Constraint         `yaml:"constraints,omitempty"`
+	Properties   []PropertyDefinition `yaml:"properties,omitempty"`
 }
 
 // DirectionType represents the directionality of a relation type.
@@ -181,6 +182,33 @@ func (s *Schema) ValidateProperty(propDef *PropertyDefinition, value interface{}
 		return nil
 	}
 
+	if propDef.Type == PropertyTypeList {
+		list, ok := value.([]interface{})
+		if !ok {
+			return fmt.Errorf("property %q: expected list value, got %T", propDef.Name, value)
+		}
+		if len(propDef.Properties) > 0 {
+			for i, item := range list {
+				itemMap, ok := item.(map[string]interface{})
+				if !ok {
+					return fmt.Errorf("property %q[%d]: expected map value, got %T", propDef.Name, i, item)
+				}
+				for _, subProp := range propDef.Properties {
+					subVal, exists := itemMap[subProp.Name]
+					if subVal == nil && !exists {
+						if subProp.Required {
+							return fmt.Errorf("property %q[%d].%s: required but not set", propDef.Name, i, subProp.Name)
+						}
+						continue
+					}
+					if err := s.ValidateProperty(&subProp, subVal); err != nil {
+						return fmt.Errorf("property %q[%d]: %w", propDef.Name, i, err)
+					}
+				}
+			}
+		}
+	}
+
 	if propDef.Constraints != nil {
 		if err := validateConstraints(propDef, value); err != nil {
 			return fmt.Errorf("property %q: %w", propDef.Name, err)
@@ -198,6 +226,8 @@ func validateConstraints(propDef *PropertyDefinition, value interface{}) error {
 		return validateNumericConstraints(c, value)
 	case PropertyTypeString:
 		return validateStringConstraints(c, value)
+	case PropertyTypeList:
+		return validateListConstraints(c, value)
 	}
 
 	return nil
@@ -223,6 +253,25 @@ func validateNumericConstraints(c *Constraint, value interface{}) error {
 	}
 	if c.Max != nil && fval > *c.Max {
 		return fmt.Errorf("value %v is greater than maximum %v", fval, *c.Max)
+	}
+
+	return nil
+}
+
+func validateListConstraints(c *Constraint, value interface{}) error {
+	list, ok := value.([]interface{})
+	if !ok {
+		return fmt.Errorf("expected list value, got %T", value)
+	}
+
+	if c.UniqueItems != nil && *c.UniqueItems {
+		seen := make(map[interface{}]bool)
+		for _, item := range list {
+			if seen[item] {
+				return fmt.Errorf("list contains duplicate item: %v", item)
+			}
+			seen[item] = true
+		}
 	}
 
 	return nil

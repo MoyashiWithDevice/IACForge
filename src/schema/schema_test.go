@@ -103,25 +103,25 @@ func TestCoreSchemaRelationDirections(t *testing.T) {
 func TestCoreSchemaEntityKindProperties(t *testing.T) {
 	s := CoreSchema()
 
-	// Server should have cpu_cores property
+	// Server should have cpu property (structured list)
 	serverDef, ok := s.GetEntityKindDef(kinds.Server)
 	if !ok {
 		t.Fatal("server kind not found")
 	}
-	foundCpuCores := false
+	foundCpu := false
 	for _, p := range serverDef.Properties {
-		if p.Name == "cpu_cores" {
-			foundCpuCores = true
-			if p.Type != PropertyTypeInteger {
-				t.Errorf("expected cpu_cores type integer, got %s", p.Type)
+		if p.Name == "cpu" {
+			foundCpu = true
+			if p.Type != PropertyTypeList {
+				t.Errorf("expected cpu type list, got %s", p.Type)
 			}
-			if p.Constraints == nil || p.Constraints.Min == nil {
-				t.Error("expected cpu_cores to have min constraint")
+			if len(p.Properties) != 2 {
+				t.Errorf("expected cpu to have 2 sub-properties, got %d", len(p.Properties))
 			}
 		}
 	}
-	if !foundCpuCores {
-		t.Error("server kind missing cpu_cores property")
+	if !foundCpu {
+		t.Error("server kind missing cpu property")
 	}
 
 	// Open port should have port property with range 1-65535
@@ -217,31 +217,47 @@ func TestValidateProperty(t *testing.T) {
 
 	serverDef, _ := s.GetEntityKindDef(kinds.Server)
 
-	// Find cpu_cores property
-	var cpuCoresProp *PropertyDefinition
+	// Find cpu property (structured list)
+	var cpuProp *PropertyDefinition
 	for i := range serverDef.Properties {
-		if serverDef.Properties[i].Name == "cpu_cores" {
-			cpuCoresProp = &serverDef.Properties[i]
+		if serverDef.Properties[i].Name == "cpu" {
+			cpuProp = &serverDef.Properties[i]
 			break
 		}
 	}
-	if cpuCoresProp == nil {
-		t.Fatal("cpu_cores property not found")
+	if cpuProp == nil {
+		t.Fatal("cpu property not found")
 	}
 
 	// Test nil value (not required, should pass)
-	if err := s.ValidateProperty(cpuCoresProp, nil); err != nil {
+	if err := s.ValidateProperty(cpuProp, nil); err != nil {
 		t.Errorf("expected nil error for nil value, got %v", err)
 	}
 
-	// Test valid value
-	if err := s.ValidateProperty(cpuCoresProp, 8); err != nil {
-		t.Errorf("expected no error for valid value 8, got %v", err)
+	// Test valid structured list value
+	validCpu := []interface{}{
+		map[string]interface{}{
+			"cores":        16,
+			"architecture": "x86_64",
+		},
+	}
+	if err := s.ValidateProperty(cpuProp, validCpu); err != nil {
+		t.Errorf("expected no error for valid structured list value, got %v", err)
 	}
 
-	// Test value below min (min is 1)
-	if err := s.ValidateProperty(cpuCoresProp, 0); err == nil {
-		t.Error("expected error for value below min")
+	// Test scalar value (should fail for list type)
+	if err := s.ValidateProperty(cpuProp, 8); err == nil {
+		t.Error("expected error for scalar value on list property")
+	}
+
+	// Test invalid sub-property type
+	invalidCpu := []interface{}{
+		map[string]interface{}{
+			"cores": "not_a_number",
+		},
+	}
+	if err := s.ValidateProperty(cpuProp, invalidCpu); err == nil {
+		t.Error("expected error for invalid sub-property type")
 	}
 }
 
