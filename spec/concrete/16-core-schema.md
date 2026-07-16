@@ -127,7 +127,9 @@ A definition includes:
 | server | Physical or virtual compute host |
 | interface | Network interface |
 | cable | Physical cable |
+| power_distribution | Power distribution unit (PDU) |
 | network | Logical network |
+| vlan | VLAN definition |
 | switch | Network switch |
 | router | Network router |
 | firewall | Network firewall |

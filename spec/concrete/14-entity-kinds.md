@@ -226,6 +226,51 @@ A physical cable connecting two or more interfaces.
 
 ---
 
+### interface
+
+A network interface (physical or virtual).
+
+#### Properties
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| type | string | no | ethernet | Interface type (ethernet, fiber, wireless) |
+| speed_mbps | integer | no | - | Interface speed in Mbps |
+| mac_address | string | no | - | MAC address |
+| ip_address | list[string] | no | - | IP addresses if configured |
+| mtu | integer | no | 1500 | Maximum transmission unit |
+
+#### Typical Ownership
+
+- owned by: server, switch, router, firewall, network, vm, container
+
+#### Typical Relations
+
+- connects → interface (symmetric, via cable)
+- belongs_to → server, switch, router, firewall
+
+#### Nestable Children
+
+| Nest Key | Child Kind |
+|----------|------------|
+| vlans | vlan |
+| cables | cable |
+
+#### Example
+
+```yaml
+- id: eth0
+  kind: interface
+  name: Management Interface
+  type: ethernet
+  speed_mbps: 1000
+  mac_address: "00:1a:2b:3c:4d:5e"
+  ip_address:
+    - 10.0.1.10
+```
+
+---
+
 ### power_distribution
 
 A power distribution unit (PDU) or power feed.

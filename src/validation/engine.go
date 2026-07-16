@@ -125,7 +125,7 @@ func (e *Engine) computeSummary(findings []Finding) Summary {
 	return s
 }
 
-// RegisterCoreRules registers all 14 core validation rules.
+// RegisterCoreRules registers all core validation rules.
 func RegisterCoreRules(engine *Engine) {
 	registerGraphIntegrityRules(engine)
 	registerEntityRules(engine)
@@ -296,6 +296,13 @@ func registerReferenceRules(e *Engine) {
 		Severity: SeverityError,
 		Scope:    ScopeGraph,
 	}, ruleDanglingReference)
+
+	e.RegisterRule(&Rule{
+		ID:       "invalid-path",
+		Name:     "Invalid Path",
+		Severity: SeverityError,
+		Scope:    ScopeGraph,
+	}, ruleInvalidPath)
 }
 
 // --- Rule Implementations ---
@@ -377,6 +384,15 @@ func ruleSingleOwner(ctx *Context) []Finding {
 	g := ctx.Graph.(*core.Graph)
 	var findings []Finding
 
+	// Find root entities (those without owner)
+	var roots []string
+	for _, e := range g.Entities() {
+		if e.Owner == "" {
+			roots = append(roots, e.ID)
+		}
+	}
+
+	// For each entity with an owner, verify the owner exists
 	for _, e := range g.Entities() {
 		if e.Owner == "" {
 			continue
@@ -385,11 +401,24 @@ func ruleSingleOwner(ctx *Context) []Finding {
 		if !found {
 			findings = append(findings, Finding{
 				Severity:   SeverityError,
-				Message:    fmt.Sprintf("entity %q references non-existent owner %q", e.ID, e.Owner),
+				Message:    fmt.Sprintf("entity %q has no valid owner (references non-existent entity %q)", e.ID, e.Owner),
 				ObjectID:   e.ID,
 				ObjectType: ObjectTypeEntity,
 			})
 		}
+	}
+
+	// Check that exactly one root exists (complements root-entity rule)
+	if len(roots) == 0 {
+		findings = append(findings, Finding{
+			Severity: SeverityError,
+			Message:  "no root entity found (every entity has an owner, but one root is required)",
+		})
+	} else if len(roots) > 1 {
+		findings = append(findings, Finding{
+			Severity: SeverityError,
+			Message:  fmt.Sprintf("multiple root entities found: %v (exactly one root is required)", roots),
+		})
 	}
 
 	return findings
@@ -734,11 +763,49 @@ func ruleOwnershipTree(ctx *Context) []Finding {
 	g := ctx.Graph.(*core.Graph)
 	var findings []Finding
 
-	if err := g.BuildOwnershipPaths(); err != nil {
+	var roots []string
+	for _, e := range g.Entities() {
+		if e.Owner == "" {
+			roots = append(roots, e.ID)
+		}
+	}
+
+	if len(roots) == 0 {
 		findings = append(findings, Finding{
 			Severity: SeverityError,
-			Message:  fmt.Sprintf("ownership tree is broken: %v", err),
+			Message:  "no root entity found (ownership tree must have exactly one root)",
 		})
+		return findings
+	}
+
+	if len(roots) > 1 {
+		findings = append(findings, Finding{
+			Severity: SeverityError,
+			Message:  fmt.Sprintf("multiple root entities found: %v (ownership tree must have exactly one root)", roots),
+		})
+	}
+
+	for _, rootID := range roots {
+		visited := make(map[string]bool)
+		visited[rootID] = true
+		queue := []string{rootID}
+		for len(queue) > 0 {
+			current := queue[0]
+			queue = queue[1:]
+			for _, child := range g.Children(current) {
+				if visited[child.ID] {
+					continue
+				}
+				visited[child.ID] = true
+				queue = append(queue, child.ID)
+			}
+		}
+		if len(visited) != g.EntityCount() {
+			findings = append(findings, Finding{
+				Severity: SeverityError,
+				Message:  fmt.Sprintf("ownership tree is disconnected: root %q reaches %d of %d entities", rootID, len(visited), g.EntityCount()),
+			})
+		}
 	}
 
 	return findings
@@ -886,6 +953,63 @@ func ruleDanglingReference(ctx *Context) []Finding {
 						})
 					}
 				}
+			}
+		}
+	}
+
+	return findings
+}
+
+func ruleInvalidPath(ctx *Context) []Finding {
+	g := ctx.Graph.(*core.Graph)
+	var findings []Finding
+
+	for _, e := range g.Entities() {
+		path := e.Path()
+		if path == "" || path == "/"+e.ID {
+			continue
+		}
+
+		segments := strings.Split(strings.TrimPrefix(path, "/"), "/")
+		if len(segments) == 0 {
+			continue
+		}
+
+		if segments[len(segments)-1] != e.ID {
+			findings = append(findings, Finding{
+				Severity:   SeverityError,
+				Message:    fmt.Sprintf("entity %q path %q does not end with entity ID", e.ID, path),
+				ObjectID:   e.ID,
+				ObjectType: ObjectTypeEntity,
+				Path:       path,
+			})
+			continue
+		}
+
+		for i := 1; i < len(segments); i++ {
+			childID := segments[i]
+			parentID := segments[i-1]
+
+			child, ok := g.GetEntity(childID)
+			if !ok {
+				findings = append(findings, Finding{
+					Severity:   SeverityError,
+					Message:    fmt.Sprintf("entity %q path %q references non-existent entity %q", e.ID, path, childID),
+					ObjectID:   e.ID,
+					ObjectType: ObjectTypeEntity,
+					Path:       path,
+				})
+				break
+			}
+			if child.Owner != parentID {
+				findings = append(findings, Finding{
+					Severity:   SeverityError,
+					Message:    fmt.Sprintf("entity %q path %q: entity %q is not owned by %q", e.ID, path, childID, parentID),
+					ObjectID:   e.ID,
+					ObjectType: ObjectTypeEntity,
+					Path:       path,
+				})
+				break
 			}
 		}
 	}

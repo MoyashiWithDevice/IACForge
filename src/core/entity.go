@@ -69,7 +69,7 @@ type Entity struct {
 	Tags        []string               `yaml:"tags,omitempty"`
 	Labels      map[string]string      `yaml:"labels,omitempty"`
 	Extensions  map[string]interface{} `yaml:"extensions,omitempty"`
-	Properties  map[string]interface{} `yaml:"properties,omitempty"`
+	Properties  map[string]interface{} `yaml:"spec,omitempty"`
 	path        string
 	internal    bool
 }

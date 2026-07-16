@@ -38,7 +38,7 @@ func TestEngineCoreRulesRegistered(t *testing.T) {
 		"required-type", "required-participants", "valid-type", "valid-direction",
 		"valid-cardinality", "valid-participant-kind",
 		"ownership-tree", "no-ownership-cycle", "root-entity",
-		"dangling-reference",
+		"dangling-reference", "invalid-path",
 	}
 
 	for _, ruleID := range expectedRules {
@@ -675,6 +675,91 @@ func TestValidPropertyReference(t *testing.T) {
 	for _, f := range result.Findings {
 		if f.RuleID == "dangling-reference" && f.ObjectID == "vlan-100" {
 			t.Error("valid property reference should not cause dangling-reference error")
+		}
+	}
+}
+
+func TestInvalidPathNonExistentEntity(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+
+	site := core.NewEntity("site-01", kinds.Site, "Site 01")
+	site.SetPath("/site-01")
+	graph.AddEntity(site)
+
+	server := core.NewEntity("srv-01", kinds.Server, "Server 01")
+	server.SetOwner("site-01")
+	server.SetPath("/site-01/nonexistent/srv-01")
+	graph.AddEntity(server)
+
+	result := e.Validate(graph, nil)
+	found := false
+	for _, f := range result.Findings {
+		if f.RuleID == "invalid-path" && f.Severity == SeverityError {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("expected invalid-path error for path referencing non-existent entity")
+	}
+}
+
+func TestInvalidPathWrongOwnership(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+
+	site := core.NewEntity("site-01", kinds.Site, "Site 01")
+	site.SetPath("/site-01")
+	graph.AddEntity(site)
+
+	rack := core.NewEntity("rack-01", kinds.Rack, "Rack 01")
+	rack.SetOwner("site-01")
+	rack.SetPath("/site-01/rack-01")
+	graph.AddEntity(rack)
+
+	server := core.NewEntity("srv-01", kinds.Server, "Server 01")
+	server.SetOwner("rack-01")
+	server.SetPath("/site-01/rack-01/srv-01")
+	graph.AddEntity(server)
+
+	// Manually set wrong path (not matching ownership)
+	server.SetPath("/site-01/srv-01")
+	result := e.Validate(graph, nil)
+	found := false
+	for _, f := range result.Findings {
+		if f.RuleID == "invalid-path" && f.Severity == SeverityError {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("expected invalid-path error for path with wrong ownership")
+	}
+}
+
+func TestValidPath(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+
+	site := core.NewEntity("site-01", kinds.Site, "Site 01")
+	site.SetPath("/site-01")
+	graph.AddEntity(site)
+
+	rack := core.NewEntity("rack-01", kinds.Rack, "Rack 01")
+	rack.SetOwner("site-01")
+	rack.SetPath("/site-01/rack-01")
+	graph.AddEntity(rack)
+
+	server := core.NewEntity("srv-01", kinds.Server, "Server 01")
+	server.SetOwner("rack-01")
+	server.SetPath("/site-01/rack-01/srv-01")
+	graph.AddEntity(server)
+
+	result := e.Validate(graph, nil)
+	for _, f := range result.Findings {
+		if f.RuleID == "invalid-path" && f.Severity == SeverityError {
+			t.Errorf("unexpected invalid-path error: %s", f.Message)
 		}
 	}
 }
