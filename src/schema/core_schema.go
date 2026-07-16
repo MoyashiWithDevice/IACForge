@@ -62,8 +62,6 @@ func registerEntityKinds(s *Schema) {
 			{Name: "memory_gb", Type: PropertyTypeNumber, Required: false, Constraints: &Constraint{Min: intPtr(0.5)}, Description: "Total memory in GB"},
 			{Name: "storage_gb", Type: PropertyTypeNumber, Required: false, Description: "Total local storage in GB"},
 			{Name: "platform", Type: PropertyTypeString, Required: false, Description: "Virtualization platform"},
-			{Name: "ip_address", Type: PropertyTypeString, Required: false, Description: "Primary management IP address"},
-			{Name: "mac_address", Type: PropertyTypeString, Required: false, Description: "Primary MAC address"},
 			{Name: "bios_version", Type: PropertyTypeString, Required: false, Description: "BIOS/UEFI version"},
 		},
 		NestingDefs: []NestingDefinition{
@@ -201,8 +199,6 @@ func registerEntityKinds(s *Schema) {
 			{Name: "cpu_cores", Type: PropertyTypeInteger, Required: false, Description: "Number of virtual CPUs"},
 			{Name: "memory_gb", Type: PropertyTypeNumber, Required: false, Description: "Memory in GB"},
 			{Name: "storage_gb", Type: PropertyTypeNumber, Required: false, Description: "Virtual disk size in GB"},
-			{Name: "ip_address", Type: PropertyTypeString, Required: false, Description: "IP address if assigned"},
-			{Name: "mac_address", Type: PropertyTypeString, Required: false, Description: "MAC address if assigned"},
 			{Name: "os", Type: PropertyTypeString, Required: false, Description: "Operating system"},
 			{Name: "os_version", Type: PropertyTypeString, Required: false, Description: "Operating system version"},
 		},

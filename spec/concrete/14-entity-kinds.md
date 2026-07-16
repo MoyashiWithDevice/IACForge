@@ -139,8 +139,6 @@ A physical or virtual compute host.
 | memory_gb | number | no | - | Total memory in GB |
 | storage_gb | number | no | - | Total local storage in GB |
 | platform | string | no | - | Virtualization platform (e.g., proxmox, vmware, kubernetes) |
-| ip_address | string | no | - | Primary management IP address |
-| mac_address | string | no | - | Primary MAC address |
 | bios_version | string | no | - | BIOS/UEFI version |
 
 #### Typical Ownership
@@ -526,8 +524,6 @@ A virtual machine.
 | cpu_cores | integer | no | - | Number of virtual CPUs |
 | memory_gb | number | no | - | Memory in GB |
 | storage_gb | number | no | - | Virtual disk size in GB |
-| ip_address | string | no | - | IP address if assigned |
-| mac_address | string | no | - | MAC address if assigned |
 | os | string | no | - | Operating system |
 | os_version | string | no | - | Operating system version |
 

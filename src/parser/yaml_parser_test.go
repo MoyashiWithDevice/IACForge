@@ -67,7 +67,6 @@ objects:
       cpu_cores: 32
       memory_gb: 128
       storage_gb: 2000
-      ip_address: 10.0.1.10
 `
 
 	parser := NewParser()
@@ -350,7 +349,6 @@ objects:
       cpu_cores: 32
       memory_gb: 128
       storage_gb: 2000
-      ip_address: 10.0.1.10
 
   # VMs
   - id: vm-web-01
@@ -365,7 +363,6 @@ objects:
       storage_gb: 100
       os: ubuntu
       os_version: "22.04"
-      ip_address: 10.0.2.10
 
   # Applications
   - id: app-web-server
