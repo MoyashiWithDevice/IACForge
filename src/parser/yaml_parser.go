@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -237,9 +236,9 @@ func (p *Parser) parseEntity(obj map[string]interface{}, parentID string) (*core
 	name, nameProvided := getStringOptional(obj, "name")
 	kind := core.EntityKind(kindStr)
 
-	// For nested entities: if id is empty, auto-generate from parent
+	// For nested entities: if id is empty, generate a scoped ID
 	if id == "" && parentID != "" {
-		id = p.generateNestedID(parentID, kind)
+		id = p.generateScopedID(parentID, kind)
 	}
 
 	if !nameProvided {
@@ -251,6 +250,11 @@ func (p *Parser) parseEntity(obj map[string]interface{}, parentID string) (*core
 	}
 
 	entity := core.NewEntity(id, kind, name)
+
+	// Mark as internal if using scoped ID (starts with _)
+	if len(id) > 0 && id[0] == '_' {
+		entity.SetInternal(true)
+	}
 
 	// Set owner from parent
 	if parentID != "" {
@@ -324,11 +328,17 @@ func (p *Parser) parseEntity(obj map[string]interface{}, parentID string) (*core
 	return entity, nestedEntities, nil
 }
 
-// generateNestedID generates an ID for a nested entity that doesn't specify one.
-// Uses the parent ID prefix and a counter-based suffix.
-func (p *Parser) generateNestedID(parentID string, childKind core.EntityKind) string {
-	prefix := string(childKind)
-	return parentID + "-" + prefix
+// generateScopedID generates an internal ID for a nested entity that doesn't specify one.
+// This ID is for internal processing only and should not be used directly by users.
+// Users should reference nested entities using path notation (e.g., parent/child).
+func (p *Parser) generateScopedID(parentID string, childKind core.EntityKind) string {
+	// Strip leading underscores from parentID to avoid doubling
+	cleanParentID := parentID
+	for len(cleanParentID) > 0 && cleanParentID[0] == '_' {
+		cleanParentID = cleanParentID[1:]
+	}
+	// Use _ prefix to indicate this is an internal scoped ID
+	return "_" + cleanParentID + "-" + string(childKind)
 }
 
 // parseNestedEntities parses a list of nested child entities under a parent.
@@ -344,7 +354,6 @@ func (p *Parser) parseNestedEntities(value interface{}, parentID string, nestKey
 	}
 
 	var result []*core.Entity
-	usedIDs := make(map[string]bool)
 
 	for i, child := range children {
 		childObj, ok := child.(map[string]interface{})
@@ -365,13 +374,10 @@ func (p *Parser) parseNestedEntities(value interface{}, parentID string, nestKey
 		}
 		childObjWithKind["kind"] = string(childKind)
 
-		// Generate child ID if not provided
+		// If no ID provided, generate scoped ID
 		if _, hasID := childObj["id"]; !hasID {
-			childID := p.generateUniqueNestedID(parentID, childKind, usedIDs)
+			childID := p.generateScopedID(parentID, childKind)
 			childObjWithKind["id"] = childID
-			usedIDs[childID] = true
-		} else {
-			usedIDs[childObj["id"].(string)] = true
 		}
 
 		entity, nestedEntities, err := p.parseEntity(childObjWithKind, parentID)
@@ -384,20 +390,6 @@ func (p *Parser) parseNestedEntities(value interface{}, parentID string, nestKey
 	}
 
 	return result, nil
-}
-
-// generateUniqueNestedID generates a unique ID for a nested entity.
-func (p *Parser) generateUniqueNestedID(parentID string, childKind core.EntityKind, usedIDs map[string]bool) string {
-	base := parentID + "-" + string(childKind)
-	if !usedIDs[base] {
-		return base
-	}
-	for i := 2; ; i++ {
-		candidate := base + "-" + strconv.Itoa(i)
-		if !usedIDs[candidate] {
-			return candidate
-		}
-	}
 }
 
 // parseRelation parses a relation from its YAML representation.

@@ -84,7 +84,9 @@ func (g *Graph) UpdateEntity(e *Entity) error {
 func (g *Graph) Entities() []*Entity {
 	result := make([]*Entity, 0, len(g.entities))
 	for _, e := range g.entities {
-		result = append(result, e)
+		if !e.IsInternal() {
+			result = append(result, e)
+		}
 	}
 	return result
 }
@@ -92,7 +94,7 @@ func (g *Graph) Entities() []*Entity {
 func (g *Graph) EntitiesByKind(kind EntityKind) []*Entity {
 	var result []*Entity
 	for _, e := range g.entities {
-		if e.Kind == kind {
+		if e.Kind == kind && !e.IsInternal() {
 			result = append(result, e)
 		}
 	}

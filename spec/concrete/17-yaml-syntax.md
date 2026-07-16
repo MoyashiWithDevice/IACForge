@@ -155,18 +155,24 @@ objects:
 
 | Field | Required | Notes |
 |-------|----------|-------|
-| id | optional | Auto-generated from parent ID if omitted |
+| id | no | Scoped to parent if omitted (local reference only) |
 | kind | optional | Inferred from the nest key |
 | name | optional | Defaults to ID if omitted |
 | spec | optional | Kind-specific properties |
 
-### ID Auto-Generation
+### Scoped IDs
 
-When a nested entity omits its `id`, one is generated using the pattern:
-`{parent-id}-{child-kind}`
+When a nested entity omits its `id`, it receives a scoped ID that is only
+referable within the parent's scope. The entity can be referenced using the
+parent's path notation:
 
-If that ID is already in use (e.g., multiple children of the same kind),
-a numeric suffix is appended: `{parent-id}-{child-kind}-{n}`
+```yaml
+participants:
+  source: srv-proxmox-01/net-private/eth0
+```
+
+Scoped entities cannot be referenced from outside their parent scope
+using simple ID references.
 
 ### Ownership
 
@@ -175,7 +181,7 @@ The `owner` field should NOT be specified in nested definitions.
 
 ### Reference Syntax for Nested Entities
 
-Nested entities can be referenced by their ID:
+Entities with explicit IDs can be referenced by their ID:
 
 ```yaml
 participants:
@@ -189,6 +195,13 @@ Or by path notation:
 participants:
   source: srv-proxmox-01/net-private/eth1
   target: sw-core-01/port1
+```
+
+Scoped entities (without explicit IDs) must use path notation:
+
+```yaml
+participants:
+  source: srv-proxmox-01/net-private/eth0
 ```
 
 ### Mixed Definitions

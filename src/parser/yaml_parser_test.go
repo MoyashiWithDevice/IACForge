@@ -723,10 +723,12 @@ objects:
     name: Rack A01
     spec:
       servers:
-        - name: Server 01
+        - id: srv-01
+          name: Server 01
           spec:
             cpu_cores: 16
-        - name: Server 02
+        - id: srv-02
+          name: Server 02
           spec:
             cpu_cores: 32
 `
@@ -742,10 +744,10 @@ objects:
 		t.Fatalf("expected 3 entities, got %d", g.EntityCount())
 	}
 
-	// Check auto-generated IDs
-	s1, ok := g.GetEntity("rack-a01-server")
+	// Check explicit IDs
+	s1, ok := g.GetEntity("srv-01")
 	if !ok {
-		t.Fatal("entity rack-a01-server not found")
+		t.Fatal("entity srv-01 not found")
 	}
 	if s1.Owner != "rack-a01" {
 		t.Errorf("expected owner rack-a01, got %s", s1.Owner)
@@ -754,9 +756,9 @@ objects:
 		t.Errorf("expected name Server 01, got %s", s1.Name)
 	}
 
-	s2, ok := g.GetEntity("rack-a01-server-2")
+	s2, ok := g.GetEntity("srv-02")
 	if !ok {
-		t.Fatal("entity rack-a01-server-2 not found")
+		t.Fatal("entity srv-02 not found")
 	}
 	if s2.Owner != "rack-a01" {
 		t.Errorf("expected owner rack-a01, got %s", s2.Owner)
@@ -772,12 +774,14 @@ objects:
     spec:
       default_action: deny
       acl_rules:
-        - name: Allow HTTPS
+        - id: rule-https
+          name: Allow HTTPS
           spec:
             action: allow
             protocol: tcp
             destination_port: "443"
-        - name: Allow SSH
+        - id: rule-ssh
+          name: Allow SSH
           spec:
             action: allow
             protocol: tcp
@@ -796,9 +800,9 @@ objects:
 	}
 
 	// Check first rule
-	r1, ok := g.GetEntity("acl-web-acl_rule")
+	r1, ok := g.GetEntity("rule-https")
 	if !ok {
-		t.Fatal("entity acl-web-acl_rule not found")
+		t.Fatal("entity rule-https not found")
 	}
 	if r1.Owner != "acl-web" {
 		t.Errorf("expected owner acl-web, got %s", r1.Owner)
@@ -904,7 +908,7 @@ objects:
 	}
 
 	// Both networks should be owned by the server
-	for _, id := range []string{"net-private", "srv-proxmox-01-network"} {
+	for _, id := range []string{"net-private", "_srv-proxmox-01-network"} {
 		e, ok := g.GetEntity(id)
 		if !ok {
 			t.Fatalf("entity %s not found", id)
@@ -923,13 +927,13 @@ objects:
 		t.Errorf("expected eth1 owner net-private, got %s", eth1.Owner)
 	}
 
-	// eth0 should be owned by srv-proxmox-01-network (the auto-ID'd network)
-	eth0, ok := g.GetEntity("srv-proxmox-01-network-interface")
+	// eth0 should be owned by _srv-proxmox-01-network (the auto-ID'd network)
+	eth0, ok := g.GetEntity("_srv-proxmox-01-network-interface")
 	if !ok {
-		t.Fatal("entity srv-proxmox-01-network-interface not found")
+		t.Fatal("entity _srv-proxmox-01-network-interface not found")
 	}
-	if eth0.Owner != "srv-proxmox-01-network" {
-		t.Errorf("expected eth0 owner srv-proxmox-01-network, got %s", eth0.Owner)
+	if eth0.Owner != "_srv-proxmox-01-network" {
+		t.Errorf("expected eth0 owner _srv-proxmox-01-network, got %s", eth0.Owner)
 	}
 }
 

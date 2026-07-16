@@ -36,6 +36,7 @@ type Entity struct {
 	Extensions  map[string]interface{} `yaml:"extensions,omitempty"`
 	Properties  map[string]interface{} `yaml:"properties,omitempty"`
 	path        string
+	internal    bool
 }
 
 func NewEntity(id string, kind EntityKind, name string) *Entity {
@@ -108,6 +109,14 @@ func (e *Entity) SetPath(path string) {
 
 func (e *Entity) IsRoot() bool {
 	return e.Owner == ""
+}
+
+func (e *Entity) SetInternal(internal bool) {
+	e.internal = internal
+}
+
+func (e *Entity) IsInternal() bool {
+	return e.internal
 }
 
 func (e *Entity) Validate() error {
