@@ -138,11 +138,11 @@ objects:
           name: private
           spec:
             cidr: 172.31.0.0/24
-          interfaces:
-            - id: eth1
-              spec:
-                ip_address: 172.31.0.15
-                type: ethernet
+            interfaces:
+              - id: eth1
+                spec:
+                  ip_address: 172.31.0.15
+                  type: ethernet
       vms:
         - id: vm-web-01
           name: Web Server 01
@@ -211,8 +211,9 @@ objects:
     spec:
       networks:
         - id: net-private
-          interfaces:
-            - id: eth1
+          spec:
+            interfaces:
+              - id: eth1
 ```
 
 ---
@@ -376,38 +377,7 @@ objects:
       storage_gb: 2000
       ip_address: 10.0.1.11
 
-  # Interfaces
-  - id: eno1
-    kind: interface
-    name: eno1
-    attributes:
-      owner: srv-proxmox-01
-    spec:
-      type: ethernet
-      speed_mbps: 10000
-      mac_address: "aa:bb:cc:dd:ee:f0"
-      ip_address: 10.0.1.10
-
-  - id: eno2
-    kind: interface
-    name: eno2
-    attributes:
-      owner: srv-proxmox-01
-    spec:
-      type: ethernet
-      speed_mbps: 10000
-      mac_address: "aa:bb:cc:dd:ee:f1"
-
-  - id: sw-port1
-    kind: interface
-    name: port1
-    attributes:
-      owner: sw-core-01
-    spec:
-      type: ethernet
-      speed_mbps: 10000
-
-  # Network
+  # Network with Interfaces
   - id: mgmt-network-01
     kind: network
     name: Management Network
@@ -415,6 +385,18 @@ objects:
       cidr: 10.0.0.0/24
       gateway: 10.0.0.1
       network_type: management
+      interfaces:
+        - id: eno1
+          spec:
+            type: ethernet
+            speed_mbps: 10000
+            mac_address: "aa:bb:cc:dd:ee:f0"
+            ip_address: 10.0.1.10
+        - id: eno2
+          spec:
+            type: ethernet
+            speed_mbps: 10000
+            mac_address: "aa:bb:cc:dd:ee:f1"
 
   # VMs
   - id: vm-web-01
@@ -426,7 +408,7 @@ objects:
     spec:
       cpu_cores: 4
       memory_gb: 8
-      disk_gb: 100
+      storage_gb: 100
       os: ubuntu
       os_version: "22.04"
       ip_address: 10.0.2.10
@@ -529,8 +511,8 @@ objects:
       connection_type: physical
       bandwidth_mbps: 10000
     participants:
-      - srv-proxmox-01/eno1
-      - sw-core-01/port1
+      - mgmt-network-01/eno1
+      - mgmt-network-01/eno2
 
   # Hosting Relations (hosts)
   - id: rel-hosts-server-vm
@@ -555,7 +537,7 @@ objects:
   - id: rel-belongsto-intf-network
     type: belongs_to
     participants:
-      source: vm-web-01/eth0
+      source: mgmt-network-01/eno1
       target: mgmt-network-01
 
   # ACL Application Relations (applies_to)
@@ -563,7 +545,7 @@ objects:
     type: applies_to
     participants:
       source: acl-web-ingress
-      target: vm-web-01/eth0
+      target: mgmt-network-01/eno1
 
   # Open Port Relations (belongs_to)
   - id: rel-belongsto-port-nginx
@@ -583,13 +565,13 @@ objects:
     type: listens_on
     participants:
       source: port-443-nginx
-      target: vm-web-01/eth0
+      target: mgmt-network-01/eno1
 
   - id: rel-listens-postgres
     type: listens_on
     participants:
       source: port-5432-postgres
-      target: vm-web-01/eth0
+      target: mgmt-network-01/eno1
 ```
 
 ---

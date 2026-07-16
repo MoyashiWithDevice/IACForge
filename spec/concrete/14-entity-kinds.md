@@ -177,42 +177,6 @@ A physical or virtual compute host.
 
 ---
 
-### interface
-
-A network interface on a device.
-
-#### Properties
-
-| Property | Type | Required | Default | Description |
-|----------|------|----------|---------|-------------|
-| type | string | no | ethernet | Interface type (ethernet, fiber, wireless) |
-| speed_mbps | integer | no | - | Interface speed in Mbps |
-| mac_address | string | no | - | MAC address |
-| ip_address | string | no | - | IP address if configured |
-| mtu | integer | no | 1500 | Maximum transmission unit |
-
-#### Typical Relations
-
-- belongs_to → server
-- belongs_to → switch
-- belongs_to → router
-- connects → interface (via cable)
-- belongs_to → network
-
-#### Example
-
-```yaml
-- id: eno1
-  kind: interface
-  name: eno1
-  type: ethernet
-  speed_mbps: 10000
-  mac_address: "aa:bb:cc:dd:ee:f0"
-  ip_address: 10.0.1.10
-```
-
----
-
 ### cable
 
 A physical cable connecting two or more interfaces.
@@ -286,9 +250,28 @@ A logical network or broadcast domain.
 
 #### Nestable Children
 
+| Nest Key | Child Kind | Description |
+|----------|------------|-------------|
+| interfaces | interface | Network interfaces belonging to this network |
+
+#### Interface Properties
+
+When defining interfaces as nested children of a network, the following properties are available:
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| type | string | no | ethernet | Interface type (ethernet, fiber, wireless) |
+| speed_mbps | integer | no | - | Interface speed in Mbps |
+| mac_address | string | no | - | MAC address |
+| ip_address | string | no | - | IP address if configured |
+| mtu | integer | no | 1500 | Maximum transmission unit |
+
+#### Interface Nestable Children
+
 | Nest Key | Child Kind |
 |----------|------------|
-| interfaces | interface |
+| vlans | vlan |
+| cables | cable |
 
 #### Example
 
@@ -296,9 +279,17 @@ A logical network or broadcast domain.
 - id: mgmt-network-01
   kind: network
   name: Management Network
-  cidr: 10.0.0.0/24
-  gateway: 10.0.0.1
-  network_type: management
+  spec:
+    cidr: 10.0.0.0/24
+    gateway: 10.0.0.1
+    network_type: management
+    interfaces:
+      - id: eth0
+        spec:
+          ip_address: 10.0.0.10
+          type: ethernet
+          speed_mbps: 10000
+          mac_address: "aa:bb:cc:dd:ee:f0"
 ```
 
 ---
@@ -534,7 +525,7 @@ A virtual machine.
 |----------|------|----------|---------|-------------|
 | cpu_cores | integer | no | - | Number of virtual CPUs |
 | memory_gb | number | no | - | Memory in GB |
-| disk_gb | number | no | - | Virtual disk size in GB |
+| storage_gb | number | no | - | Virtual disk size in GB |
 | ip_address | string | no | - | IP address if assigned |
 | mac_address | string | no | - | MAC address if assigned |
 | os | string | no | - | Operating system |
@@ -565,7 +556,7 @@ A virtual machine.
   name: Web Server 01
   cpu_cores: 4
   memory_gb: 8
-  disk_gb: 100
+  storage_gb: 100
   os: ubuntu
   os_version: "22.04"
   ip_address: 10.0.2.10

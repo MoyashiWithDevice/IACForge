@@ -81,6 +81,10 @@ func registerEntityKinds(s *Schema) {
 			{Name: "ip_address", Type: PropertyTypeString, Required: false, Description: "IP address if configured"},
 			{Name: "mtu", Type: PropertyTypeInteger, Required: false, Default: 1500, Description: "Maximum transmission unit"},
 		},
+		NestingDefs: []NestingDefinition{
+			{NestKey: "vlans", ChildKind: kinds.VLAN},
+			{NestKey: "cables", ChildKind: kinds.Cable},
+		},
 	})
 
 	s.AddEntityKind(kinds.Cable, &EntityKindDefinition{
@@ -196,7 +200,7 @@ func registerEntityKinds(s *Schema) {
 		Properties: []PropertyDefinition{
 			{Name: "cpu_cores", Type: PropertyTypeInteger, Required: false, Description: "Number of virtual CPUs"},
 			{Name: "memory_gb", Type: PropertyTypeNumber, Required: false, Description: "Memory in GB"},
-			{Name: "disk_gb", Type: PropertyTypeNumber, Required: false, Description: "Virtual disk size in GB"},
+			{Name: "storage_gb", Type: PropertyTypeNumber, Required: false, Description: "Virtual disk size in GB"},
 			{Name: "ip_address", Type: PropertyTypeString, Required: false, Description: "IP address if assigned"},
 			{Name: "mac_address", Type: PropertyTypeString, Required: false, Description: "MAC address if assigned"},
 			{Name: "os", Type: PropertyTypeString, Required: false, Description: "Operating system"},

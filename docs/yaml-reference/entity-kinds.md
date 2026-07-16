@@ -112,6 +112,8 @@ A network interface on a device.
 
 **Ownership:** server, switch, router, vm
 
+**Nestable Children:** vlans (vlan), cables (cable)
+
 ```yaml
 - id: eno1
   kind: interface
@@ -123,6 +125,15 @@ A network interface on a device.
     speed_mbps: 10000
     mac_address: "aa:bb:cc:dd:ee:f0"
     ip_address: 10.0.1.10
+    vlans:
+      - id: eno1-vlan100
+        spec:
+          vlan_id: 100
+    cables:
+      - id: cable-eno1-sw01
+        spec:
+          cable_type: cat6a
+          length_meters: 2.0
 ```
 
 ---
@@ -400,7 +411,7 @@ A virtual machine.
 |----------|------|----------|---------|-------------|
 | cpu_cores | integer | no | - | Number of virtual CPUs |
 | memory_gb | number | no | - | Memory in GB |
-| disk_gb | number | no | - | Virtual disk size in GB |
+| storage_gb | number | no | - | Virtual disk size in GB |
 | ip_address | string | no | - | IP address if assigned |
 | mac_address | string | no | - | MAC address if assigned |
 | os | string | no | - | Operating system |
@@ -418,7 +429,7 @@ A virtual machine.
   spec:
     cpu_cores: 4
     memory_gb: 8
-    disk_gb: 100
+    storage_gb: 100
     os: ubuntu
     os_version: "22.04"
     ip_address: 10.0.2.10

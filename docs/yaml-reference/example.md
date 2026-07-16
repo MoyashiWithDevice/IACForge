@@ -116,7 +116,7 @@ objects:
     spec:
       cpu_cores: 4
       memory_gb: 8
-      disk_gb: 100
+      storage_gb: 100
       os: ubuntu
       os_version: "22.04"
       ip_address: 10.0.2.10
