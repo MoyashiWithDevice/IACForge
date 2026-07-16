@@ -215,6 +215,17 @@ func (s *Schema) ValidateProperty(propDef *PropertyDefinition, value interface{}
 		}
 	}
 
+	// Type-specific validation for reference properties
+	if propDef.Type == PropertyTypeReference {
+		if !core.IsReferenceValue(value) {
+			if str, ok := value.(string); ok && len(str) > 0 && str[0] == '@' {
+				// @ prefix present but not yet converted to ReferenceValue (e.g., raw input)
+				return nil
+			}
+			return fmt.Errorf("property %q: expected a reference (use @ prefix), got %T", propDef.Name, value)
+		}
+	}
+
 	return nil
 }
 
@@ -228,6 +239,8 @@ func validateConstraints(propDef *PropertyDefinition, value interface{}) error {
 		return validateStringConstraints(c, value)
 	case PropertyTypeList:
 		return validateListConstraints(c, value)
+	case PropertyTypeReference:
+		return validateReferenceConstraints(c, value)
 	}
 
 	return nil
@@ -306,5 +319,17 @@ func validateStringConstraints(c *Constraint, value interface{}) error {
 		}
 	}
 
+	return nil
+}
+
+func validateReferenceConstraints(c *Constraint, value interface{}) error {
+	// Basic type check: must be a ReferenceValue or a string with @ prefix
+	if _, ok := value.(core.ReferenceValue); !ok {
+		if str, ok := value.(string); ok && len(str) > 0 && str[0] == '@' {
+			// Raw @ prefix string (not yet converted) is acceptable
+			return nil
+		}
+		return fmt.Errorf("expected a reference value, got %T", value)
+	}
 	return nil
 }

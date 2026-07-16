@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"strings"
 	"testing"
 
 	"IACForge/src/core"
@@ -995,5 +996,167 @@ objects:
 	errs := ResolveReferences(g)
 	if len(errs) != 0 {
 		t.Errorf("expected no reference errors, got %v", errs)
+	}
+}
+
+func TestParseEntityPropertyReference(t *testing.T) {
+	yaml := `
+objects:
+  - id: net-mgmt
+    kind: network
+    name: Management Network
+    spec:
+      cidr: 10.0.0.0/24
+
+  - id: vlan-100
+    kind: vlan
+    name: VLAN 100
+    spec:
+      vlan_id: 100
+      associated_network: "@net-mgmt"
+`
+
+	parser := NewParser()
+	g, err := parser.Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+
+	vlan, ok := g.GetEntity("vlan-100")
+	if !ok {
+		t.Fatal("expected entity vlan-100")
+	}
+
+	v, ok := vlan.GetProperty("associated_network")
+	if !ok {
+		t.Fatal("expected property associated_network")
+	}
+	ref, ok := v.(core.ReferenceValue)
+	if !ok {
+		t.Fatalf("expected ReferenceValue, got %T", v)
+	}
+	if ref.RefTargetID() != "net-mgmt" {
+		t.Errorf("expected reference target net-mgmt, got %s", ref.RefTargetID())
+	}
+
+	// Verify reference resolution
+	errs := ResolveReferences(g)
+	if len(errs) != 0 {
+		t.Errorf("expected no reference errors, got %v", errs)
+	}
+}
+
+func TestParseEntityPropertyReferenceNotFound(t *testing.T) {
+	yaml := `
+objects:
+  - id: vlan-100
+    kind: vlan
+    name: VLAN 100
+    spec:
+      vlan_id: 100
+      associated_network: "@nonexistent"
+`
+
+	parser := NewParser()
+	g, err := parser.Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+
+	errs := ResolveReferences(g)
+	if len(errs) == 0 {
+		t.Error("expected reference error for nonexistent entity")
+	}
+	found := false
+	for _, e := range errs {
+		if strings.Contains(e.Error(), "nonexistent") {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("expected error about nonexistent reference, got %v", errs)
+	}
+}
+
+func TestParseRelationPropertyReference(t *testing.T) {
+	yaml := `
+objects:
+  - id: srv-01
+    kind: server
+    name: Server 01
+
+  - id: net-mgmt
+    kind: network
+    name: Management Network
+
+  - id: rel-uses
+    type: depends_on
+    participants:
+      source: srv-01
+      target: net-mgmt
+    spec:
+      dependency_type: "@net-mgmt"
+`
+
+	parser := NewParser()
+	g, err := parser.Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+
+	rel, ok := g.GetRelation("rel-uses")
+	if !ok {
+		t.Fatal("expected relation rel-uses")
+	}
+
+	v, ok := rel.GetProperty("dependency_type")
+	if !ok {
+		t.Fatal("expected property dependency_type")
+	}
+	_, ok = v.(core.ReferenceValue)
+	if !ok {
+		t.Fatalf("expected ReferenceValue, got %T", v)
+	}
+
+	errs := ResolveReferences(g)
+	if len(errs) != 0 {
+		t.Errorf("expected no reference errors, got %v", errs)
+	}
+}
+
+func TestParsePropertyPlainTextNotAffected(t *testing.T) {
+	yaml := `
+objects:
+  - id: srv-01
+    kind: server
+    name: Server 01
+    spec:
+      platform: proxmox
+      description: "A server without @ prefix"
+`
+
+	parser := NewParser()
+	g, err := parser.Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+
+	srv, ok := g.GetEntity("srv-01")
+	if !ok {
+		t.Fatal("expected entity srv-01")
+	}
+
+	// Plain string should NOT be converted to ReferenceValue
+	v, ok := srv.GetProperty("platform")
+	if !ok {
+		t.Fatal("expected property platform")
+	}
+	if _, ok := v.(core.ReferenceValue); ok {
+		t.Error("plain string should not be converted to ReferenceValue")
+	}
+	str, ok := v.(string)
+	if !ok || str != "proxmox" {
+		t.Errorf("expected plain string proxmox, got %v", v)
 	}
 }

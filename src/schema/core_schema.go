@@ -128,7 +128,7 @@ func registerEntityKinds(s *Schema) {
 		Description: "Virtual LAN configuration",
 		Properties: []PropertyDefinition{
 			{Name: "vlan_id", Type: PropertyTypeInteger, Required: true, Constraints: &Constraint{Min: intPtr(1), Max: intPtr(4094)}, Description: "VLAN identifier (1-4094)"},
-			{Name: "associated_network", Type: PropertyTypeString, Required: false, Description: "Reference to parent network"},
+			{Name: "associated_network", Type: PropertyTypeReference, Required: false, Description: "Reference to parent network"},
 		},
 	})
 

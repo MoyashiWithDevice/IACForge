@@ -12,6 +12,41 @@ var (
 	ErrEntityMissingName = errors.New("entity missing required property: name")
 )
 
+// ReferenceValue represents a reference to another Entity in a property value.
+// In YAML, references are denoted with the @ prefix (e.g., "@net-mgmt").
+// At runtime, the @ prefix is stripped and the value is stored as a ReferenceValue.
+type ReferenceValue string
+
+// RefTargetID returns the ID of the referenced Entity.
+func (r ReferenceValue) RefTargetID() string {
+	return string(r)
+}
+
+// NewReferenceValue creates a ReferenceValue from a raw string, stripping the @ prefix if present.
+func NewReferenceValue(raw string) ReferenceValue {
+	return ReferenceValue(strings.TrimPrefix(raw, "@"))
+}
+
+// String returns the reference with the @ prefix for serialization.
+func (r ReferenceValue) String() string {
+	return "@" + string(r)
+}
+
+// IsReferenceValue checks if a property value is a ReferenceValue.
+func IsReferenceValue(v interface{}) bool {
+	_, ok := v.(ReferenceValue)
+	return ok
+}
+
+// ExtractReferenceValue extracts the target ID from a property value if it is a ReferenceValue.
+// Returns the target ID and true if the value is a reference, empty string and false otherwise.
+func ExtractReferenceValue(v interface{}) (string, bool) {
+	if ref, ok := v.(ReferenceValue); ok {
+		return string(ref), true
+	}
+	return "", false
+}
+
 type Status string
 
 const (

@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"strings"
 	"testing"
 
 	"IACForge/src/core"
@@ -357,5 +358,63 @@ func TestSerializeFile(t *testing.T) {
 
 	if e2.ID != e.ID {
 		t.Errorf("expected ID %s, got %s", e.ID, e2.ID)
+	}
+}
+
+func TestRoundTripPropertyReference(t *testing.T) {
+	input := `
+objects:
+  - id: net-mgmt
+    kind: network
+    name: Management Network
+    spec:
+      cidr: 10.0.0.0/24
+
+  - id: vlan-100
+    kind: vlan
+    name: VLAN 100
+    spec:
+      vlan_id: 100
+      associated_network: "@net-mgmt"
+`
+	parser := NewParser()
+	g, err := parser.Parse([]byte(input))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+
+	serializer := NewSerializer()
+	data, err := serializer.Serialize(g)
+	if err != nil {
+		t.Fatalf("failed to serialize: %v", err)
+	}
+
+	// Verify @ prefix is preserved in output (YAML may use single or double quotes)
+	output := string(data)
+	if !strings.Contains(output, "@net-mgmt") {
+		t.Errorf("serialized output should contain @net-mgmt reference, got:\n%s", output)
+	}
+
+	// Parse back and verify round-trip
+	g2, err := parser.Parse(data)
+	if err != nil {
+		t.Fatalf("failed to re-parse: %v", err)
+	}
+
+	vlan, ok := g2.GetEntity("vlan-100")
+	if !ok {
+		t.Fatal("expected entity vlan-100")
+	}
+
+	v, ok := vlan.GetProperty("associated_network")
+	if !ok {
+		t.Fatal("expected property associated_network")
+	}
+	ref, ok := v.(core.ReferenceValue)
+	if !ok {
+		t.Fatalf("expected ReferenceValue after round-trip, got %T", v)
+	}
+	if ref.RefTargetID() != "net-mgmt" {
+		t.Errorf("expected reference target net-mgmt, got %s", ref.RefTargetID())
 	}
 }

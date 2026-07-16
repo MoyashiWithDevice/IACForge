@@ -319,9 +319,9 @@ func (p *Parser) parseEntity(obj map[string]interface{}, parentID string) (*core
 					return nil, nil, fmt.Errorf("nested key %q in spec: %w", k, err)
 				}
 				nestedEntities = append(nestedEntities, children...)
-			} else {
-				entity.SetProperty(k, v)
-			}
+		} else {
+			entity.SetProperty(k, convertPropertyValue(v))
+		}
 		}
 	}
 
@@ -451,7 +451,7 @@ func (p *Parser) parseRelation(obj map[string]interface{}, entities map[string]*
 	// Parse spec sub-key for relation-type-specific properties
 	if spec, ok := getMapOptional(obj, "spec"); ok {
 		for k, v := range spec {
-			relation.SetProperty(k, v)
+			relation.SetProperty(k, convertPropertyValue(v))
 		}
 	}
 
@@ -536,6 +536,15 @@ func getSliceOptional(obj map[string]interface{}, key string) ([]interface{}, bo
 	return slice, true
 }
 
+// convertPropertyValue converts a raw YAML value, detecting @ prefix for references.
+// If the value is a string starting with "@", it is converted to a core.ReferenceValue.
+func convertPropertyValue(v interface{}) interface{} {
+	if str, ok := v.(string); ok && strings.HasPrefix(str, "@") {
+		return core.NewReferenceValue(str)
+	}
+	return v
+}
+
 // getMapOptional extracts an optional map value from a map.
 func getMapOptional(obj map[string]interface{}, key string) (map[string]interface{}, bool) {
 	val, ok := obj[key]
@@ -551,6 +560,7 @@ func getMapOptional(obj map[string]interface{}, key string) (map[string]interfac
 
 // ResolveReferences checks that all references in the graph point to existing objects.
 // It supports both simple ID references and path-based references.
+// It also validates @-prefixed property references.
 func ResolveReferences(g *core.Graph) []error {
 	var errs []error
 
@@ -568,6 +578,28 @@ func ResolveReferences(g *core.Graph) []error {
 		for _, pid := range r.ParticipantIDs() {
 			if _, err := resolvePathReference(g, pid); err != nil {
 				errs = append(errs, fmt.Errorf("relation %s: %w", r.ID, err))
+			}
+		}
+	}
+
+	// Check entity property references (@ prefix)
+	for _, e := range g.Entities() {
+		for key, value := range e.Properties {
+			if targetID, ok := core.ExtractReferenceValue(value); ok {
+				if _, err := resolvePathReference(g, targetID); err != nil {
+					errs = append(errs, fmt.Errorf("entity %s property %q: %w", e.ID, key, err))
+				}
+			}
+		}
+	}
+
+	// Check relation property references (@ prefix)
+	for _, r := range g.Relations() {
+		for key, value := range r.Properties {
+			if targetID, ok := core.ExtractReferenceValue(value); ok {
+				if _, err := resolvePathReference(g, targetID); err != nil {
+					errs = append(errs, fmt.Errorf("relation %s property %q: %w", r.ID, key, err))
+				}
 			}
 		}
 	}

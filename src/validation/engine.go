@@ -850,6 +850,44 @@ func ruleDanglingReference(ctx *Context) []Finding {
 				})
 			}
 		}
+
+		// Check entity property references (@ prefix)
+		for key, value := range e.Properties {
+			if targetID, ok := core.ExtractReferenceValue(value); ok {
+				_, foundEntity := g.GetEntity(targetID)
+				if !foundEntity {
+					_, foundRel := g.GetRelation(targetID)
+					if !foundRel {
+						findings = append(findings, Finding{
+							Severity:   SeverityError,
+							Message:    fmt.Sprintf("entity %q property %q references non-existent object %q", e.ID, key, targetID),
+							ObjectID:   e.ID,
+							ObjectType: ObjectTypeEntity,
+						})
+					}
+				}
+			}
+		}
+	}
+
+	// Check relation property references (@ prefix)
+	for _, r := range g.Relations() {
+		for key, value := range r.Properties {
+			if targetID, ok := core.ExtractReferenceValue(value); ok {
+				_, foundEntity := g.GetEntity(targetID)
+				if !foundEntity {
+					_, foundRel := g.GetRelation(targetID)
+					if !foundRel {
+						findings = append(findings, Finding{
+							Severity:   SeverityError,
+							Message:    fmt.Sprintf("relation %q property %q references non-existent object %q", r.ID, key, targetID),
+							ObjectID:   r.ID,
+							ObjectType: ObjectTypeRelation,
+						})
+					}
+				}
+			}
+		}
 	}
 
 	return findings

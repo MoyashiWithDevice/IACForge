@@ -212,7 +212,7 @@ func (s *Serializer) buildEntityWithChildren(e *core.Entity, childrenByParent ma
 	}
 	sort.Strings(sortedKeys)
 	for _, k := range sortedKeys {
-		spec[k] = e.Properties[k]
+		spec[k] = serializePropertyValue(e.Properties[k])
 	}
 
 	// Group children by nest key and recurse
@@ -299,7 +299,7 @@ func (s *Serializer) buildRelation(r *core.Relation) map[string]interface{} {
 		sort.Strings(sortedKeys)
 
 		for _, k := range sortedKeys {
-			spec[k] = r.Properties[k]
+			spec[k] = serializePropertyValue(r.Properties[k])
 		}
 		obj["spec"] = spec
 	}
@@ -317,6 +317,15 @@ func sortMap(m map[string]string) map[string]string {
 		result[k] = v
 	}
 	return result
+}
+
+// serializePropertyValue converts a property value for YAML output.
+// ReferenceValue is serialized with the @ prefix.
+func serializePropertyValue(v interface{}) interface{} {
+	if ref, ok := v.(core.ReferenceValue); ok {
+		return ref.String()
+	}
+	return v
 }
 
 // sortInterfaceMap returns a sorted copy of a map[string]interface{} for deterministic YAML output.

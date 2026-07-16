@@ -334,6 +334,24 @@ participants:
   - sw-core-01/port24
 ```
 
+### Property Reference
+
+Properties that reference other Objects use the `@` prefix to distinguish references from plain string values:
+
+```yaml
+spec:
+  associated_network: "@net-mgmt"
+  dns_servers: ["@dns-1", "@dns-2"]
+```
+
+The `@` prefix indicates that the value is a reference to another Entity's ID.
+At runtime, the parser converts `@`-prefixed strings to typed reference values.
+When serializing back to YAML, the `@` prefix is automatically restored.
+
+Reference properties are validated to ensure the referenced Entity exists in the graph.
+A property value of `"@net-mgmt"` references the Entity with ID `net-mgmt`.
+Path notation is also supported: `"@/site01/rack01/server01"`.
+
 ---
 
 ## Complete Example

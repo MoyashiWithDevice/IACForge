@@ -611,3 +611,70 @@ func TestValidateResultPassed(t *testing.T) {
 		t.Error("expected Passed=true when there are no errors")
 	}
 }
+
+func TestDanglingPropertyReference(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+
+	site := core.NewEntity("site-01", kinds.Site, "Site 01")
+	graph.AddEntity(site)
+
+	net := core.NewEntity("net-mgmt", kinds.Network, "Management Network")
+	net.SetOwner("site-01")
+	graph.AddEntity(net)
+
+	vlan := core.NewEntity("vlan-100", kinds.VLAN, "VLAN 100")
+	vlan.SetOwner("site-01")
+	vlan.SetProperty("associated_network", core.NewReferenceValue("@net-mgmt"))
+	graph.AddEntity(vlan)
+
+	vlan2 := core.NewEntity("vlan-200", kinds.VLAN, "VLAN 200")
+	vlan2.SetOwner("site-01")
+	vlan2.SetProperty("associated_network", core.NewReferenceValue("@nonexistent"))
+	graph.AddEntity(vlan2)
+
+	result := e.Validate(graph, nil)
+
+	foundDangling := false
+	for _, f := range result.Findings {
+		if f.RuleID == "dangling-reference" && f.ObjectID == "vlan-200" {
+			foundDangling = true
+			break
+		}
+	}
+	if !foundDangling {
+		t.Error("expected dangling-reference error for vlan-200 property reference")
+	}
+
+	// vlan-100 should NOT have a dangling reference error
+	for _, f := range result.Findings {
+		if f.RuleID == "dangling-reference" && f.ObjectID == "vlan-100" {
+			t.Error("vlan-100 should not have dangling-reference error")
+		}
+	}
+}
+
+func TestValidPropertyReference(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+
+	site := core.NewEntity("site-01", kinds.Site, "Site 01")
+	graph.AddEntity(site)
+
+	net := core.NewEntity("net-mgmt", kinds.Network, "Management Network")
+	net.SetOwner("site-01")
+	graph.AddEntity(net)
+
+	vlan := core.NewEntity("vlan-100", kinds.VLAN, "VLAN 100")
+	vlan.SetOwner("site-01")
+	vlan.SetProperty("associated_network", core.NewReferenceValue("@net-mgmt"))
+	graph.AddEntity(vlan)
+
+	result := e.Validate(graph, nil)
+
+	for _, f := range result.Findings {
+		if f.RuleID == "dangling-reference" && f.ObjectID == "vlan-100" {
+			t.Error("valid property reference should not cause dangling-reference error")
+		}
+	}
+}

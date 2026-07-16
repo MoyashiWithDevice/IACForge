@@ -177,3 +177,86 @@ func TestStatusConstants(t *testing.T) {
 		}
 	}
 }
+
+func TestReferenceValue(t *testing.T) {
+	tests := []struct {
+		name       string
+		raw        string
+		wantTarget string
+		wantString string
+	}{
+		{
+			name:       "simple reference",
+			raw:        "@net-mgmt",
+			wantTarget: "net-mgmt",
+			wantString: "@net-mgmt",
+		},
+		{
+			name:       "reference without prefix",
+			raw:        "net-mgmt",
+			wantTarget: "net-mgmt",
+			wantString: "@net-mgmt",
+		},
+		{
+			name:       "path reference",
+			raw:        "@/site01/rack01/server01",
+			wantTarget: "/site01/rack01/server01",
+			wantString: "@/site01/rack01/server01",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ref := NewReferenceValue(tt.raw)
+			if ref.RefTargetID() != tt.wantTarget {
+				t.Errorf("RefTargetID() = %q, want %q", ref.RefTargetID(), tt.wantTarget)
+			}
+			if ref.String() != tt.wantString {
+				t.Errorf("String() = %q, want %q", ref.String(), tt.wantString)
+			}
+		})
+	}
+}
+
+func TestIsReferenceValue(t *testing.T) {
+	ref := NewReferenceValue("@net-mgmt")
+	if !IsReferenceValue(ref) {
+		t.Error("expected IsReferenceValue to return true for ReferenceValue")
+	}
+	if IsReferenceValue("net-mgmt") {
+		t.Error("expected IsReferenceValue to return false for string")
+	}
+	if IsReferenceValue(42) {
+		t.Error("expected IsReferenceValue to return false for int")
+	}
+}
+
+func TestExtractReferenceValue(t *testing.T) {
+	ref := NewReferenceValue("@net-mgmt")
+	targetID, ok := ExtractReferenceValue(ref)
+	if !ok || targetID != "net-mgmt" {
+		t.Errorf("ExtractReferenceValue(ReferenceValue) = (%q, %v), want (\"net-mgmt\", true)", targetID, ok)
+	}
+
+	targetID, ok = ExtractReferenceValue("net-mgmt")
+	if ok || targetID != "" {
+		t.Errorf("ExtractReferenceValue(string) = (%q, %v), want (\"\", false)", targetID, ok)
+	}
+}
+
+func TestEntityPropertyReference(t *testing.T) {
+	e := NewEntity("vlan-100", "vlan", "VLAN 100")
+	e.SetProperty("associated_network", NewReferenceValue("@net-mgmt"))
+
+	v, ok := e.GetProperty("associated_network")
+	if !ok {
+		t.Fatal("expected property associated_network to exist")
+	}
+	ref, ok := v.(ReferenceValue)
+	if !ok {
+		t.Fatalf("expected ReferenceValue, got %T", v)
+	}
+	if ref.RefTargetID() != "net-mgmt" {
+		t.Errorf("expected reference target net-mgmt, got %s", ref.RefTargetID())
+	}
+}

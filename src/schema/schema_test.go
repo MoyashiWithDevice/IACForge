@@ -396,3 +396,38 @@ func TestProfile(t *testing.T) {
 		t.Errorf("expected 2 required properties for server, got %d", len(p.RequiredProperties["server"]))
 	}
 }
+
+func TestValidatePropertyReferenceType(t *testing.T) {
+	s := NewSchema("1.0.0", "1.0")
+	propDef := &PropertyDefinition{
+		Name:     "associated_network",
+		Type:     PropertyTypeReference,
+		Required: false,
+	}
+
+	// Valid ReferenceValue
+	ref := core.NewReferenceValue("@net-mgmt")
+	if err := s.ValidateProperty(propDef, ref); err != nil {
+		t.Errorf("expected no error for valid ReferenceValue, got %v", err)
+	}
+
+	// Valid @ prefix string (not yet converted)
+	if err := s.ValidateProperty(propDef, "@net-mgmt"); err != nil {
+		t.Errorf("expected no error for @ prefix string, got %v", err)
+	}
+
+	// Invalid: plain string without @ prefix
+	if err := s.ValidateProperty(propDef, "net-mgmt"); err == nil {
+		t.Error("expected error for plain string without @ prefix")
+	}
+
+	// Invalid: non-string value
+	if err := s.ValidateProperty(propDef, 42); err == nil {
+		t.Error("expected error for non-string value")
+	}
+
+	// nil is OK (not required)
+	if err := s.ValidateProperty(propDef, nil); err != nil {
+		t.Errorf("expected no error for nil value, got %v", err)
+	}
+}
