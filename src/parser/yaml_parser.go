@@ -538,9 +538,24 @@ func getSliceOptional(obj map[string]interface{}, key string) ([]interface{}, bo
 
 // convertPropertyValue converts a raw YAML value, detecting @ prefix for references.
 // If the value is a string starting with "@", it is converted to a core.ReferenceValue.
+// For lists and maps, the conversion is applied recursively to all contained values.
 func convertPropertyValue(v interface{}) interface{} {
 	if str, ok := v.(string); ok && strings.HasPrefix(str, "@") {
 		return core.NewReferenceValue(str)
+	}
+	if list, ok := v.([]interface{}); ok {
+		converted := make([]interface{}, len(list))
+		for i, item := range list {
+			converted[i] = convertPropertyValue(item)
+		}
+		return converted
+	}
+	if m, ok := v.(map[string]interface{}); ok {
+		converted := make(map[string]interface{}, len(m))
+		for k, item := range m {
+			converted[k] = convertPropertyValue(item)
+		}
+		return converted
 	}
 	return v
 }

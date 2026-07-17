@@ -134,6 +134,56 @@ func (e *Entity) GetProperty(key string) (interface{}, bool) {
 	return v, ok
 }
 
+// ResolvePropertyPath resolves a dot-notation property path like "memory.size_gb" on the entity.
+// For list properties, it collects the sub-property from each item and returns a flattened list.
+// Returns nil if the path cannot be resolved.
+func (e *Entity) ResolvePropertyPath(path string) interface{} {
+	if e.Properties == nil {
+		return nil
+	}
+	return resolvePath(e.Properties, path)
+}
+
+// resolvePath traverses a nested value using a dot-separated path.
+func resolvePath(obj map[string]interface{}, path string) interface{} {
+	dotIdx := strings.Index(path, ".")
+	if dotIdx == -1 {
+		v, ok := obj[path]
+		if !ok {
+			return nil
+		}
+		return v
+	}
+
+	head := path[:dotIdx]
+	tail := path[dotIdx+1:]
+
+	v, ok := obj[head]
+	if !ok || v == nil {
+		return nil
+	}
+
+	switch val := v.(type) {
+	case map[string]interface{}:
+		return resolvePath(val, tail)
+	case []interface{}:
+		var results []interface{}
+		for _, item := range val {
+			if m, ok := item.(map[string]interface{}); ok {
+				if r := resolvePath(m, tail); r != nil {
+					results = append(results, r)
+				}
+			}
+		}
+		if len(results) == 0 {
+			return nil
+		}
+		return results
+	default:
+		return nil
+	}
+}
+
 func (e *Entity) Path() string {
 	return e.path
 }

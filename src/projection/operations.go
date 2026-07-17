@@ -2,6 +2,7 @@ package projection
 
 import (
 	"fmt"
+	"strings"
 
 	"IACForge/src/core"
 )
@@ -819,6 +820,11 @@ func getEntityField(e *core.Entity, field string) interface{} {
 	case "tags":
 		return e.Tags
 	default:
+		if strings.Contains(field, ".") {
+			if v := e.ResolvePropertyPath(field); v != nil {
+				return v
+			}
+		}
 		if v, ok := e.GetProperty(field); ok {
 			return v
 		}

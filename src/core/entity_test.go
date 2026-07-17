@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -266,5 +267,87 @@ func TestEntityPropertyReference(t *testing.T) {
 	}
 	if ref.RefTargetID() != "net-mgmt" {
 		t.Errorf("expected reference target net-mgmt, got %s", ref.RefTargetID())
+	}
+}
+
+func TestResolvePropertyPath(t *testing.T) {
+	e := NewEntity("srv-01", "server", "Server 01")
+	e.SetProperty("memory", []interface{}{
+		map[string]interface{}{"size_gb": float64(64), "speed": float64(3200), "type": "ddr4"},
+		map[string]interface{}{"size_gb": float64(64), "speed": float64(3200), "type": "ddr4"},
+	})
+	e.SetProperty("cpu", []interface{}{
+		map[string]interface{}{"cores": float64(32), "architecture": "x86_64"},
+	})
+	e.SetProperty("platform", "proxmox")
+
+	tests := []struct {
+		name     string
+		path     string
+		expected interface{}
+		isNil    bool
+	}{
+		{
+			name:  "simple property",
+			path:  "platform",
+			expected: "proxmox",
+		},
+		{
+			name:     "nonexistent property",
+			path:     "nonexistent",
+			isNil:    true,
+		},
+		{
+			name:  "list property returns full list",
+			path:  "memory",
+			expected: []interface{}{
+				map[string]interface{}{"size_gb": float64(64), "speed": float64(3200), "type": "ddr4"},
+				map[string]interface{}{"size_gb": float64(64), "speed": float64(3200), "type": "ddr4"},
+			},
+		},
+		{
+			name:  "dot-notation extracts sub-property from list items",
+			path:  "memory.size_gb",
+			expected: []interface{}{float64(64), float64(64)},
+		},
+		{
+			name:  "dot-notation extracts speed from list items",
+			path:  "memory.speed",
+			expected: []interface{}{float64(3200), float64(3200)},
+		},
+		{
+			name:  "dot-notation extracts cpu cores",
+			path:  "cpu.cores",
+			expected: []interface{}{float64(32)},
+		},
+		{
+			name:     "dot-notation on nonexistent top-level",
+			path:     "nonexistent.size_gb",
+			isNil:    true,
+		},
+		{
+			name:     "dot-notation on nonexistent sub-property",
+			path:     "memory.nonexistent",
+			isNil:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := e.ResolvePropertyPath(tt.path)
+			if tt.isNil {
+				if result != nil {
+					t.Errorf("expected nil, got %v", result)
+				}
+				return
+			}
+			if result == nil {
+				t.Fatalf("expected non-nil result, got nil")
+			}
+			// Compare as string representations to handle type differences
+			if fmt.Sprintf("%v", result) != fmt.Sprintf("%v", tt.expected) {
+				t.Errorf("ResolvePropertyPath(%q) = %v, want %v", tt.path, result, tt.expected)
+			}
+		})
 	}
 }

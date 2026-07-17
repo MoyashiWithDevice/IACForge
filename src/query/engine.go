@@ -299,6 +299,12 @@ func (e *Engine) getObjectField(entity *core.Entity, field string) interface{} {
 	case "extensions":
 		return entity.Extensions
 	default:
+		// Check properties with dot-notation support
+		if strings.Contains(field, ".") {
+			if val := entity.ResolvePropertyPath(field); val != nil {
+				return val
+			}
+		}
 		// Check properties
 		if val, ok := entity.GetProperty(field); ok {
 			return val

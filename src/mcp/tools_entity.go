@@ -11,6 +11,37 @@ import (
 	"IACForge/src/core"
 )
 
+// entityToJSONMap converts an Entity to a map with snake_case keys for consistent JSON output.
+func entityToJSONMap(e *core.Entity) map[string]interface{} {
+	m := map[string]interface{}{
+		"id":   e.ID,
+		"kind": string(e.Kind),
+		"name": e.Name,
+	}
+	if e.Owner != "" {
+		m["owner"] = e.Owner
+	}
+	if e.Description != "" {
+		m["description"] = e.Description
+	}
+	if e.Status != "" {
+		m["status"] = string(e.Status)
+	}
+	if len(e.Tags) > 0 {
+		m["tags"] = e.Tags
+	}
+	if len(e.Labels) > 0 {
+		m["labels"] = e.Labels
+	}
+	if len(e.Extensions) > 0 {
+		m["extensions"] = e.Extensions
+	}
+	if len(e.Properties) > 0 {
+		m["spec"] = e.Properties
+	}
+	return m
+}
+
 func registerEntityMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 	s.AddTool(
 		mcp.NewTool("add_entity",
@@ -95,7 +126,7 @@ func registerEntityMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 			if !ok {
 				return toolError(fmt.Sprintf("entity not found: %s", id)), nil
 			}
-			data, _ := json.MarshalIndent(e, "", "  ")
+			data, _ := json.MarshalIndent(entityToJSONMap(e), "", "  ")
 			return toolResult(string(data)), nil
 		},
 	)
@@ -147,11 +178,16 @@ func registerEntityMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 				e.Labels = labels
 			}
 			if propsJSON := req.GetString("properties_json", ""); propsJSON != "" {
-				var props map[string]interface{}
-				if err := json.Unmarshal([]byte(propsJSON), &props); err != nil {
+				var newProps map[string]interface{}
+				if err := json.Unmarshal([]byte(propsJSON), &newProps); err != nil {
 					return toolError(fmt.Sprintf("invalid properties_json: %v", err)), nil
 				}
-				e.Properties = props
+				if e.Properties == nil {
+					e.Properties = make(map[string]interface{})
+				}
+				for k, v := range newProps {
+					e.Properties[k] = v
+				}
 			}
 
 			if err := sd.Graph.UpdateEntity(e); err != nil {

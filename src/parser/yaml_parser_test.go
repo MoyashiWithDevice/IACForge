@@ -1175,3 +1175,115 @@ objects:
 		t.Errorf("expected plain string proxmox, got %v", v)
 	}
 }
+
+func TestConvertPropertyValueRecursive(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    interface{}
+		wantRef  bool
+		wantType string
+	}{
+		{
+			name:    "simple @ reference",
+			input:   "@net-mgmt",
+			wantRef: true,
+		},
+		{
+			name:     "plain string",
+			input:    "hello",
+			wantType: "string",
+		},
+		{
+			name: "list with @ reference",
+			input: []interface{}{
+				"@net-mgmt",
+				"plain",
+			},
+			wantType: "list-of-strings",
+		},
+		{
+			name: "nested map with @ reference",
+			input: map[string]interface{}{
+				"network": "@net-mgmt",
+				"name":    "mgmt",
+			},
+			wantType: "map",
+		},
+		{
+			name: "list of maps with @ reference",
+			input: []interface{}{
+				map[string]interface{}{
+					"network": "@net-mgmt",
+					"vlan":    float64(100),
+				},
+			},
+			wantType: "list-of-maps",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := convertPropertyValue(tt.input)
+
+			if tt.wantRef {
+				ref, ok := result.(core.ReferenceValue)
+				if !ok {
+					t.Errorf("expected ReferenceValue, got %T", result)
+				}
+				if ref.RefTargetID() != "net-mgmt" {
+					t.Errorf("expected reference target net-mgmt, got %s", ref.RefTargetID())
+				}
+				return
+			}
+
+			switch tt.wantType {
+			case "list-of-strings":
+				list, ok := result.([]interface{})
+				if !ok {
+					t.Fatalf("expected []interface{}, got %T", result)
+				}
+				if len(list) > 0 {
+					if ref, ok := list[0].(core.ReferenceValue); !ok {
+						t.Errorf("expected list[0] to be ReferenceValue, got %T", list[0])
+					} else if ref.RefTargetID() != "net-mgmt" {
+						t.Errorf("expected reference target net-mgmt, got %s", ref.RefTargetID())
+					}
+				}
+			case "list-of-maps":
+				list, ok := result.([]interface{})
+				if !ok {
+					t.Fatalf("expected []interface{}, got %T", result)
+				}
+				if len(list) > 0 {
+					m, ok := list[0].(map[string]interface{})
+					if !ok {
+						t.Fatalf("expected list[0] to be map, got %T", list[0])
+					}
+					if ref, ok := m["network"].(core.ReferenceValue); !ok {
+						t.Errorf("expected network to be ReferenceValue, got %T", m["network"])
+					} else if ref.RefTargetID() != "net-mgmt" {
+						t.Errorf("expected reference target net-mgmt, got %s", ref.RefTargetID())
+					}
+				}
+			case "map":
+				m, ok := result.(map[string]interface{})
+				if !ok {
+					t.Fatalf("expected map[string]interface{}, got %T", result)
+				}
+				if ref, ok := m["network"].(core.ReferenceValue); !ok {
+					t.Errorf("expected network to be ReferenceValue, got %T", m["network"])
+				} else if ref.RefTargetID() != "net-mgmt" {
+					t.Errorf("expected reference target net-mgmt, got %s", ref.RefTargetID())
+				}
+			case "string":
+				str, ok := result.(string)
+				if !ok {
+					t.Fatalf("expected string, got %T", result)
+				}
+				if str != "hello" {
+					t.Errorf("expected hello, got %s", str)
+				}
+			}
+		})
+	}
+}
