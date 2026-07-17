@@ -812,10 +812,10 @@ objects:
 func TestSchemaNestingDefinitions(t *testing.T) {
 	s := schema.CoreSchema()
 
-	// Site should nest racks and clusters
+	// Site should nest racks, clusters, servers, switches, routers, and firewalls
 	siteNesting := s.GetNestingDefs(kinds.Site)
-	if len(siteNesting) != 2 {
-		t.Fatalf("expected 2 nesting defs for site, got %d", len(siteNesting))
+	if len(siteNesting) != 6 {
+		t.Fatalf("expected 6 nesting defs for site, got %d", len(siteNesting))
 	}
 
 	// Rack should nest servers, switches, routers, firewalls
@@ -959,15 +959,10 @@ objects:
 	validation.RegisterCoreRules(engine)
 	result := engine.Validate(g, nil)
 
-	found := false
 	for _, f := range result.Findings {
 		if f.RuleID == "valid-nesting-parent" {
-			found = true
-			break
+			t.Error("valid-nesting-parent warning should not be emitted for server owned by site (server is a valid child of site)")
 		}
-	}
-	if !found {
-		t.Error("expected valid-nesting-parent warning for server owned by site")
 	}
 }
 

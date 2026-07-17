@@ -34,6 +34,10 @@ func registerEntityKinds(s *Schema) {
 		NestingDefs: []NestingDefinition{
 			{NestKey: "racks", ChildKind: kinds.Rack},
 			{NestKey: "clusters", ChildKind: kinds.Cluster},
+			{NestKey: "servers", ChildKind: kinds.Server},
+			{NestKey: "switches", ChildKind: kinds.Switch},
+			{NestKey: "routers", ChildKind: kinds.Router},
+			{NestKey: "firewalls", ChildKind: kinds.Firewall},
 		},
 	})
 
