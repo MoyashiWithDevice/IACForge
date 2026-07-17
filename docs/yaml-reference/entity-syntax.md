@@ -68,7 +68,13 @@
         architecture: x86_64
       - cores: 16
         architecture: x86_64
-    memory_gb: 128
+    memory:
+      - size_gb: 64
+        speed: 3200
+        type: ddr4
+      - size_gb: 64
+        speed: 3200
+        type: ddr4
     storage:
       - size_gb: 500
         type: ssd

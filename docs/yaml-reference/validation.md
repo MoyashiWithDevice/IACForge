@@ -65,7 +65,7 @@
 ### Property命名
 
 - snake_caseを使用
-- 例: `cpu`, `memory_gb`, `storage`
+- 例: `cpu`, `memory`, `storage`
 
 ---
 
