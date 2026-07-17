@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"IACForge/src/core"
+	iacmcp "IACForge/src/mcp"
 	"IACForge/src/parser"
 	"IACForge/src/query"
 	"IACForge/src/renderer"
@@ -32,6 +34,8 @@ func main() {
 		cmdRender(args)
 	case "query":
 		cmdQuery(args)
+	case "mcp":
+		cmdMCP(args)
 	case "version":
 		fmt.Println("iacforge 0.1.0")
 	default:
@@ -49,6 +53,7 @@ Commands:
   info       Show summary of a YAML infrastructure model
   render     Render a view to an artifact (svg, markdown, mermaid, json)
   query      Execute a query against a model
+  mcp        Start MCP server (SSE transport)
   version    Print version
 
 Path argument is optional. When omitted, the current directory
@@ -61,7 +66,8 @@ Examples:
   iacforge validate model.yaml
   iacforge info
   iacforge render --format markdown
-  iacforge query --kind server`)
+  iacforge query --kind server
+  iacforge mcp --port 8080`)
 }
 
 func loadGraph(path string) (*core.Graph, error) {
@@ -341,4 +347,43 @@ func sortedRelTypes(counts map[core.RelationType]int) []core.RelationType {
 		}
 	}
 	return types
+}
+
+func cmdMCP(args []string) {
+	port := 8080
+	stdio := false
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--port":
+			if i+1 < len(args) {
+				p, err := strconv.Atoi(args[i+1])
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "invalid port: %s\n", args[i+1])
+					os.Exit(1)
+				}
+				port = p
+				i++
+			}
+		case "--stdio":
+			stdio = true
+		}
+	}
+
+	sm := iacmcp.NewSessionManager()
+	s := iacmcp.NewMCPServer(sm)
+
+	if stdio {
+		if err := iacmcp.ServeStdio(s); err != nil {
+			fmt.Fprintf(os.Stderr, "MCP server error: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		addr := fmt.Sprintf(":%d", port)
+		fmt.Fprintf(os.Stderr, "Starting IACForge MCP server on %s\n", addr)
+
+		if err := iacmcp.NewSSEServer(s, addr); err != nil {
+			fmt.Fprintf(os.Stderr, "MCP server error: %v\n", err)
+			os.Exit(1)
+		}
+	}
 }
