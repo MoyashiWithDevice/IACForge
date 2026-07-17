@@ -66,7 +66,10 @@ objects:
     spec:
       platform: proxmox
       cpu_cores: 32
-      memory_gb: 128
+      memory:
+        - size_gb: 64
+          speed: 3200
+          type: ddr4
       storage_gb: 2000
 `
 
@@ -348,7 +351,10 @@ objects:
     spec:
       platform: proxmox
       cpu_cores: 32
-      memory_gb: 128
+      memory:
+        - size_gb: 64
+          speed: 3200
+          type: ddr4
       storage_gb: 2000
 
   # VMs
@@ -360,7 +366,10 @@ objects:
       status: active
     spec:
       cpu_cores: 4
-      memory_gb: 8
+      memory:
+        - size_gb: 8
+          speed: 3200
+          type: ddr4
       storage_gb: 100
       os: ubuntu
       os_version: "22.04"
@@ -491,7 +500,10 @@ objects:
     name: Proxmox Node 01
     spec:
       cpu_cores: 32
-      memory_gb: 128
+      memory:
+        - size_gb: 64
+          speed: 3200
+          type: ddr4
       networks:
         - id: net-private
           name: private
@@ -509,7 +521,10 @@ objects:
           name: Web Server 01
           spec:
             cpu_cores: 4
-            memory_gb: 8
+            memory:
+              - size_gb: 8
+                speed: 3200
+                type: ddr4
 `
 
 	parser := NewParser()

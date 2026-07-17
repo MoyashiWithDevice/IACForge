@@ -244,7 +244,7 @@ operations:
       - property: cpu.cores
         function: sum
         target_property: total_cpu_cores
-      - property: memory_gb
+      - property: memory.size_gb
         function: sum
         target_property: total_memory_gb
       - property: id
@@ -486,9 +486,9 @@ operations:
       - property: name
         operation: rename
         value: server_name
-      - property: memory_gb
-        operation: cast
-        value: integer
+      - property: memory
+        operation: flatten
+        value: size_gb
       - property: status
         operation: default
         value: unknown

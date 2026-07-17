@@ -381,12 +381,23 @@ entity_kinds:
             type: string
             required: false
             description: "CPU architecture (x86_64, arm64)"
-      - name: memory_gb
-        type: number
+      - name: memory
+        type: list
         required: false
-        constraints:
-          min: 0.5
-        description: "Total memory in GB"
+        description: "Memory modules"
+        properties:
+          - name: size_gb
+            type: number
+            required: true
+            description: "Memory module size in GB"
+          - name: speed
+            type: integer
+            required: false
+            description: "Memory speed in MHz"
+          - name: type
+            type: string
+            required: false
+            description: "Memory type (ddr4, ddr5, lpddr4, lpddr5)"
       - name: storage
         type: list
         required: false

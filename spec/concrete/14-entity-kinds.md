@@ -136,7 +136,7 @@ A physical or virtual compute host.
 | model | string | no | - | Hardware model |
 | serial_number | string | no | - | Serial number |
 | cpu | list[object] | no | - | CPU configurations |
-| memory_gb | number | no | - | Total memory in GB |
+| memory | list[object] | no | - | Memory modules |
 | storage | list[object] | no | - | Local storage devices |
 | platform | string | no | - | Virtualization platform (e.g., proxmox, vmware, kubernetes) |
 | bios_version | string | no | - | BIOS/UEFI version |
@@ -147,6 +147,14 @@ A physical or virtual compute host.
 |----------|------|----------|---------|-------------|
 | cores | integer | no | - | Number of CPU cores |
 | architecture | string | no | - | CPU architecture (x86_64, arm64) |
+
+##### memory Properties
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| size_gb | number | yes | - | Memory module size in GB |
+| speed | integer | no | - | Memory speed in MHz |
+| type | string | no | - | Memory type (ddr4, ddr5, lpddr4, lpddr5) |
 
 ##### storage Properties
 
@@ -186,7 +194,13 @@ A physical or virtual compute host.
       architecture: x86_64
     - cores: 16
       architecture: x86_64
-  memory_gb: 128
+  memory:
+    - size_gb: 64
+      speed: 3200
+      type: ddr4
+    - size_gb: 64
+      speed: 3200
+      type: ddr4
   storage:
     - size_gb: 500
       type: ssd
@@ -590,7 +604,7 @@ A virtual machine.
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
 | cpu | list[object] | no | - | Virtual CPU configurations |
-| memory_gb | number | no | - | Memory in GB |
+| memory | list[object] | no | - | Memory modules |
 | storage | list[object] | no | - | Virtual disk configurations |
 | os | string | no | - | Operating system |
 | os_version | string | no | - | Operating system version |
@@ -601,6 +615,14 @@ A virtual machine.
 |----------|------|----------|---------|-------------|
 | cores | integer | no | - | Number of virtual CPU cores |
 | architecture | string | no | - | CPU architecture (x86_64, arm64) |
+
+##### memory Properties
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| size_gb | number | yes | - | Memory module size in GB |
+| speed | integer | no | - | Memory speed in MHz |
+| type | string | no | - | Memory type (ddr4, ddr5, lpddr4, lpddr5) |
 
 ##### storage Properties
 
@@ -635,7 +657,10 @@ A virtual machine.
   cpu:
     - cores: 4
       architecture: x86_64
-  memory_gb: 8
+  memory:
+    - size_gb: 8
+      speed: 3200
+      type: ddr4
   storage:
     - size_gb: 100
       type: ssd

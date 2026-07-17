@@ -57,7 +57,10 @@ func TestSerializeEntityWithAllProperties(t *testing.T) {
 	e.Extensions = map[string]interface{}{"vendor": "dell"}
 	e.SetProperty("platform", "proxmox")
 	e.SetProperty("cpu_cores", 32)
-	e.SetProperty("memory_gb", 128)
+	e.SetProperty("memory", []interface{}{
+		map[string]interface{}{"size_gb": 64, "speed": 3200, "type": "ddr4"},
+		map[string]interface{}{"size_gb": 64, "speed": 3200, "type": "ddr4"},
+	})
 
 	if err := g.AddEntity(e); err != nil {
 		t.Fatalf("failed to add entity: %v", err)
@@ -236,7 +239,10 @@ objects:
     spec:
       platform: proxmox
       cpu_cores: 32
-      memory_gb: 128
+      memory:
+        - size_gb: 64
+          speed: 3200
+          type: ddr4
 
   - id: vm-web-01
     kind: vm
@@ -246,7 +252,10 @@ objects:
       status: active
     spec:
       cpu_cores: 4
-      memory_gb: 8
+      memory:
+        - size_gb: 8
+          speed: 3200
+          type: ddr4
       os: ubuntu
 
   - id: rel-hosts-server-vm

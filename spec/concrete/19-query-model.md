@@ -79,7 +79,7 @@ The Where clause filters Objects based on conditions.
 | in | In list | `kind: [server, vm]` |
 | nin | Not in list | `kind: {nin: [cable]}` |
 | gt | Greater than | `cpu.cores: {gt: 8}` |
-| ge | Greater than or equal | `memory_gb: {gte: 16}` |
+| ge | Greater than or equal | `memory.size_gb: {gte: 16}` |
 | lt | Less than | `storage.size_gb: {lt: 1000}` |
 | le | Less than or equal | `storage.size_gb: {lte: 2000}` |
 | contains | String contains | `name: {contains: web}` |
@@ -221,7 +221,7 @@ project:
     - name
     - status
     - cpu.cores
-    - memory_gb
+    - memory.size_gb
 
 # Return paths
 project:
@@ -255,7 +255,7 @@ project:
 |----------|-------------|---------|
 | count | Count Objects | `{count: true}` |
 | sum | Sum numeric property | `{sum: cpu.cores}` |
-| avg | Average numeric property | `{avg: memory_gb}` |
+| avg | Average numeric property | `{avg: memory.size_gb}` |
 | min | Minimum value | `{min: storage.size_gb}` |
 | max | Maximum value | `{max: storage.size_gb}` |
 | group_by | Group results | `{group_by: kind}` |
@@ -267,7 +267,7 @@ project:
     count: true
     group_by: kind
     sum: cpu.cores
-    avg: memory_gb
+    avg: memory.size_gb
 ```
 
 ---
@@ -398,7 +398,7 @@ select:
 where:
   status: active
   cpu.cores: {ge: 4}
-  memory_gb: {ge: 8}
+  memory.size_gb: {ge: 8}
 ```
 
 ### Select All Connections

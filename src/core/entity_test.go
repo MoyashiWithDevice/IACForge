@@ -83,13 +83,21 @@ func TestEntityLabels(t *testing.T) {
 func TestEntityProperties(t *testing.T) {
 	e := NewEntity("srv-01", "server", "Server 01")
 	e.SetProperty("cpu_cores", 32)
-	e.SetProperty("memory_gb", float64(128))
+	e.SetProperty("memory", []interface{}{
+		map[string]interface{}{"size_gb": 64, "speed": 3200, "type": "ddr4"},
+		map[string]interface{}{"size_gb": 64, "speed": 3200, "type": "ddr4"},
+	})
 
 	if v, ok := e.GetProperty("cpu_cores"); !ok || v != 32 {
 		t.Errorf("expected property cpu_cores=32, got %v", v)
 	}
-	if v, ok := e.GetProperty("memory_gb"); !ok || v != float64(128) {
-		t.Errorf("expected property memory_gb=128, got %v", v)
+	mem, ok := e.GetProperty("memory")
+	if !ok {
+		t.Error("expected property memory to exist")
+	}
+	memList, ok := mem.([]interface{})
+	if !ok || len(memList) != 2 {
+		t.Errorf("expected memory to be a list of 2, got %v", mem)
 	}
 	if _, ok := e.GetProperty("nonexistent"); ok {
 		t.Error("expected no property nonexistent")

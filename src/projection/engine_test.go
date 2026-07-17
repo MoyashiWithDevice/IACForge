@@ -28,21 +28,30 @@ func createTestGraph() *core.Graph {
 	srv1.SetOwner("rack-01")
 	srv1.SetStatus(core.StatusActive)
 	srv1.SetProperty("cpu_cores", 16)
-	srv1.SetProperty("memory_gb", 64)
+	srv1.SetProperty("memory", []interface{}{
+		map[string]interface{}{"size_gb": 32, "speed": 3200, "type": "ddr4"},
+		map[string]interface{}{"size_gb": 32, "speed": 3200, "type": "ddr4"},
+	})
 	g.AddEntity(srv1)
 
 	srv2 := core.NewEntity("srv-02", "server", "Server 02")
 	srv2.SetOwner("rack-01")
 	srv2.SetStatus(core.StatusActive)
 	srv2.SetProperty("cpu_cores", 32)
-	srv2.SetProperty("memory_gb", 128)
+	srv2.SetProperty("memory", []interface{}{
+		map[string]interface{}{"size_gb": 64, "speed": 3200, "type": "ddr4"},
+		map[string]interface{}{"size_gb": 64, "speed": 3200, "type": "ddr4"},
+	})
 	g.AddEntity(srv2)
 
 	srv3 := core.NewEntity("srv-03", "server", "Server 03")
 	srv3.SetOwner("rack-01")
 	srv3.SetStatus(core.StatusMaintenance)
 	srv3.SetProperty("cpu_cores", 8)
-	srv3.SetProperty("memory_gb", 32)
+	srv3.SetProperty("memory", []interface{}{
+		map[string]interface{}{"size_gb": 16, "speed": 3200, "type": "ddr4"},
+		map[string]interface{}{"size_gb": 16, "speed": 3200, "type": "ddr4"},
+	})
 	g.AddEntity(srv3)
 
 	// VMs
@@ -50,14 +59,19 @@ func createTestGraph() *core.Graph {
 	vm1.SetOwner("srv-01")
 	vm1.SetStatus(core.StatusActive)
 	vm1.SetProperty("cpu_cores", 4)
-	vm1.SetProperty("memory_gb", 8)
+	vm1.SetProperty("memory", []interface{}{
+		map[string]interface{}{"size_gb": 8, "speed": 3200, "type": "ddr4"},
+	})
 	g.AddEntity(vm1)
 
 	vm2 := core.NewEntity("vm-02", "vm", "VM 02")
 	vm2.SetOwner("srv-02")
 	vm2.SetStatus(core.StatusActive)
 	vm2.SetProperty("cpu_cores", 8)
-	vm2.SetProperty("memory_gb", 16)
+	vm2.SetProperty("memory", []interface{}{
+		map[string]interface{}{"size_gb": 8, "speed": 3200, "type": "ddr4"},
+		map[string]interface{}{"size_gb": 8, "speed": 3200, "type": "ddr4"},
+	})
 	g.AddEntity(vm2)
 
 	// Network
@@ -545,7 +559,7 @@ func TestAggregateOperation(t *testing.T) {
 	op.GroupBy = []string{"owner"}
 	op.Aggregations = []*Aggregation{
 		NewAggregation("cpu_cores", AggSum, "total_cpu_cores"),
-		NewAggregation("memory_gb", AggSum, "total_memory_gb"),
+		NewAggregation("memory.size_gb", AggSum, "total_memory_gb"),
 		NewAggregation("id", AggCount, "server_count"),
 	}
 	proj.Operations = append(proj.Operations, op)

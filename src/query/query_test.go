@@ -25,7 +25,10 @@ func createTestGraph() *core.Graph {
 	server1.SetOwner("rack-a01")
 	server1.SetStatus(core.StatusActive)
 	server1.SetProperty("cpu_cores", 16)
-	server1.SetProperty("memory_gb", 64)
+	server1.SetProperty("memory", []interface{}{
+		map[string]interface{}{"size_gb": 32, "speed": 3200, "type": "ddr4"},
+		map[string]interface{}{"size_gb": 32, "speed": 3200, "type": "ddr4"},
+	})
 	server1.AddTag("production")
 	g.AddEntity(server1)
 
@@ -33,7 +36,10 @@ func createTestGraph() *core.Graph {
 	server2.SetOwner("rack-a01")
 	server2.SetStatus(core.StatusActive)
 	server2.SetProperty("cpu_cores", 8)
-	server2.SetProperty("memory_gb", 32)
+	server2.SetProperty("memory", []interface{}{
+		map[string]interface{}{"size_gb": 16, "speed": 3200, "type": "ddr4"},
+		map[string]interface{}{"size_gb": 16, "speed": 3200, "type": "ddr4"},
+	})
 	server2.AddTag("development")
 	g.AddEntity(server2)
 
@@ -41,7 +47,9 @@ func createTestGraph() *core.Graph {
 	vm1.SetOwner("srv-proxmox-01")
 	vm1.SetStatus(core.StatusActive)
 	vm1.SetProperty("cpu_cores", 4)
-	vm1.SetProperty("memory_gb", 8)
+	vm1.SetProperty("memory", []interface{}{
+		map[string]interface{}{"size_gb": 8, "speed": 3200, "type": "ddr4"},
+	})
 	vm1.AddTag("production")
 	g.AddEntity(vm1)
 
@@ -49,7 +57,9 @@ func createTestGraph() *core.Graph {
 	vm2.SetOwner("srv-proxmox-01")
 	vm2.SetStatus(core.StatusActive)
 	vm2.SetProperty("cpu_cores", 2)
-	vm2.SetProperty("memory_gb", 4)
+	vm2.SetProperty("memory", []interface{}{
+		map[string]interface{}{"size_gb": 4, "speed": 3200, "type": "ddr4"},
+	})
 	vm2.AddTag("production")
 	g.AddEntity(vm2)
 
@@ -57,7 +67,9 @@ func createTestGraph() *core.Graph {
 	vm3.SetOwner("srv-proxmox-02")
 	vm3.SetStatus(core.StatusMaintenance)
 	vm3.SetProperty("cpu_cores", 2)
-	vm3.SetProperty("memory_gb", 4)
+	vm3.SetProperty("memory", []interface{}{
+		map[string]interface{}{"size_gb": 4, "speed": 3200, "type": "ddr4"},
+	})
 	vm3.AddTag("development")
 	g.AddEntity(vm3)
 
