@@ -40,6 +40,7 @@ var ValidStatuses = []core.Status{
 	core.StatusMaintenance,
 	core.StatusDeprecated,
 	core.StatusOffline,
+	core.StatusStandby,
 }
 
 func IsValidKind(k core.EntityKind) bool {

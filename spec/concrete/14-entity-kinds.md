@@ -249,7 +249,7 @@ A network interface (physical or virtual).
 
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
-| type | string | no | ethernet | Interface type (ethernet, fiber, wireless) |
+| type | string | no | ethernet | Interface type (ethernet, fiber, wireless, virtual, bond) |
 | speed_mbps | integer | no | - | Interface speed in Mbps |
 | mac_address | string | no | - | MAC address |
 | ip_address | list[string] | no | - | IP addresses if configured |
@@ -270,8 +270,11 @@ A network interface (physical or virtual).
 |----------|------------|
 | vlans | vlan |
 | cables | cable |
+| interfaces | interface |
 
-#### Example
+#### Examples
+
+Physical interface:
 
 ```yaml
 - id: eth0
@@ -282,6 +285,61 @@ A network interface (physical or virtual).
   mac_address: "00:1a:2b:3c:4d:5e"
   ip_address:
     - 10.0.1.10
+```
+
+VRRP virtual interface with physical members:
+
+```yaml
+- id: eth0-vrrp
+  kind: interface
+  name: VRRP Virtual Interface
+  status: active
+  spec:
+    type: virtual
+    ip_address:
+      - 10.0.0.1
+    interfaces:
+      - id: eth0
+        kind: interface
+        name: eth0 - Primary
+        status: active
+        spec:
+          type: ethernet
+          ip_address:
+            - 10.0.0.2
+      - id: eth1
+        kind: interface
+        name: eth1 - Secondary
+        status: standby
+        spec:
+          type: ethernet
+          ip_address:
+            - 10.0.0.3
+```
+
+LACP/teaming bond interface:
+
+```yaml
+- id: bond0
+  kind: interface
+  name: LAG Bundle
+  spec:
+    type: bond
+    interfaces:
+      - id: eth0
+        kind: interface
+        status: active
+        spec:
+          type: ethernet
+          ip_address:
+            - 192.168.1.1
+      - id: eth1
+        kind: interface
+        status: standby
+        spec:
+          type: ethernet
+          ip_address:
+            - 192.168.1.2
 ```
 
 ---
@@ -919,6 +977,7 @@ The core specification defines the following statuses:
 | maintenance | Entity is under maintenance |
 | deprecated | Entity is scheduled for removal |
 | offline | Entity is not operational |
+| standby | Entity is in standby state (e.g. redundant member) |
 
 Implementations MAY introduce additional statuses.
 

@@ -177,9 +177,9 @@ func TestEntityString(t *testing.T) {
 func TestStatusConstants(t *testing.T) {
 	statuses := []Status{
 		StatusPlanned, StatusActive, StatusMaintenance,
-		StatusDeprecated, StatusOffline,
+		StatusDeprecated, StatusOffline, StatusStandby,
 	}
-	expected := []string{"planned", "active", "maintenance", "deprecated", "offline"}
+	expected := []string{"planned", "active", "maintenance", "deprecated", "offline", "standby"}
 	for i, s := range statuses {
 		if string(s) != expected[i] {
 			t.Errorf("expected status %s, got %s", expected[i], s)

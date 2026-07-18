@@ -101,6 +101,7 @@ The core specification defines the following status values.
 | maintenance | Under maintenance |
 | deprecated | Scheduled for removal |
 | offline | Not operational |
+| standby | Standby (e.g. redundant member) |
 
 Implementations MAY extend with additional values.
 

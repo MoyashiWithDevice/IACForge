@@ -32,12 +32,12 @@ func registerEntityKinds(s *Schema) {
 			{Name: "timezone", Type: PropertyTypeString, Required: false, Description: "Timezone identifier"},
 		},
 		NestingDefs: []NestingDefinition{
-			{NestKey: "racks", ChildKind: kinds.Rack},
-			{NestKey: "clusters", ChildKind: kinds.Cluster},
-			{NestKey: "servers", ChildKind: kinds.Server},
-			{NestKey: "switches", ChildKind: kinds.Switch},
-			{NestKey: "routers", ChildKind: kinds.Router},
-			{NestKey: "firewalls", ChildKind: kinds.Firewall},
+			{NestKey: "racks", ChildKind: kinds.Rack, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
+			{NestKey: "clusters", ChildKind: kinds.Cluster, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
+			{NestKey: "servers", ChildKind: kinds.Server, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
+			{NestKey: "switches", ChildKind: kinds.Switch, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
+			{NestKey: "routers", ChildKind: kinds.Router, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
+			{NestKey: "firewalls", ChildKind: kinds.Firewall, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 		},
 	})
 
@@ -49,10 +49,10 @@ func registerEntityKinds(s *Schema) {
 			{Name: "max_load_kg", Type: PropertyTypeNumber, Required: false, Description: "Maximum weight capacity in kg"},
 		},
 		NestingDefs: []NestingDefinition{
-			{NestKey: "servers", ChildKind: kinds.Server},
-			{NestKey: "switches", ChildKind: kinds.Switch},
-			{NestKey: "routers", ChildKind: kinds.Router},
-			{NestKey: "firewalls", ChildKind: kinds.Firewall},
+			{NestKey: "servers", ChildKind: kinds.Server, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
+			{NestKey: "switches", ChildKind: kinds.Switch, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
+			{NestKey: "routers", ChildKind: kinds.Router, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
+			{NestKey: "firewalls", ChildKind: kinds.Firewall, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 		},
 	})
 
@@ -79,23 +79,24 @@ func registerEntityKinds(s *Schema) {
 			{Name: "bios_version", Type: PropertyTypeString, Required: false, Description: "BIOS/UEFI version"},
 		},
 		NestingDefs: []NestingDefinition{
-			{NestKey: "networks", ChildKind: kinds.Network},
-			{NestKey: "vms", ChildKind: kinds.VM},
+			{NestKey: "networks", ChildKind: kinds.Network, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
+			{NestKey: "vms", ChildKind: kinds.VM, AutoRelationType: types.Hosts, AutoRelationSource: "parent"},
 		},
 	})
 
 	s.AddEntityKind(kinds.Interface, &EntityKindDefinition{
 		Description: "Network interface on a device",
 		Properties: []PropertyDefinition{
-			{Name: "type", Type: PropertyTypeString, Required: false, Default: "ethernet", Description: "Interface type (ethernet, fiber, wireless)"},
+			{Name: "type", Type: PropertyTypeString, Required: false, Default: "ethernet", Description: "Interface type (ethernet, fiber, wireless, virtual, bond)"},
 			{Name: "speed_mbps", Type: PropertyTypeInteger, Required: false, Description: "Interface speed in Mbps"},
 			{Name: "mac_address", Type: PropertyTypeString, Required: false, Description: "MAC address"},
 			{Name: "ip_address", Type: PropertyTypeList, Required: false, Description: "IP addresses if configured"},
 			{Name: "mtu", Type: PropertyTypeInteger, Required: false, Default: 1500, Description: "Maximum transmission unit"},
 		},
 		NestingDefs: []NestingDefinition{
-			{NestKey: "vlans", ChildKind: kinds.VLAN},
+			{NestKey: "vlans", ChildKind: kinds.VLAN, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 			{NestKey: "cables", ChildKind: kinds.Cable},
+			{NestKey: "interfaces", ChildKind: kinds.Interface, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 		},
 	})
 
@@ -128,7 +129,7 @@ func registerEntityKinds(s *Schema) {
 			{Name: "network_type", Type: PropertyTypeString, Required: false, Description: "Network type (management, storage, vm, public)"},
 		},
 		NestingDefs: []NestingDefinition{
-			{NestKey: "interfaces", ChildKind: kinds.Interface},
+			{NestKey: "interfaces", ChildKind: kinds.Interface, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 		},
 	})
 
@@ -151,7 +152,7 @@ func registerEntityKinds(s *Schema) {
 			{Name: "stackable", Type: PropertyTypeBoolean, Required: false, Default: false, Description: "Whether switch supports stacking"},
 		},
 		NestingDefs: []NestingDefinition{
-			{NestKey: "interfaces", ChildKind: kinds.Interface},
+			{NestKey: "interfaces", ChildKind: kinds.Interface, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 		},
 	})
 
@@ -164,7 +165,7 @@ func registerEntityKinds(s *Schema) {
 			{Name: "interfaces", Type: PropertyTypeInteger, Required: false, Description: "Number of interfaces"},
 		},
 		NestingDefs: []NestingDefinition{
-			{NestKey: "interfaces", ChildKind: kinds.Interface},
+			{NestKey: "interfaces", ChildKind: kinds.Interface, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 		},
 	})
 
@@ -177,8 +178,8 @@ func registerEntityKinds(s *Schema) {
 			{Name: "throughput_gbps", Type: PropertyTypeNumber, Required: false, Description: "Maximum throughput in Gbps"},
 		},
 		NestingDefs: []NestingDefinition{
-			{NestKey: "interfaces", ChildKind: kinds.Interface},
-			{NestKey: "acls", ChildKind: kinds.ACL},
+			{NestKey: "interfaces", ChildKind: kinds.Interface, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
+			{NestKey: "acls", ChildKind: kinds.ACL, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 		},
 	})
 
@@ -190,7 +191,7 @@ func registerEntityKinds(s *Schema) {
 			{Name: "protocol", Type: PropertyTypeString, Required: false, Default: "any", Description: "Protocol filter (tcp, udp, icmp, any)"},
 		},
 		NestingDefs: []NestingDefinition{
-			{NestKey: "acl_rules", ChildKind: kinds.ACLRule},
+			{NestKey: "acl_rules", ChildKind: kinds.ACLRule, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 		},
 	})
 
@@ -227,8 +228,8 @@ func registerEntityKinds(s *Schema) {
 			{Name: "os_version", Type: PropertyTypeString, Required: false, Description: "Operating system version"},
 		},
 		NestingDefs: []NestingDefinition{
-			{NestKey: "networks", ChildKind: kinds.Network},
-			{NestKey: "applications", ChildKind: kinds.Application},
+			{NestKey: "networks", ChildKind: kinds.Network, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
+			{NestKey: "applications", ChildKind: kinds.Application, AutoRelationType: types.Hosts, AutoRelationSource: "parent"},
 		},
 	})
 
@@ -252,7 +253,7 @@ func registerEntityKinds(s *Schema) {
 			{Name: "url", Type: PropertyTypeString, Required: false, Description: "Application URL if applicable"},
 		},
 		NestingDefs: []NestingDefinition{
-			{NestKey: "open_ports", ChildKind: kinds.OpenPort},
+			{NestKey: "open_ports", ChildKind: kinds.OpenPort, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 		},
 	})
 

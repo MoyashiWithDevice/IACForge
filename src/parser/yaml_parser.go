@@ -26,8 +26,24 @@ func (e *ParseError) Error() string {
 
 // Parser parses YAML syntax into a Graph.
 type Parser struct {
-	graph  *core.Graph
-	schema *schema.Schema
+	graph           *core.Graph
+	schema          *schema.Schema
+	autoRelConfig   *AutoRelationConfig
+}
+
+// AutoRelationConfig holds configuration for auto-relation generation.
+type AutoRelationConfig struct {
+	// Overrides allows customizing auto-relation mapping.
+	// Key format: "parentKind.nestKey"
+	Overrides map[string]AutoRelationMapping
+	// Disabled disables auto-relation generation entirely.
+	Disabled bool
+}
+
+// AutoRelationMapping defines a custom auto-relation mapping.
+type AutoRelationMapping struct {
+	RelationType core.RelationType
+	Source       string // "parent" or "child"
 }
 
 // NewParser creates a new YAML parser with the core schema.
@@ -43,6 +59,15 @@ func NewParserWithSchema(s *schema.Schema) *Parser {
 	return &Parser{
 		graph:  core.NewGraph(),
 		schema: s,
+	}
+}
+
+// NewParserWithAutoRelationConfig creates a new YAML parser with custom auto-relation config.
+func NewParserWithAutoRelationConfig(s *schema.Schema, config *AutoRelationConfig) *Parser {
+	return &Parser{
+		graph:         core.NewGraph(),
+		schema:        s,
+		autoRelConfig: config,
 	}
 }
 
@@ -168,6 +193,7 @@ func (p *Parser) parseObjects(objects []map[string]interface{}) error {
 	// First pass: parse all entities (including nested ones)
 	entities := make(map[string]*core.Entity)
 	var relations []*rawRelation
+	nestedIDs := make(map[string]bool) // track entities created via nesting
 
 	for i, obj := range objects {
 		if obj == nil {
@@ -182,6 +208,7 @@ func (p *Parser) parseObjects(objects []map[string]interface{}) error {
 			entities[entity.ID] = entity
 			for _, ne := range nestedEntities {
 				entities[ne.ID] = ne
+				nestedIDs[ne.ID] = true
 			}
 		} else if _, hasType := obj["type"]; hasType {
 			relations = append(relations, &rawRelation{index: i, data: obj})
@@ -195,6 +222,9 @@ func (p *Parser) parseObjects(objects []map[string]interface{}) error {
 		}
 	}
 
+	// Generate auto-relations from nesting (before explicit relations)
+	autoRelations := p.generateAutoRelations(entities, nestedIDs)
+
 	// Second pass: parse relations (need entities to be added first for reference validation)
 	for _, raw := range relations {
 		relation, err := p.parseRelation(raw.data, entities)
@@ -206,6 +236,16 @@ func (p *Parser) parseObjects(objects []map[string]interface{}) error {
 		}
 	}
 
+	// Add auto-relations (skip duplicates)
+	for _, ar := range autoRelations {
+		if hasDuplicateRelation(ar, relations) {
+			continue
+		}
+		if err := p.graph.AddRelation(ar); err != nil {
+			return fmt.Errorf("failed to add auto-relation %s: %w", ar.ID, err)
+		}
+	}
+
 	return nil
 }
 
@@ -213,6 +253,159 @@ func (p *Parser) parseObjects(objects []map[string]interface{}) error {
 type rawRelation struct {
 	index int
 	data  map[string]interface{}
+}
+
+// generateAutoRelations generates relations automatically from nesting relationships.
+func (p *Parser) generateAutoRelations(entities map[string]*core.Entity, nestedIDs map[string]bool) []*core.Relation {
+	if p.autoRelConfig != nil && p.autoRelConfig.Disabled {
+		return nil
+	}
+
+	var relations []*core.Relation
+
+	for _, entity := range entities {
+		if entity.Owner == "" {
+			continue
+		}
+		// Only generate auto-relations for entities created via nesting
+		if !nestedIDs[entity.ID] {
+			continue
+		}
+		parent, ok := entities[entity.Owner]
+		if !ok {
+			continue
+		}
+
+		nd := p.findAutoRelationDef(parent.Kind, entity.Kind)
+		if nd == nil {
+			continue
+		}
+
+		rel := p.buildAutoRelation(nd, parent, entity)
+		if rel != nil {
+			relations = append(relations, rel)
+		}
+	}
+
+	return relations
+}
+
+// findAutoRelationDef finds the nesting definition with auto-relation for given parent/child kinds.
+func (p *Parser) findAutoRelationDef(parentKind, childKind core.EntityKind) *schema.NestingDefinition {
+	// Check for override first
+	if p.autoRelConfig != nil && p.autoRelConfig.Overrides != nil {
+		key := string(parentKind) + ".*"
+		if override, ok := p.autoRelConfig.Overrides[key]; ok {
+			// Find the nesting definition that matches this child kind
+			defs := p.schema.GetNestingDefs(parentKind)
+			for i := range defs {
+				if defs[i].ChildKind == childKind {
+					return &schema.NestingDefinition{
+						NestKey:            defs[i].NestKey,
+						ChildKind:          childKind,
+						AutoRelationType:   override.RelationType,
+						AutoRelationSource: override.Source,
+					}
+				}
+			}
+		}
+	}
+
+	// Use schema defaults
+	defs := p.schema.GetNestingDefs(parentKind)
+	for i := range defs {
+		if defs[i].ChildKind == childKind && defs[i].AutoRelationType != "" {
+			return &defs[i]
+		}
+	}
+	return nil
+}
+
+// buildAutoRelation creates a Relation from a nesting definition.
+func (p *Parser) buildAutoRelation(nd *schema.NestingDefinition, parent, child *core.Entity) *core.Relation {
+	relType := nd.AutoRelationType
+
+	// Check for per-type override
+	if p.autoRelConfig != nil && p.autoRelConfig.Overrides != nil {
+		key := string(parent.Kind) + "." + nd.NestKey
+		if override, ok := p.autoRelConfig.Overrides[key]; ok {
+			relType = override.RelationType
+		}
+	}
+
+	relTypeDef, ok := p.schema.GetRelationTypeDef(relType)
+	if !ok {
+		return nil
+	}
+
+	var source, target string
+	if nd.AutoRelationSource == "parent" {
+		source = parent.ID
+		target = child.ID
+	} else {
+		source = child.ID
+		target = parent.ID
+	}
+
+	relID := generateAutoRelationID(relType, source, target)
+
+	rel := &core.Relation{
+		ID:          relID,
+		Type:        relType,
+		Direction:   core.Direction(relTypeDef.Direction),
+		Participants: core.Participants{
+			Source: source,
+			Target: target,
+		},
+		Properties: make(map[string]interface{}),
+	}
+	rel.SetLabel("auto_generated", "true")
+	return rel
+}
+
+// hasDuplicateRelation checks if a relation with the same type and participants already exists.
+func hasDuplicateRelation(newRel *core.Relation, existing []*rawRelation) bool {
+	for _, raw := range existing {
+		typeStr, _ := raw.data["type"].(string)
+		if typeStr != string(newRel.Type) {
+			continue
+		}
+		participantsRaw, ok := raw.data["participants"]
+		if !ok {
+			continue
+		}
+		switch p := participantsRaw.(type) {
+		case map[string]interface{}:
+			src, _ := p["source"].(string)
+			tgt, _ := p["target"].(string)
+			if src == newRel.Participants.Source && tgt == newRel.Participants.Target {
+				return true
+			}
+		case []interface{}:
+			if len(p) == len(newRel.Participants.List) {
+				ids := make([]string, len(p))
+				for i, v := range p {
+					ids[i], _ = v.(string)
+				}
+				match := true
+				for i, id := range ids {
+					if id != newRel.Participants.List[i] {
+						match = false
+						break
+					}
+				}
+				if match {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+// generateAutoRelationID generates a deterministic ID for an auto-generated relation.
+func generateAutoRelationID(relType core.RelationType, source, target string) string {
+	return fmt.Sprintf("rel-auto-%s-%s-%s", relType, source, target)
 }
 
 // parseEntity parses an entity from its YAML representation.

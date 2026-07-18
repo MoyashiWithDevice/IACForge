@@ -139,7 +139,7 @@ Conditions use a declarative expression language.
 ```yaml
 condition: "entity.id is unique"
 condition: "relation.type is defined in schema"
-condition: "entity.status in ['planned', 'active', 'maintenance', 'deprecated', 'offline']"
+condition: "entity.status in ['planned', 'active', 'maintenance', 'deprecated', 'offline', 'standby']"
 condition: "relation.participants.count >= 2"
 condition: "ownership.forms.tree"
 ```

@@ -158,6 +158,7 @@ The core specification recommends:
 - maintenance
 - deprecated
 - offline
+- standby
 
 Additional statuses MAY be introduced by extensions.
 

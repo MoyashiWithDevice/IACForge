@@ -508,6 +508,7 @@ The core specification defines the following statuses:
 | maintenance | Relation is under maintenance |
 | deprecated | Relation is scheduled for removal |
 | offline | Relation is not operational |
+| standby | Relation is in standby state |
 
 ---
 

@@ -61,9 +61,11 @@ type ParticipantConstraints struct {
 
 // NestingDefinition defines a nestable child relationship for an entity kind.
 type NestingDefinition struct {
-	NestKey    string            `yaml:"nest_key"`
-	ChildKind  core.EntityKind   `yaml:"child_kind"`
-	ChildKeys  map[string]core.EntityKind `yaml:"child_keys,omitempty"`
+	NestKey            string              `yaml:"nest_key"`
+	ChildKind          core.EntityKind     `yaml:"child_kind"`
+	ChildKeys          map[string]core.EntityKind `yaml:"child_keys,omitempty"`
+	AutoRelationType   core.RelationType   `yaml:"auto_relation_type,omitempty"`
+	AutoRelationSource string              `yaml:"auto_relation_source,omitempty"` // "parent" or "child"
 }
 
 // EntityKindDefinition defines an entity kind in the schema.

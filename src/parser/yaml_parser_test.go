@@ -840,6 +840,193 @@ func TestSchemaNestingDefinitions(t *testing.T) {
 	}
 }
 
+func TestInterfaceNestingDefinitions(t *testing.T) {
+	s := schema.CoreSchema()
+
+	// Interface should nest vlans, cables, and interfaces
+	ifaceNesting := s.GetNestingDefs(kinds.Interface)
+	if len(ifaceNesting) != 3 {
+		t.Fatalf("expected 3 nesting defs for interface, got %d", len(ifaceNesting))
+	}
+
+	nd, ok := s.FindNestingByNestKey(kinds.Interface, "interfaces")
+	if !ok {
+		t.Fatal("interfaces nesting not found for interface")
+	}
+	if nd.ChildKind != kinds.Interface {
+		t.Errorf("expected child kind interface, got %s", nd.ChildKind)
+	}
+}
+
+func TestParseNestedInterfaceVRRP(t *testing.T) {
+	yaml := `
+objects:
+  - id: router-01
+    kind: router
+    name: Router 01
+    spec:
+      interfaces:
+        - id: eth0-vrrp
+          kind: interface
+          name: VRRP Virtual Interface
+          attributes:
+            status: active
+          spec:
+            type: virtual
+            ip_address:
+              - 10.0.0.1
+            interfaces:
+              - id: eth0
+                kind: interface
+                name: eth0 - Primary
+                attributes:
+                  status: active
+                spec:
+                  type: ethernet
+                  ip_address:
+                    - 10.0.0.2
+              - id: eth1
+                kind: interface
+                name: eth1 - Secondary
+                attributes:
+                  status: standby
+                spec:
+                  type: ethernet
+                  ip_address:
+                    - 10.0.0.3
+`
+
+	parser := NewParser()
+	g, err := parser.Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+
+	// 1 router + 1 virtual interface + 2 physical interfaces = 4
+	if g.EntityCount() != 4 {
+		t.Fatalf("expected 4 entities, got %d", g.EntityCount())
+	}
+
+	// Check parent router
+	router, ok := g.GetEntity("router-01")
+	if !ok {
+		t.Fatal("entity router-01 not found")
+	}
+	if router.Owner != "" {
+		t.Errorf("router should be root, got owner %s", router.Owner)
+	}
+
+	// Check virtual interface
+	viface, ok := g.GetEntity("eth0-vrrp")
+	if !ok {
+		t.Fatal("entity eth0-vrrp not found")
+	}
+	if viface.Owner != "router-01" {
+		t.Errorf("expected owner router-01, got %s", viface.Owner)
+	}
+	if viface.Kind != kinds.Interface {
+		t.Errorf("expected kind interface, got %s", viface.Kind)
+	}
+	if viface.Status != core.StatusActive {
+		t.Errorf("expected status active, got %s", viface.Status)
+	}
+	if vtype, ok := viface.GetProperty("type"); !ok || vtype != "virtual" {
+		t.Errorf("expected type virtual, got %v", vtype)
+	}
+
+	// Check primary physical interface
+	eth0, ok := g.GetEntity("eth0")
+	if !ok {
+		t.Fatal("entity eth0 not found")
+	}
+	if eth0.Owner != "eth0-vrrp" {
+		t.Errorf("expected owner eth0-vrrp, got %s", eth0.Owner)
+	}
+	if eth0.Kind != kinds.Interface {
+		t.Errorf("expected kind interface, got %s", eth0.Kind)
+	}
+	if eth0.Status != core.StatusActive {
+		t.Errorf("expected status active, got %s", eth0.Status)
+	}
+
+	// Check secondary physical interface
+	eth1, ok := g.GetEntity("eth1")
+	if !ok {
+		t.Fatal("entity eth1 not found")
+	}
+	if eth1.Owner != "eth0-vrrp" {
+		t.Errorf("expected owner eth0-vrrp, got %s", eth1.Owner)
+	}
+	if eth1.Status != core.StatusStandby {
+		t.Errorf("expected status standby, got %s", eth1.Status)
+	}
+}
+
+func TestParseNestedInterfaceLACP(t *testing.T) {
+	yaml := `
+objects:
+  - id: router-01
+    kind: router
+    name: Router 01
+    spec:
+      interfaces:
+        - id: bond0
+          kind: interface
+          name: LAG Bundle
+          spec:
+            type: bond
+            interfaces:
+              - id: eth0
+                kind: interface
+                attributes:
+                  status: active
+                spec:
+                  type: ethernet
+                  ip_address:
+                    - 192.168.1.1
+              - id: eth1
+                kind: interface
+                attributes:
+                  status: standby
+                spec:
+                  type: ethernet
+                  ip_address:
+                    - 192.168.1.2
+`
+
+	parser := NewParser()
+	g, err := parser.Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+
+	// 1 router + 1 bond interface + 2 physical interfaces = 4
+	if g.EntityCount() != 4 {
+		t.Fatalf("expected 4 entities, got %d", g.EntityCount())
+	}
+
+	// Check bond interface
+	bond, ok := g.GetEntity("bond0")
+	if !ok {
+		t.Fatal("entity bond0 not found")
+	}
+	if bond.Owner != "router-01" {
+		t.Errorf("expected owner router-01, got %s", bond.Owner)
+	}
+	if btype, ok := bond.GetProperty("type"); !ok || btype != "bond" {
+		t.Errorf("expected type bond, got %v", btype)
+	}
+
+	// Check that physical interfaces have no virtual IP
+	eth0, ok := g.GetEntity("eth0")
+	if !ok {
+		t.Fatal("entity eth0 not found")
+	}
+	if eth0.Owner != "bond0" {
+		t.Errorf("expected owner bond0, got %s", eth0.Owner)
+	}
+}
+
 func TestRoundTripNestedEntities(t *testing.T) {
 	yaml := `
 objects:
@@ -1281,4 +1468,414 @@ func TestConvertPropertyValueRecursive(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAutoRelationGeneration(t *testing.T) {
+	t.Run("server nesting vm generates hosts relation", func(t *testing.T) {
+		yaml := `
+objects:
+  - id: srv-01
+    kind: server
+    name: Server 01
+    spec:
+      vms:
+        - id: vm-01
+          name: VM 01
+`
+		parser := NewParser()
+		g, err := parser.Parse([]byte(yaml))
+		if err != nil {
+			t.Fatalf("failed to parse: %v", err)
+		}
+
+		rel, ok := g.GetRelation("rel-auto-hosts-srv-01-vm-01")
+		if !ok {
+			t.Fatal("auto-relation not generated")
+		}
+		if rel.Type != types.Hosts {
+			t.Errorf("expected hosts, got %s", rel.Type)
+		}
+		if rel.Participants.Source != "srv-01" {
+			t.Errorf("expected source srv-01, got %s", rel.Participants.Source)
+		}
+		if rel.Participants.Target != "vm-01" {
+			t.Errorf("expected target vm-01, got %s", rel.Participants.Target)
+		}
+		if val, ok := rel.GetLabel("auto_generated"); !ok || val != "true" {
+			t.Error("expected auto_generated label")
+		}
+	})
+
+	t.Run("server nesting network generates belongs_to relation", func(t *testing.T) {
+		yaml := `
+objects:
+  - id: srv-01
+    kind: server
+    name: Server 01
+    spec:
+      networks:
+        - id: net-01
+          name: Network 01
+`
+		parser := NewParser()
+		g, err := parser.Parse([]byte(yaml))
+		if err != nil {
+			t.Fatalf("failed to parse: %v", err)
+		}
+
+		rel, ok := g.GetRelation("rel-auto-belongs_to-net-01-srv-01")
+		if !ok {
+			t.Fatal("auto-relation not generated")
+		}
+		if rel.Type != types.BelongsTo {
+			t.Errorf("expected belongs_to, got %s", rel.Type)
+		}
+		if rel.Participants.Source != "net-01" {
+			t.Errorf("expected source net-01, got %s", rel.Participants.Source)
+		}
+		if rel.Participants.Target != "srv-01" {
+			t.Errorf("expected target srv-01, got %s", rel.Participants.Target)
+		}
+	})
+
+	t.Run("rack nesting server generates belongs_to relation", func(t *testing.T) {
+		yaml := `
+objects:
+  - id: rack-01
+    kind: rack
+    name: Rack 01
+    spec:
+      servers:
+        - id: srv-01
+          name: Server 01
+`
+		parser := NewParser()
+		g, err := parser.Parse([]byte(yaml))
+		if err != nil {
+			t.Fatalf("failed to parse: %v", err)
+		}
+
+		rel, ok := g.GetRelation("rel-auto-belongs_to-srv-01-rack-01")
+		if !ok {
+			t.Fatal("auto-relation not generated")
+		}
+		if rel.Type != types.BelongsTo {
+			t.Errorf("expected belongs_to, got %s", rel.Type)
+		}
+	})
+
+	t.Run("explicit relation skips auto-relation", func(t *testing.T) {
+		yaml := `
+objects:
+  - id: srv-01
+    kind: server
+    name: Server 01
+    spec:
+      vms:
+        - id: vm-01
+          name: VM 01
+  - id: rel-hosts-1
+    type: hosts
+    participants:
+      source: srv-01
+      target: vm-01
+`
+		parser := NewParser()
+		g, err := parser.Parse([]byte(yaml))
+		if err != nil {
+			t.Fatalf("failed to parse: %v", err)
+		}
+
+		// Explicit relation should exist
+		_, ok := g.GetRelation("rel-hosts-1")
+		if !ok {
+			t.Fatal("explicit relation not found")
+		}
+
+		// Auto-relation should not be generated (duplicate skipped)
+		autoRel, ok := g.GetRelation("rel-auto-hosts-srv-01-vm-01")
+		if ok {
+			t.Errorf("auto-relation should have been skipped, but found: %v", autoRel)
+		}
+	})
+
+	t.Run("multi-level nesting", func(t *testing.T) {
+		yaml := `
+objects:
+  - id: srv-01
+    kind: server
+    name: Server 01
+    spec:
+      vms:
+        - id: vm-01
+          name: VM 01
+          spec:
+            applications:
+              - id: app-01
+                name: App 01
+`
+		parser := NewParser()
+		g, err := parser.Parse([]byte(yaml))
+		if err != nil {
+			t.Fatalf("failed to parse: %v", err)
+		}
+
+		// server -> vm (hosts)
+		rel1, ok := g.GetRelation("rel-auto-hosts-srv-01-vm-01")
+		if !ok {
+			t.Fatal("auto-relation server->vm not generated")
+		}
+		if rel1.Type != types.Hosts {
+			t.Errorf("expected hosts, got %s", rel1.Type)
+		}
+
+		// vm -> application (hosts)
+		rel2, ok := g.GetRelation("rel-auto-hosts-vm-01-app-01")
+		if !ok {
+			t.Fatal("auto-relation vm->app not generated")
+		}
+		if rel2.Type != types.Hosts {
+			t.Errorf("expected hosts, got %s", rel2.Type)
+		}
+	})
+}
+
+func TestAutoRelationConfig(t *testing.T) {
+	t.Run("disabled auto-relation", func(t *testing.T) {
+		yaml := `
+objects:
+  - id: srv-01
+    kind: server
+    name: Server 01
+    spec:
+      vms:
+        - id: vm-01
+          name: VM 01
+`
+		config := &AutoRelationConfig{
+			Disabled: true,
+		}
+		parser := NewParserWithAutoRelationConfig(schema.CoreSchema(), config)
+		g, err := parser.Parse([]byte(yaml))
+		if err != nil {
+			t.Fatalf("failed to parse: %v", err)
+		}
+
+		_, ok := g.GetRelation("rel-auto-hosts-srv-01-vm-01")
+		if ok {
+			t.Error("auto-relation should not be generated when disabled")
+		}
+	})
+
+	t.Run("custom override", func(t *testing.T) {
+		yaml := `
+objects:
+  - id: srv-01
+    kind: server
+    name: Server 01
+    spec:
+      vms:
+        - id: vm-01
+          name: VM 01
+`
+		config := &AutoRelationConfig{
+			Overrides: map[string]AutoRelationMapping{
+				"server.vms": {
+					RelationType: types.DependsOn,
+					Source:       "parent",
+				},
+			},
+		}
+		parser := NewParserWithAutoRelationConfig(schema.CoreSchema(), config)
+		g, err := parser.Parse([]byte(yaml))
+		if err != nil {
+			t.Fatalf("failed to parse: %v", err)
+		}
+
+		rel, ok := g.GetRelation("rel-auto-depends_on-srv-01-vm-01")
+		if !ok {
+			t.Fatal("auto-relation not generated")
+		}
+		if rel.Type != types.DependsOn {
+			t.Errorf("expected depends_on, got %s", rel.Type)
+		}
+	})
+}
+
+func TestAutoRelationIntegration(t *testing.T) {
+	t.Run("nesting to flat round-trip preserves auto-relations", func(t *testing.T) {
+		nestedYAML := `
+objects:
+  - id: site-01
+    kind: site
+    name: Site 01
+    spec:
+      racks:
+        - id: rack-01
+          name: Rack 01
+          spec:
+            servers:
+              - id: srv-01
+                name: Server 01
+                spec:
+                  vms:
+                    - id: vm-01
+                      name: VM 01
+`
+		parser := NewParser()
+		g1, err := parser.Parse([]byte(nestedYAML))
+		if err != nil {
+			t.Fatalf("failed to parse: %v", err)
+		}
+
+		if g1.EntityCount() != 4 {
+			t.Errorf("expected 4 entities, got %d", g1.EntityCount())
+		}
+		if g1.RelationCount() != 3 {
+			t.Errorf("expected 3 auto-relations, got %d", g1.RelationCount())
+		}
+
+		// Verify specific relations
+		rel1, ok := g1.GetRelation("rel-auto-belongs_to-rack-01-site-01")
+		if !ok || rel1.Type != types.BelongsTo {
+			t.Error("missing belongs_to rack->site")
+		}
+
+		rel2, ok := g1.GetRelation("rel-auto-belongs_to-srv-01-rack-01")
+		if !ok || rel2.Type != types.BelongsTo {
+			t.Error("missing belongs_to server->rack")
+		}
+
+		rel3, ok := g1.GetRelation("rel-auto-hosts-srv-01-vm-01")
+		if !ok || rel3.Type != types.Hosts {
+			t.Error("missing hosts server->vm")
+		}
+
+		// Serialize to flat YAML
+		serializer := NewSerializer()
+		data, err := serializer.Serialize(g1)
+		if err != nil {
+			t.Fatalf("failed to serialize: %v", err)
+		}
+
+		// Re-parse should produce equivalent graph
+		parser2 := NewParser()
+		g2, err := parser2.Parse(data)
+		if err != nil {
+			t.Fatalf("failed to re-parse: %v", err)
+		}
+
+		// All 4 entities should exist
+		if g2.EntityCount() != 4 {
+			t.Errorf("expected 4 entities after round-trip, got %d", g2.EntityCount())
+		}
+
+		// Verify ownership preserved
+		rack, _ := g2.GetEntity("rack-01")
+		if rack.Owner != "site-01" {
+			t.Errorf("rack owner should be site-01, got %s", rack.Owner)
+		}
+		srv, _ := g2.GetEntity("srv-01")
+		if srv.Owner != "rack-01" {
+			t.Errorf("server owner should be rack-01, got %s", srv.Owner)
+		}
+		vm, _ := g2.GetEntity("vm-01")
+		if vm.Owner != "srv-01" {
+			t.Errorf("vm owner should be srv-01, got %s", vm.Owner)
+		}
+	})
+
+	t.Run("all nesting types generate correct relations", func(t *testing.T) {
+		yaml := `
+objects:
+  - id: site-01
+    kind: site
+    name: Site 01
+    spec:
+      clusters:
+        - id: cluster-01
+          name: Cluster 01
+      firewalls:
+        - id: fw-01
+          name: Firewall 01
+          spec:
+            acls:
+              - id: acl-01
+                name: ACL 01
+                spec:
+                  acl_rules:
+                    - id: rule-01
+                      name: Rule 01
+                      spec:
+                        action: allow
+`
+		parser := NewParser()
+		g, err := parser.Parse([]byte(yaml))
+		if err != nil {
+			t.Fatalf("failed to parse: %v", err)
+		}
+
+		// site -> cluster (belongs_to, child source)
+		r1, ok := g.GetRelation("rel-auto-belongs_to-cluster-01-site-01")
+		if !ok || r1.Type != types.BelongsTo {
+			t.Error("missing belongs_to cluster->site")
+		}
+		if r1.Participants.Source != "cluster-01" || r1.Participants.Target != "site-01" {
+			t.Errorf("wrong participants: %s -> %s", r1.Participants.Source, r1.Participants.Target)
+		}
+
+		// site -> firewall (belongs_to, child source)
+		r2, ok := g.GetRelation("rel-auto-belongs_to-fw-01-site-01")
+		if !ok || r2.Type != types.BelongsTo {
+			t.Error("missing belongs_to firewall->site")
+		}
+
+		// firewall -> acl (belongs_to, child source)
+		r3, ok := g.GetRelation("rel-auto-belongs_to-acl-01-fw-01")
+		if !ok || r3.Type != types.BelongsTo {
+			t.Error("missing belongs_to acl->firewall")
+		}
+
+		// acl -> acl_rule (belongs_to, child source)
+		r4, ok := g.GetRelation("rel-auto-belongs_to-rule-01-acl-01")
+		if !ok || r4.Type != types.BelongsTo {
+			t.Error("missing belongs_to acl_rule->acl")
+		}
+	})
+
+	t.Run("explicit relation prevents auto-generation", func(t *testing.T) {
+		yaml := `
+objects:
+  - id: rack-01
+    kind: rack
+    name: Rack 01
+    spec:
+      servers:
+        - id: srv-01
+          name: Server 01
+  - id: rel-custom
+    type: belongs_to
+    participants:
+      source: srv-01
+      target: rack-01
+`
+		parser := NewParser()
+		g, err := parser.Parse([]byte(yaml))
+		if err != nil {
+			t.Fatalf("failed to parse: %v", err)
+		}
+
+		// Only the explicit relation should exist
+		if g.RelationCount() != 1 {
+			t.Errorf("expected 1 relation, got %d", g.RelationCount())
+		}
+		_, ok := g.GetRelation("rel-custom")
+		if !ok {
+			t.Error("explicit relation not found")
+		}
+		_, ok = g.GetRelation("rel-auto-belongs_to-srv-01-rack-01")
+		if ok {
+			t.Error("auto-relation should not exist when explicit one is present")
+		}
+	})
 }

@@ -55,6 +55,7 @@ const (
 	StatusMaintenance Status = "maintenance"
 	StatusDeprecated Status = "deprecated"
 	StatusOffline    Status = "offline"
+	StatusStandby    Status = "standby"
 )
 
 type EntityKind string

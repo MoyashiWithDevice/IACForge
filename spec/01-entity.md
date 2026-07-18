@@ -124,6 +124,7 @@ The core specification defines the following statuses.
 - maintenance
 - deprecated
 - offline
+- standby
 
 Implementations MAY introduce additional statuses.
 

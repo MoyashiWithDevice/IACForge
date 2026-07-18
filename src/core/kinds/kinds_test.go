@@ -61,6 +61,7 @@ func TestIsValidStatus(t *testing.T) {
 		{core.StatusMaintenance, true},
 		{core.StatusDeprecated, true},
 		{core.StatusOffline, true},
+		{core.StatusStandby, true},
 		{"invalid", false},
 		{"", false},
 	}
