@@ -812,25 +812,30 @@ objects:
 func TestSchemaNestingDefinitions(t *testing.T) {
 	s := schema.CoreSchema()
 
-	// Site should nest racks, clusters, servers, switches, routers, and firewalls
+	// Global nesting defs should exist
+	if len(s.NestingDefs) != 6 {
+		t.Fatalf("expected 6 global nesting defs, got %d", len(s.NestingDefs))
+	}
+
+	// Site: 6 global + 2 per-kind (racks, clusters) = 8
 	siteNesting := s.GetNestingDefs(kinds.Site)
-	if len(siteNesting) != 6 {
-		t.Fatalf("expected 6 nesting defs for site, got %d", len(siteNesting))
+	if len(siteNesting) != 8 {
+		t.Fatalf("expected 8 nesting defs for site, got %d", len(siteNesting))
 	}
 
-	// Rack should nest servers, switches, routers, firewalls
+	// Rack: 6 global + 0 per-kind = 6
 	rackNesting := s.GetNestingDefs(kinds.Rack)
-	if len(rackNesting) != 4 {
-		t.Fatalf("expected 4 nesting defs for rack, got %d", len(rackNesting))
+	if len(rackNesting) != 6 {
+		t.Fatalf("expected 6 nesting defs for rack, got %d", len(rackNesting))
 	}
 
-	// Server should nest networks and vms
+	// Server: 6 global + 1 per-kind (vms) = 7
 	serverNesting := s.GetNestingDefs(kinds.Server)
-	if len(serverNesting) != 2 {
-		t.Fatalf("expected 2 nesting defs for server, got %d", len(serverNesting))
+	if len(serverNesting) != 7 {
+		t.Fatalf("expected 7 nesting defs for server, got %d", len(serverNesting))
 	}
 
-	// Find network nesting under server
+	// Find network nesting under server (now from global)
 	nd, ok := s.FindNestingByNestKey(kinds.Server, "networks")
 	if !ok {
 		t.Fatal("networks nesting not found for server")
@@ -843,10 +848,10 @@ func TestSchemaNestingDefinitions(t *testing.T) {
 func TestInterfaceNestingDefinitions(t *testing.T) {
 	s := schema.CoreSchema()
 
-	// Interface should nest vlans, cables, and interfaces
+	// Interface: 6 global + 2 per-kind (vlans, cables) = 8
 	ifaceNesting := s.GetNestingDefs(kinds.Interface)
-	if len(ifaceNesting) != 3 {
-		t.Fatalf("expected 3 nesting defs for interface, got %d", len(ifaceNesting))
+	if len(ifaceNesting) != 8 {
+		t.Fatalf("expected 8 nesting defs for interface, got %d", len(ifaceNesting))
 	}
 
 	nd, ok := s.FindNestingByNestKey(kinds.Interface, "interfaces")

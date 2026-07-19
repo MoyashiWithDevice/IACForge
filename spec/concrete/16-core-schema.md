@@ -20,7 +20,31 @@ A Schema consists of:
 - Property type definitions
 - Entity kind definitions
 - Relation type definitions
+- Global nesting definitions
 - User-defined validation profiles (extensions)
+
+---
+
+## Global Nesting Definitions
+
+The Schema MAY define nesting definitions that apply to all entity kinds.
+
+These are called Global Nesting Definitions.
+
+Global nesting definitions are merged with per-kind nesting definitions.
+
+When a per-kind definition exists for the same nest key, the per-kind definition takes precedence.
+
+### Global Nesting Definition
+
+| Nest Key | Child Kind | Auto-Relation |
+|----------|------------|---------------|
+| interfaces | interface | belongs_to (child) |
+| servers | server | belongs_to (child) |
+| switches | switch | belongs_to (child) |
+| routers | router | belongs_to (child) |
+| firewalls | firewall | belongs_to (child) |
+| networks | network | belongs_to (child) |
 
 ---
 

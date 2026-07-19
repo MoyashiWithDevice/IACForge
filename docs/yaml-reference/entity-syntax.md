@@ -92,23 +92,21 @@
 
 | 親 Kind | ネストキー | 子 Kind |
 |---------|-----------|---------|
+| any | interfaces | interface |
+| any | servers | server |
+| any | switches | switch |
+| any | routers | router |
+| any | firewalls | firewall |
+| any | networks | network |
 | site | racks | rack |
 | site | clusters | cluster |
-| rack | servers | server |
-| rack | switches | switch |
-| rack | routers | router |
-| rack | firewalls | firewall |
-| server | networks | network |
 | server | vms | vm |
-| switch | interfaces | interface |
-| router | interfaces | interface |
-| firewall | interfaces | interface |
 | firewall | acls | acl |
-| vm | networks | network |
 | vm | applications | application |
-| network | interfaces | interface |
 | application | open_ports | open_port |
 | acl | acl_rules | acl_rule |
+| interface | vlans | vlan |
+| interface | cables | cable |
 
 ### 基本構文
 

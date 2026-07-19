@@ -113,25 +113,25 @@ hierarchical representation of the infrastructure.
 
 Each entity kind defines which child kinds can be nested and under which key.
 
+A nesting rule with `any` as the parent kind means the child can be nested under any entity kind.
+
 | Parent Kind | Nest Key | Child Kind |
 |-------------|----------|------------|
+| any | interfaces | interface |
+| any | servers | server |
+| any | switches | switch |
+| any | routers | router |
+| any | firewalls | firewall |
+| any | networks | network |
 | site | racks | rack |
 | site | clusters | cluster |
-| rack | servers | server |
-| rack | switches | switch |
-| rack | routers | router |
-| rack | firewalls | firewall |
-| server | networks | network |
 | server | vms | vm |
-| switch | interfaces | interface |
-| router | interfaces | interface |
-| firewall | interfaces | interface |
 | firewall | acls | acl |
-| vm | networks | network |
 | vm | applications | application |
-| network | interfaces | interface |
 | application | open_ports | open_port |
 | acl | acl_rules | acl_rule |
+| interface | vlans | vlan |
+| interface | cables | cable |
 
 ### Syntax
 

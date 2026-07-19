@@ -139,15 +139,15 @@ A network interface on a device.
 
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
-| type | string | no | ethernet | Interface type (ethernet, fiber, wireless) |
+| type | string | no | ethernet | Interface type (ethernet, fiber, wireless, virtual, bond) |
 | speed_mbps | integer | no | - | Interface speed in Mbps |
 | mac_address | string | no | - | MAC address |
 | ip_address | string | no | - | IP address if configured |
 | mtu | integer | no | 1500 | Maximum transmission unit |
 
-**Ownership:** server, switch, router, vm
+**Ownership:** server, switch, router, vm, container, network
 
-**Nestable Children:** vlans (vlan), cables (cable)
+**Nestable Children:** vlans (vlan), cables (cable), interfaces (interface)
 
 ```yaml
 - id: eno1

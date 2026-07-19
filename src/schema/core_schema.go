@@ -23,6 +23,16 @@ func CoreSchema() *Schema {
 }
 
 func registerEntityKinds(s *Schema) {
+	// Global nesting definitions shared by all entity kinds
+	s.NestingDefs = []NestingDefinition{
+		{NestKey: "interfaces", ChildKind: kinds.Interface, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
+		{NestKey: "servers", ChildKind: kinds.Server, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
+		{NestKey: "switches", ChildKind: kinds.Switch, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
+		{NestKey: "routers", ChildKind: kinds.Router, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
+		{NestKey: "firewalls", ChildKind: kinds.Firewall, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
+		{NestKey: "networks", ChildKind: kinds.Network, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
+	}
+
 	s.AddEntityKind(kinds.Site, &EntityKindDefinition{
 		Description: "Physical location where infrastructure is deployed",
 		Properties: []PropertyDefinition{
@@ -34,10 +44,6 @@ func registerEntityKinds(s *Schema) {
 		NestingDefs: []NestingDefinition{
 			{NestKey: "racks", ChildKind: kinds.Rack, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 			{NestKey: "clusters", ChildKind: kinds.Cluster, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
-			{NestKey: "servers", ChildKind: kinds.Server, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
-			{NestKey: "switches", ChildKind: kinds.Switch, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
-			{NestKey: "routers", ChildKind: kinds.Router, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
-			{NestKey: "firewalls", ChildKind: kinds.Firewall, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 		},
 	})
 
@@ -47,12 +53,6 @@ func registerEntityKinds(s *Schema) {
 			{Name: "height_units", Type: PropertyTypeInteger, Required: false, Default: 42, Description: "Rack height in rack units (U)"},
 			{Name: "power_capacity_watts", Type: PropertyTypeInteger, Required: false, Description: "Total power capacity in watts"},
 			{Name: "max_load_kg", Type: PropertyTypeNumber, Required: false, Description: "Maximum weight capacity in kg"},
-		},
-		NestingDefs: []NestingDefinition{
-			{NestKey: "servers", ChildKind: kinds.Server, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
-			{NestKey: "switches", ChildKind: kinds.Switch, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
-			{NestKey: "routers", ChildKind: kinds.Router, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
-			{NestKey: "firewalls", ChildKind: kinds.Firewall, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 		},
 	})
 
@@ -79,7 +79,6 @@ func registerEntityKinds(s *Schema) {
 			{Name: "bios_version", Type: PropertyTypeString, Required: false, Description: "BIOS/UEFI version"},
 		},
 		NestingDefs: []NestingDefinition{
-			{NestKey: "networks", ChildKind: kinds.Network, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 			{NestKey: "vms", ChildKind: kinds.VM, AutoRelationType: types.Hosts, AutoRelationSource: "parent"},
 		},
 	})
@@ -96,7 +95,6 @@ func registerEntityKinds(s *Schema) {
 		NestingDefs: []NestingDefinition{
 			{NestKey: "vlans", ChildKind: kinds.VLAN, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 			{NestKey: "cables", ChildKind: kinds.Cable},
-			{NestKey: "interfaces", ChildKind: kinds.Interface, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 		},
 	})
 
@@ -128,9 +126,6 @@ func registerEntityKinds(s *Schema) {
 			{Name: "vlan_id", Type: PropertyTypeInteger, Required: false, Description: "Associated VLAN ID"},
 			{Name: "network_type", Type: PropertyTypeString, Required: false, Description: "Network type (management, storage, vm, public)"},
 		},
-		NestingDefs: []NestingDefinition{
-			{NestKey: "interfaces", ChildKind: kinds.Interface, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
-		},
 	})
 
 	s.AddEntityKind(kinds.VLAN, &EntityKindDefinition{
@@ -151,9 +146,6 @@ func registerEntityKinds(s *Schema) {
 			{Name: "managed", Type: PropertyTypeBoolean, Required: false, Default: true, Description: "Whether switch is managed"},
 			{Name: "stackable", Type: PropertyTypeBoolean, Required: false, Default: false, Description: "Whether switch supports stacking"},
 		},
-		NestingDefs: []NestingDefinition{
-			{NestKey: "interfaces", ChildKind: kinds.Interface, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
-		},
 	})
 
 	s.AddEntityKind(kinds.Router, &EntityKindDefinition{
@@ -163,9 +155,6 @@ func registerEntityKinds(s *Schema) {
 			{Name: "model", Type: PropertyTypeString, Required: false, Description: "Hardware model"},
 			{Name: "serial_number", Type: PropertyTypeString, Required: false, Description: "Serial number"},
 			{Name: "interfaces", Type: PropertyTypeInteger, Required: false, Description: "Number of interfaces"},
-		},
-		NestingDefs: []NestingDefinition{
-			{NestKey: "interfaces", ChildKind: kinds.Interface, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 		},
 	})
 
@@ -178,7 +167,6 @@ func registerEntityKinds(s *Schema) {
 			{Name: "throughput_gbps", Type: PropertyTypeNumber, Required: false, Description: "Maximum throughput in Gbps"},
 		},
 		NestingDefs: []NestingDefinition{
-			{NestKey: "interfaces", ChildKind: kinds.Interface, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 			{NestKey: "acls", ChildKind: kinds.ACL, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 		},
 	})
@@ -228,7 +216,6 @@ func registerEntityKinds(s *Schema) {
 			{Name: "os_version", Type: PropertyTypeString, Required: false, Description: "Operating system version"},
 		},
 		NestingDefs: []NestingDefinition{
-			{NestKey: "networks", ChildKind: kinds.Network, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 			{NestKey: "applications", ChildKind: kinds.Application, AutoRelationType: types.Hosts, AutoRelationSource: "parent"},
 		},
 	})

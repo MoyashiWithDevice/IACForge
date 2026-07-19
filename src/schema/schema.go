@@ -92,10 +92,11 @@ type SchemaVersion struct {
 
 // Schema defines the complete structure of an infrastructure model.
 type Schema struct {
-	Version       SchemaVersion                     `yaml:"schema"`
-	EntityKinds   map[core.EntityKind]*EntityKindDefinition   `yaml:"entity_kinds"`
+	Version       SchemaVersion                                `yaml:"schema"`
+	EntityKinds   map[core.EntityKind]*EntityKindDefinition    `yaml:"entity_kinds"`
 	RelationTypes map[core.RelationType]*RelationTypeDefinition `yaml:"relation_types"`
-	Profiles      []*Profile                        `yaml:"profiles,omitempty"`
+	NestingDefs   []NestingDefinition                          `yaml:"nesting_defs,omitempty"`
+	Profiles      []*Profile                                   `yaml:"profiles,omitempty"`
 }
 
 // NewSchema creates a new empty Schema with initialized maps.
@@ -107,6 +108,7 @@ func NewSchema(schemaVersion, specVersion string) *Schema {
 		},
 		EntityKinds:   make(map[core.EntityKind]*EntityKindDefinition),
 		RelationTypes: make(map[core.RelationType]*RelationTypeDefinition),
+		NestingDefs:   make([]NestingDefinition, 0),
 	}
 }
 
@@ -145,15 +147,39 @@ func (s *Schema) GetRelationTypeDef(relType core.RelationType) (*RelationTypeDef
 }
 
 // GetNestingDefs returns the nesting definitions for the given entity kind.
+// Global nesting defs are merged with per-kind nesting defs.
+// Per-kind defs take precedence over global defs when NestKey conflicts.
 func (s *Schema) GetNestingDefs(kind core.EntityKind) []NestingDefinition {
 	def, ok := s.EntityKinds[kind]
 	if !ok {
-		return nil
+		return s.NestingDefs
 	}
-	return def.NestingDefs
+
+	if len(s.NestingDefs) == 0 {
+		return def.NestingDefs
+	}
+	if len(def.NestingDefs) == 0 {
+		return s.NestingDefs
+	}
+
+	// Build merged list: per-kind overrides global by NestKey
+	perKindByNestKey := make(map[string]bool, len(def.NestingDefs))
+	for _, nd := range def.NestingDefs {
+		perKindByNestKey[nd.NestKey] = true
+	}
+
+	result := make([]NestingDefinition, 0, len(s.NestingDefs)+len(def.NestingDefs))
+	for _, nd := range s.NestingDefs {
+		if !perKindByNestKey[nd.NestKey] {
+			result = append(result, nd)
+		}
+	}
+	result = append(result, def.NestingDefs...)
+	return result
 }
 
 // FindNestingByNestKey finds the nesting definition for a given parent kind and nest key.
+// Global nesting defs are checked first, then per-kind defs.
 func (s *Schema) FindNestingByNestKey(parentKind core.EntityKind, nestKey string) (*NestingDefinition, bool) {
 	defs := s.GetNestingDefs(parentKind)
 	for i := range defs {
@@ -165,6 +191,7 @@ func (s *Schema) FindNestingByNestKey(parentKind core.EntityKind, nestKey string
 }
 
 // FindNestingByChildKind finds the nesting definition for a given parent kind and child kind.
+// Global nesting defs are checked first, then per-kind defs.
 func (s *Schema) FindNestingByChildKind(parentKind core.EntityKind, childKind core.EntityKind) (*NestingDefinition, bool) {
 	defs := s.GetNestingDefs(parentKind)
 	for i := range defs {
