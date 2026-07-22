@@ -4,6 +4,24 @@
 
 ---
 
+## Relation Types一覧
+
+| Type | Direction | Cardinality | Description |
+|------|-----------|-------------|-------------|
+| connects | symmetric | N:N | Physical/logical connection |
+| hosts | directed | 1:N | Execution hosting |
+| depends_on | directed | N:N | Dependency |
+| belongs_to | directed | N:N | Logical membership |
+| replicates_to | directed | 1:N | Data replication |
+| backs_up | directed | 1:N | Backup relationship |
+| monitors | directed | 1:N | Monitoring |
+| managed_by | directed | N:1 | Management |
+| mounted_on | directed | N:1 | Storage mounting |
+| applies_to | directed | N:N | ACL application |
+| listens_on | directed | N:1 | Port listening |
+
+---
+
 ## Core Relation Types
 
 ### connects
@@ -335,21 +353,3 @@ Represents that an open port is listening on a network interface or address.
   attributes:
     status: active
 ```
-
----
-
-## Relation Types一覧
-
-| Type | Direction | Cardinality | Description |
-|------|-----------|-------------|-------------|
-| connects | symmetric | N:N | Physical/logical connection |
-| hosts | directed | 1:N | Execution hosting |
-| depends_on | directed | N:N | Dependency |
-| belongs_to | directed | N:N | Logical membership |
-| replicates_to | directed | 1:N | Data replication |
-| backs_up | directed | 1:N | Backup relationship |
-| monitors | directed | 1:N | Monitoring |
-| managed_by | directed | N:1 | Management |
-| mounted_on | directed | N:1 | Storage mounting |
-| applies_to | directed | N:N | ACL application |
-| listens_on | directed | N:1 | Port listening |

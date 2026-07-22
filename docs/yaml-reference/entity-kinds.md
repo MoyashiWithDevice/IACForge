@@ -4,6 +4,101 @@
 
 ---
 
+## Entity Kinds一覧
+
+| Kind | Category | Description |
+|------|----------|-------------|
+| site | Physical | Physical location |
+| rack | Physical | Physical rack enclosure |
+| server | Physical | Physical or virtual compute host |
+| interface | Network | Network interface |
+| cable | Physical | Physical cable |
+| power_distribution | Physical | PDU or power feed |
+| network | Network | Logical network |
+| vlan | Network | Virtual LAN |
+| switch | Network | Network switch |
+| router | Network | Network router |
+| firewall | Network | Network firewall |
+| acl | Network | Access Control List |
+| acl_rule | Network | Individual ACL rule |
+| vm | Compute | Virtual machine |
+| container | Compute | Containerized workload |
+| application | Compute | Software application |
+| open_port | Compute | Listening network port |
+| storage | Storage | Storage system |
+| volume | Storage | Logical storage volume |
+| cluster | Logical | Logical compute grouping |
+| availability_zone | Logical | Logical availability zone |
+
+---
+
+## Shared Property Types
+
+複数のKindで共通して使用されるプロパティオブジェクトの定義です。
+
+### cpu
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| cores | integer | no | - | Number of CPU cores |
+| architecture | string | no | - | CPU architecture (x86_64, arm64) |
+
+```yaml
+cpu:
+  - cores: 16
+    architecture: x86_64
+```
+
+**使用先:** [server](#server), [vm](#vm)
+
+### memory
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| size_gb | number | yes | - | Memory module size in GB |
+| speed | integer | no | - | Memory speed in MHz |
+| type | string | no | - | Memory type (ddr4, ddr5, lpddr4, lpddr5) |
+
+```yaml
+memory:
+  - size_gb: 64
+    speed: 3200
+    type: ddr4
+```
+
+**使用先:** [server](#server), [vm](#vm)
+
+### storage
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| size_gb | number | no | - | Storage size in GB |
+| type | string | no | - | Storage type (ssd, hdd, nvme) |
+
+```yaml
+storage:
+  - size_gb: 500
+    type: ssd
+```
+
+**使用先:** [server](#server), [vm](#vm)
+
+---
+
+## Shared Hardware Info
+
+ハードウェア系Kindで共通して使用されるプロパティです。
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| manufacturer | string | no | - | Hardware manufacturer |
+| model | string | no | - | Hardware model |
+| serial_number | string | no | - | Serial number |
+
+**使用先:** [server](#server), [switch](#switch), [router](#router), [firewall](#firewall), [storage](#storage-kind)
+
+---
+
 ## Physical Infrastructure
 
 ### site
@@ -68,36 +163,14 @@ A physical or virtual compute host.
 
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
-| manufacturer | string | no | - | Hardware manufacturer |
-| model | string | no | - | Hardware model |
-| serial_number | string | no | - | Serial number |
-| cpu | list[object] | no | - | CPU configurations |
-| memory | list[object] | no | - | Memory modules |
-| storage | list[object] | no | - | Local storage devices |
+| manufacturer | string | no | - | [→ Shared Hardware Info](#shared-hardware-info) |
+| model | string | no | - | [→ Shared Hardware Info](#shared-hardware-info) |
+| serial_number | string | no | - | [→ Shared Hardware Info](#shared-hardware-info) |
+| cpu | list[object] | no | - | [→ cpu](#cpu) |
+| memory | list[object] | no | - | [→ memory](#memory) |
+| storage | list[object] | no | - | [→ storage](#storage) |
 | platform | string | no | - | Virtualization platform (proxmox, vmware, kubernetes) |
 | bios_version | string | no | - | BIOS/UEFI version |
-
-##### cpu Properties
-
-| Property | Type | Required | Default | Description |
-|----------|------|----------|---------|-------------|
-| cores | integer | no | - | Number of CPU cores |
-| architecture | string | no | - | CPU architecture (x86_64, arm64) |
-
-##### memory Properties
-
-| Property | Type | Required | Default | Description |
-|----------|------|----------|---------|-------------|
-| size_gb | number | yes | - | Memory module size in GB |
-| speed | integer | no | - | Memory speed in MHz |
-| type | string | no | - | Memory type (ddr4, ddr5, lpddr4, lpddr5) |
-
-##### storage Properties
-
-| Property | Type | Required | Default | Description |
-|----------|------|----------|---------|-------------|
-| size_gb | number | no | - | Storage size in GB |
-| type | string | no | - | Storage type (ssd, hdd, nvme) |
 
 **Ownership:** rack
 
@@ -285,9 +358,9 @@ A network switch.
 
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
-| manufacturer | string | no | - | Hardware manufacturer |
-| model | string | no | - | Hardware model |
-| serial_number | string | no | - | Serial number |
+| manufacturer | string | no | - | [→ Shared Hardware Info](#shared-hardware-info) |
+| model | string | no | - | [→ Shared Hardware Info](#shared-hardware-info) |
+| serial_number | string | no | - | [→ Shared Hardware Info](#shared-hardware-info) |
 | ports | integer | no | - | Total port count |
 | managed | boolean | no | true | Whether switch is managed |
 | stackable | boolean | no | false | Whether switch supports stacking |
@@ -316,9 +389,9 @@ A network router.
 
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
-| manufacturer | string | no | - | Hardware manufacturer |
-| model | string | no | - | Hardware model |
-| serial_number | string | no | - | Serial number |
+| manufacturer | string | no | - | [→ Shared Hardware Info](#shared-hardware-info) |
+| model | string | no | - | [→ Shared Hardware Info](#shared-hardware-info) |
+| serial_number | string | no | - | [→ Shared Hardware Info](#shared-hardware-info) |
 | interfaces | integer | no | - | Number of interfaces |
 
 **Ownership:** rack
@@ -343,9 +416,9 @@ A network firewall.
 
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
-| manufacturer | string | no | - | Hardware manufacturer |
-| model | string | no | - | Hardware model |
-| serial_number | string | no | - | Serial number |
+| manufacturer | string | no | - | [→ Shared Hardware Info](#shared-hardware-info) |
+| model | string | no | - | [→ Shared Hardware Info](#shared-hardware-info) |
+| serial_number | string | no | - | [→ Shared Hardware Info](#shared-hardware-info) |
 | throughput_gbps | number | no | - | Maximum throughput in Gbps |
 
 **Ownership:** rack
@@ -444,33 +517,11 @@ A virtual machine.
 
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
-| cpu | list[object] | no | - | Virtual CPU configurations |
-| memory | list[object] | no | - | Memory modules |
-| storage | list[object] | no | - | Virtual disk configurations |
+| cpu | list[object] | no | - | [→ cpu](#cpu) |
+| memory | list[object] | no | - | [→ memory](#memory) |
+| storage | list[object] | no | - | [→ storage](#storage) |
 | os | string | no | - | Operating system |
 | os_version | string | no | - | Operating system version |
-
-##### cpu Properties
-
-| Property | Type | Required | Default | Description |
-|----------|------|----------|---------|-------------|
-| cores | integer | no | - | Number of virtual CPU cores |
-| architecture | string | no | - | CPU architecture (x86_64, arm64) |
-
-##### memory Properties
-
-| Property | Type | Required | Default | Description |
-|----------|------|----------|---------|-------------|
-| size_gb | number | yes | - | Memory module size in GB |
-| speed | integer | no | - | Memory speed in MHz |
-| type | string | no | - | Memory type (ddr4, ddr5, lpddr4, lpddr5) |
-
-##### storage Properties
-
-| Property | Type | Required | Default | Description |
-|----------|------|----------|---------|-------------|
-| size_gb | number | no | - | Disk size in GB |
-| type | string | no | - | Disk type (ssd, hdd, nvme) |
 
 **Ownership:** server
 
@@ -607,12 +658,14 @@ A listening or open network port on a host, VM, container, or application.
 
 ### storage
 
+<a id="storage-kind"></a>
+
 A storage system or array.
 
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
-| manufacturer | string | no | - | Hardware manufacturer |
-| model | string | no | - | Hardware model |
+| manufacturer | string | no | - | [→ Shared Hardware Info](#shared-hardware-info) |
+| model | string | no | - | [→ Shared Hardware Info](#shared-hardware-info) |
 | total_capacity_gb | number | no | - | Total raw capacity in GB |
 | usable_capacity_gb | number | no | - | Usable capacity after redundancy |
 | raid_level | string | no | - | RAID level if applicable |
@@ -712,31 +765,3 @@ A logical availability zone within a site.
   spec:
     redundancy: 2n
 ```
-
----
-
-## Entity Kinds一覧
-
-| Kind | Category | Description |
-|------|----------|-------------|
-| site | Physical | Physical location |
-| rack | Physical | Physical rack enclosure |
-| server | Physical | Physical or virtual compute host |
-| interface | Network | Network interface |
-| cable | Physical | Physical cable |
-| power_distribution | Physical | PDU or power feed |
-| network | Network | Logical network |
-| vlan | Network | Virtual LAN |
-| switch | Network | Network switch |
-| router | Network | Network router |
-| firewall | Network | Network firewall |
-| acl | Network | Access Control List |
-| acl_rule | Network | Individual ACL rule |
-| vm | Compute | Virtual machine |
-| container | Compute | Containerized workload |
-| application | Compute | Software application |
-| open_port | Compute | Listening network port |
-| storage | Storage | Storage system |
-| volume | Storage | Logical storage volume |
-| cluster | Logical | Logical compute grouping |
-| availability_zone | Logical | Logical availability zone |

@@ -11,20 +11,6 @@
 | Entity | id, kind, name |
 | Relation | id, type, participants |
 
-## Ownership検証
-
-- Root Entityはownerを指定してはなりません
-- Non-root Entityは正確に1つのownerを指定する必要があります
-- Owner識別子は既存のEntityを参照する必要があります
-- Ownershipは正確に1つのツリーを形成する必要があります
-- Ownershipはサイクルを含んではなりません
-
-## Reference検証
-
-- Referencesは既存のObjectsを指す必要があります
-- Interface referenceはパス表記を使用します（`entity/interface`）
-- Unknown referenceは検証エラーとなります
-
 ## 識別子ルール
 
 - IDはそのスコープ内でユニークである必要があります
@@ -32,40 +18,16 @@
 - IDは命名規則（kebab-case推奨）に従うことが望ましいです
 - IDにスラッシュ（`/`）を含めることはできません
 
-## ネスト定義の検証
-
-| Rule | Level | Description |
-|------|-------|-------------|
-| no-slash-in-id | error | IDにスラッシュを含めることはできません |
-| valid-nesting-parent | warning | 親子関係がスキーマのネスト定義と一致すること |
-
 ---
 
 ## 命名規則
 
-### 推奨パターン
-
-| Pattern | Example |
-|---------|---------|
-| kebab-case | `srv-proxmox-01` |
-| snake_case | `mgmt_network_01` |
-
-### Kind命名
-
-- 小文字を使用
-- 単数形を使用
-- 例: `server`, `vm`, `interface`
-
-### Relation Type命名
-
-- snake_caseを使用
-- 動詞または動詞句を使用
-- 例: `connects`, `hosts`, `depends_on`
-
-### Property命名
-
-- snake_caseを使用
-- 例: `cpu`, `memory`, `storage`
+| 対象 | パターン | 例 |
+|------|----------|-----|
+| ID | kebab-case (推奨) | `srv-proxmox-01` |
+| Kind | 小文字・単数形 | `server`, `vm` |
+| Relation Type | snake_case | `connects`, `depends_on` |
+| Property | snake_case | `cpu`, `memory`, `storage` |
 
 ---
 

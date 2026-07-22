@@ -34,6 +34,7 @@
 | maintenance | メンテナンス中 |
 | deprecated | 削除予定 |
 | offline | オフライン |
+| standby | スタンバイ（冗長メンバー等） |
 
 ## 基本的なEntity
 
