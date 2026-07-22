@@ -80,6 +80,7 @@ func registerEntityKinds(s *Schema) {
 		},
 		NestingDefs: []NestingDefinition{
 			{NestKey: "vms", ChildKind: kinds.VM, AutoRelationType: types.Hosts, AutoRelationSource: "parent"},
+			{NestKey: "containers", ChildKind: kinds.Container, AutoRelationType: types.Hosts, AutoRelationSource: "parent"},
 		},
 	})
 
@@ -217,6 +218,7 @@ func registerEntityKinds(s *Schema) {
 		},
 		NestingDefs: []NestingDefinition{
 			{NestKey: "applications", ChildKind: kinds.Application, AutoRelationType: types.Hosts, AutoRelationSource: "parent"},
+			{NestKey: "containers", ChildKind: kinds.Container, AutoRelationType: types.Hosts, AutoRelationSource: "parent"},
 		},
 	})
 
@@ -229,6 +231,9 @@ func registerEntityKinds(s *Schema) {
 			{Name: "memory_limit", Type: PropertyTypeString, Required: false, Description: "Memory limit"},
 			{Name: "ports", Type: PropertyTypeList, Required: false, Description: "Exposed ports"},
 		},
+		NestingDefs: []NestingDefinition{
+			{NestKey: "applications", ChildKind: kinds.Application, AutoRelationType: types.Hosts, AutoRelationSource: "parent"},
+		},
 	})
 
 	s.AddEntityKind(kinds.Application, &EntityKindDefinition{
@@ -240,6 +245,7 @@ func registerEntityKinds(s *Schema) {
 			{Name: "url", Type: PropertyTypeString, Required: false, Description: "Application URL if applicable"},
 		},
 		NestingDefs: []NestingDefinition{
+			{NestKey: "containers", ChildKind: kinds.Container, AutoRelationType: types.Hosts, AutoRelationSource: "parent"},
 			{NestKey: "open_ports", ChildKind: kinds.OpenPort, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 		},
 	})
@@ -315,7 +321,7 @@ func registerRelationTypes(s *Schema) {
 		Direction:  DirectionDirected,
 		Description: "Execution hosting relationship",
 		Participants: &ParticipantConstraints{
-			SourceKinds: []core.EntityKind{kinds.Server, kinds.VM, kinds.Container},
+			SourceKinds: []core.EntityKind{kinds.Server, kinds.VM, kinds.Container, kinds.Application},
 			TargetKinds: []core.EntityKind{kinds.VM, kinds.Container, kinds.Application},
 			MinParticipants: 2,
 			MaxParticipants: 2,

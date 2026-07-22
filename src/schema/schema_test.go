@@ -169,8 +169,8 @@ func TestCoreSchemaRelationParticipantConstraints(t *testing.T) {
 	if hostsDef.Participants == nil {
 		t.Fatal("hosts missing participant constraints")
 	}
-	if len(hostsDef.Participants.SourceKinds) != 3 {
-		t.Errorf("hosts should have 3 source kinds, got %d", len(hostsDef.Participants.SourceKinds))
+	if len(hostsDef.Participants.SourceKinds) != 4 {
+		t.Errorf("hosts should have 4 source kinds, got %d", len(hostsDef.Participants.SourceKinds))
 	}
 }
 
@@ -209,6 +209,47 @@ func TestAddRelationType(t *testing.T) {
 	}
 	if def.Direction != DirectionDirected {
 		t.Errorf("expected direction directed, got %s", def.Direction)
+	}
+}
+
+func TestCoreSchemaNestingDefinitions(t *testing.T) {
+	s := CoreSchema()
+
+	tests := []struct {
+		parentKind  core.EntityKind
+		nestKey     string
+		childKind   core.EntityKind
+		autoRelType core.RelationType
+	}{
+		// Server can nest VMs and Containers
+		{kinds.Server, "vms", kinds.VM, types.Hosts},
+		{kinds.Server, "containers", kinds.Container, types.Hosts},
+		// VM can nest Applications and Containers
+		{kinds.VM, "applications", kinds.Application, types.Hosts},
+		{kinds.VM, "containers", kinds.Container, types.Hosts},
+		// Container can nest Applications
+		{kinds.Container, "applications", kinds.Application, types.Hosts},
+		// Application can nest Containers and OpenPorts
+		{kinds.Application, "containers", kinds.Container, types.Hosts},
+		{kinds.Application, "open_ports", kinds.OpenPort, types.BelongsTo},
+	}
+
+	for _, tt := range tests {
+		defs := s.GetNestingDefs(tt.parentKind)
+		found := false
+		for _, d := range defs {
+			if d.NestKey == tt.nestKey && d.ChildKind == tt.childKind {
+				if d.AutoRelationType != tt.autoRelType {
+					t.Errorf("%s/%s: expected auto relation %s, got %s",
+						tt.parentKind, tt.nestKey, tt.autoRelType, d.AutoRelationType)
+				}
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("%s/%s -> %s nesting definition not found", tt.parentKind, tt.nestKey, tt.childKind)
+		}
 	}
 }
 
