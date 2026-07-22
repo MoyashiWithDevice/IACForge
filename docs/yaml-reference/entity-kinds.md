@@ -217,6 +217,7 @@ A network interface on a device.
 | mac_address | string | no | - | MAC address |
 | ip_address | string | no | - | IP address if configured |
 | mtu | integer | no | 1500 | Maximum transmission unit |
+| interfaces | list[object] | no | - | Nested child interfaces (VRRP, LACP/bond, etc.) |
 
 **Ownership:** server, switch, router, vm, container, network
 
@@ -242,6 +243,74 @@ A network interface on a device.
         spec:
           cable_type: cat6a
           length_meters: 2.0
+```
+
+#### Interface Hierarchy
+
+An interface can nest child interfaces via the `interfaces` key. This is useful for modeling bonded/LAG interfaces, VRRP virtual interfaces, and other hierarchical network configurations.
+
+**VRRP Virtual Interface Example:**
+
+```yaml
+- id: eth0-vrrp
+  kind: interface
+  name: VRRP Virtual Interface
+  attributes:
+    owner: rt-core-01
+  spec:
+    type: virtual
+    ip_address:
+      - 10.0.0.1
+    interfaces:
+      - id: eth0
+        kind: interface
+        name: eth0 - Primary
+        attributes:
+          owner: eth0-vrrp
+        spec:
+          type: ethernet
+          ip_address:
+            - 10.0.0.2
+      - id: eth1
+        kind: interface
+        name: eth1 - Secondary
+        attributes:
+          owner: eth0-vrrp
+        spec:
+          type: ethernet
+          ip_address:
+            - 10.0.0.3
+```
+
+**LACP/Bond Interface Example:**
+
+```yaml
+- id: bond0
+  kind: interface
+  name: LAG Bundle
+  attributes:
+    owner: srv-proxmox-01
+  spec:
+    type: bond
+    interfaces:
+      - id: eth0
+        kind: interface
+        name: eth0 - Member
+        attributes:
+          owner: bond0
+        spec:
+          type: ethernet
+          ip_address:
+            - 192.168.1.1
+      - id: eth1
+        kind: interface
+        name: eth1 - Member
+        attributes:
+          owner: bond0
+        spec:
+          type: ethernet
+          ip_address:
+            - 192.168.1.2
 ```
 
 ---
