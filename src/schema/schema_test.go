@@ -472,3 +472,63 @@ func TestValidatePropertyReferenceType(t *testing.T) {
 		t.Errorf("expected no error for nil value, got %v", err)
 	}
 }
+
+func TestCoreSchemaInterfaceModeProperty(t *testing.T) {
+	s := CoreSchema()
+	def, ok := s.GetEntityKindDef(kinds.Interface)
+	if !ok {
+		t.Fatal("interface kind not found")
+	}
+
+	var modeProp *PropertyDefinition
+	for _, p := range def.Properties {
+		if p.Name == "mode" {
+			modeProp = &p
+			break
+		}
+	}
+	if modeProp == nil {
+		t.Fatal("mode property not found on interface")
+	}
+	if modeProp.Type != PropertyTypeString {
+		t.Errorf("expected type string, got %s", modeProp.Type)
+	}
+	if modeProp.Default != "none" {
+		t.Errorf("expected default 'none', got %v", modeProp.Default)
+	}
+	if modeProp.Constraints == nil || len(modeProp.Constraints.Enum) != 4 {
+		t.Fatalf("expected 4 enum values, got %v", modeProp.Constraints)
+	}
+
+	validModes := map[string]bool{"access": true, "trunk": true, "hybrid": true, "none": true}
+	for _, v := range modeProp.Constraints.Enum {
+		if !validModes[v] {
+			t.Errorf("unexpected enum value %q", v)
+		}
+	}
+}
+
+func TestCoreSchemaVlanTaggedProperty(t *testing.T) {
+	s := CoreSchema()
+	def, ok := s.GetEntityKindDef(kinds.VLAN)
+	if !ok {
+		t.Fatal("vlan kind not found")
+	}
+
+	var taggedProp *PropertyDefinition
+	for _, p := range def.Properties {
+		if p.Name == "tagged" {
+			taggedProp = &p
+			break
+		}
+	}
+	if taggedProp == nil {
+		t.Fatal("tagged property not found on vlan")
+	}
+	if taggedProp.Type != PropertyTypeBoolean {
+		t.Errorf("expected type boolean, got %s", taggedProp.Type)
+	}
+	if taggedProp.Default != false {
+		t.Errorf("expected default false, got %v", taggedProp.Default)
+	}
+}

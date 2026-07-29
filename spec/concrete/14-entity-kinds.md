@@ -250,6 +250,7 @@ A network interface (physical or virtual).
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
 | type | string | no | ethernet | Interface type (ethernet, fiber, wireless, virtual, bond) |
+| mode | string | no | none | Interface mode (access, trunk, hybrid, none) |
 | speed_mbps | integer | no | - | Interface speed in Mbps |
 | mac_address | string | no | - | MAC address |
 | ip_address | list[string] | no | - | IP addresses if configured |
@@ -340,6 +341,39 @@ LACP/teaming bond interface:
           type: ethernet
           ip_address:
             - 192.168.1.2
+```
+
+Trunk port carrying multiple VLANs:
+
+```yaml
+- id: trunk-port1
+  kind: interface
+  name: Trunk Port to Access Switch
+  spec:
+    type: ethernet
+    mode: trunk
+    vlans:
+      - id: trunk-port1-vlan10
+        kind: vlan
+        name: VLAN 10 - Management
+        spec:
+          vlan_id: 10
+          tagged: false
+          associated_network: "@mgmt-network"
+      - id: trunk-port1-vlan100
+        kind: vlan
+        name: VLAN 100 - Production
+        spec:
+          vlan_id: 100
+          tagged: true
+          associated_network: "@prod-network"
+      - id: trunk-port1-vlan200
+        kind: vlan
+        name: VLAN 200 - Storage
+        spec:
+          vlan_id: 200
+          tagged: true
+          associated_network: "@storage-network"
 ```
 
 ---
@@ -441,7 +475,7 @@ A virtual LAN configuration.
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
 | vlan_id | integer | yes | - | VLAN identifier (1-4094) |
-| name | string | no | - | VLAN name |
+| tagged | boolean | no | false | Whether this VLAN carries tagged traffic on a trunk port |
 | associated_network | string | no | - | Reference to parent network |
 
 #### Typical Relations

@@ -2169,3 +2169,98 @@ objects:
 		}
 	})
 }
+
+func TestParseTrunkInterface(t *testing.T) {
+	yaml := `
+objects:
+  - id: sw-core-01
+    kind: switch
+    name: Core Switch 01
+    spec:
+      interfaces:
+        - id: trunk-port1
+          kind: interface
+          name: Trunk Port 1
+          spec:
+            type: ethernet
+            mode: trunk
+            vlans:
+              - id: trunk-port1-vlan10
+                kind: vlan
+                name: VLAN 10 - Management
+                spec:
+                  vlan_id: 10
+                  tagged: false
+                  associated_network: "@mgmt-network"
+              - id: trunk-port1-vlan100
+                kind: vlan
+                name: VLAN 100 - Production
+                spec:
+                  vlan_id: 100
+                  tagged: true
+                  associated_network: "@prod-network"
+
+  - id: mgmt-network
+    kind: network
+    name: Management Network
+    spec:
+      cidr: 10.0.0.0/24
+
+  - id: prod-network
+    kind: network
+    name: Production Network
+    spec:
+      cidr: 192.168.0.0/24
+`
+
+	parser := NewParser()
+	g, err := parser.Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+
+	// 1 switch + 1 trunk interface + 2 VLANs + 2 networks = 6
+	if g.EntityCount() != 6 {
+		t.Fatalf("expected 6 entities, got %d", g.EntityCount())
+	}
+
+	// Check trunk interface
+	trunk, ok := g.GetEntity("trunk-port1")
+	if !ok {
+		t.Fatal("entity trunk-port1 not found")
+	}
+	if trunk.Owner != "sw-core-01" {
+		t.Errorf("expected owner sw-core-01, got %s", trunk.Owner)
+	}
+	mode, ok := trunk.GetProperty("mode")
+	if !ok || mode != "trunk" {
+		t.Errorf("expected mode trunk, got %v", mode)
+	}
+
+	// Check VLANs nested under trunk interface
+	vlan10, ok := g.GetEntity("trunk-port1-vlan10")
+	if !ok {
+		t.Fatal("entity trunk-port1-vlan10 not found")
+	}
+	if vlan10.Owner != "trunk-port1" {
+		t.Errorf("expected owner trunk-port1, got %s", vlan10.Owner)
+	}
+	tagged, ok := vlan10.GetProperty("tagged")
+	if !ok || tagged != false {
+		t.Errorf("expected tagged false for vlan10, got %v", tagged)
+	}
+
+	vlan100, ok := g.GetEntity("trunk-port1-vlan100")
+	if !ok {
+		t.Fatal("entity trunk-port1-vlan100 not found")
+	}
+	tagged100, ok := vlan100.GetProperty("tagged")
+	if !ok || tagged100 != true {
+		t.Errorf("expected tagged true for vlan100, got %v", tagged100)
+	}
+
+	// Check auto-generated belongs_to relations for VLANs
+	if g.RelationCount() < 2 {
+		t.Errorf("expected at least 2 auto-generated belongs_to relations, got %d", g.RelationCount())
+	}
+}

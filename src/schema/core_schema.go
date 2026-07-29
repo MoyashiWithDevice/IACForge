@@ -88,6 +88,7 @@ func registerEntityKinds(s *Schema) {
 		Description: "Network interface on a device",
 		Properties: []PropertyDefinition{
 			{Name: "type", Type: PropertyTypeString, Required: false, Default: "ethernet", Description: "Interface type (ethernet, fiber, wireless, virtual, bond)"},
+			{Name: "mode", Type: PropertyTypeString, Required: false, Default: "none", Constraints: &Constraint{Enum: []string{"access", "trunk", "hybrid", "none"}}, Description: "Interface mode (access, trunk, hybrid, none)"},
 			{Name: "speed_mbps", Type: PropertyTypeInteger, Required: false, Description: "Interface speed in Mbps"},
 			{Name: "mac_address", Type: PropertyTypeString, Required: false, Description: "MAC address"},
 			{Name: "ip_address", Type: PropertyTypeList, Required: false, Description: "IP addresses if configured"},
@@ -133,6 +134,7 @@ func registerEntityKinds(s *Schema) {
 		Description: "Virtual LAN configuration",
 		Properties: []PropertyDefinition{
 			{Name: "vlan_id", Type: PropertyTypeInteger, Required: true, Constraints: &Constraint{Min: intPtr(1), Max: intPtr(4094)}, Description: "VLAN identifier (1-4094)"},
+			{Name: "tagged", Type: PropertyTypeBoolean, Required: false, Default: false, Description: "Whether this VLAN carries tagged traffic on a trunk port"},
 			{Name: "associated_network", Type: PropertyTypeReference, Required: false, Description: "Reference to parent network"},
 		},
 	})
