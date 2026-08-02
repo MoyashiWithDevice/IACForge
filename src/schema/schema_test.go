@@ -235,6 +235,9 @@ func TestCoreSchemaNestingDefinitions(t *testing.T) {
 		// Cluster can nest VMs and Servers as nodes (belongs_to membership)
 		{kinds.Cluster, "vms", kinds.VM, types.BelongsTo},
 		{kinds.Cluster, "servers", kinds.Server, types.BelongsTo},
+		// Switch and Router can nest Ports as interface entities (belongs_to)
+		{kinds.Switch, "ports", kinds.Interface, types.BelongsTo},
+		{kinds.Router, "ports", kinds.Interface, types.BelongsTo},
 	}
 
 	for _, tt := range tests {

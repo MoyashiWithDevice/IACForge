@@ -31,7 +31,7 @@ window.IACFORGE_SEARCH_INDEX = [
     title: "Entity Kinds",
     section: "YAML Reference",
     description: "全Entity種類の定義とプロパティ。site, rack, server, vm, network, storageなど。",
-    keywords: "entity kinds site rack server interface cable power_distribution network vlan switch router firewall acl acl_rule vm container application open_port storage volume cluster availability_zone mode trunk access hybrid tagged kind 種類 定義",
+    keywords: "entity kinds site rack server interface cable power_distribution network vlan switch router firewall acl acl_rule vm container application open_port storage volume cluster availability_zone mode trunk access hybrid tagged port_count ports kind 種類 定義",
   },
   {
     path: "relation-syntax.html",

@@ -530,12 +530,14 @@
           <tr><td>manufacturer</td><td><span class="type-badge">string</span></td><td><span class="req-no">no</span></td><td>-</td><td><a href="#shared-hardware-info">→ Shared Hardware Info</a></td></tr>
           <tr><td>model</td><td><span class="type-badge">string</span></td><td><span class="req-no">no</span></td><td>-</td><td><a href="#shared-hardware-info">→ Shared Hardware Info</a></td></tr>
           <tr><td>serial_number</td><td><span class="type-badge">string</span></td><td><span class="req-no">no</span></td><td>-</td><td><a href="#shared-hardware-info">→ Shared Hardware Info</a></td></tr>
-          <tr><td>ports</td><td><span class="type-badge">integer</span></td><td><span class="req-no">no</span></td><td>-</td><td>Total port count</td></tr>
+          <tr><td>port_count</td><td><span class="type-badge">integer</span></td><td><span class="req-no">no</span></td><td>-</td><td>Total port count</td></tr>
           <tr><td>managed</td><td><span class="type-badge">boolean</span></td><td><span class="req-no">no</span></td><td>true</td><td>Whether switch is managed</td></tr>
           <tr><td>stackable</td><td><span class="type-badge">boolean</span></td><td><span class="req-no">no</span></td><td>false</td><td>Whether switch supports stacking</td></tr>
         </tbody>
       </table>
       <p><strong>Ownership:</strong> rack</p>
+      <p><strong>Nestable Children:</strong> <code>ports</code> (interface), <code>interfaces</code> (interface)</p>
+      <p>各ポートは <code>interface</code> エンティティとして <code>ports</code> キー配下に定義し、<code>sw-core-01/port1</code> のようにパス記法で参照します。</p>
 <pre class="language-yaml"><code>- id: sw-core-01
   kind: switch
   name: Core Switch 01
@@ -545,8 +547,21 @@
   spec:
     manufacturer: cisco
     model: Catalyst 9300
-    ports: 48
-    managed: true</code></pre>
+    port_count: 48
+    managed: true
+    ports:
+      - id: port1
+        name: Port 1 (Uplink)
+        spec:
+          type: ethernet
+          speed_mbps: 10000
+          mode: trunk
+      - id: port2
+        name: Port 2
+        spec:
+          type: ethernet
+          speed_mbps: 1000
+          mode: access</code></pre>
 
       <h3 id="router">router</h3>
       <p>A network router.</p>
@@ -558,10 +573,11 @@
           <tr><td>manufacturer</td><td><span class="type-badge">string</span></td><td><span class="req-no">no</span></td><td>-</td><td><a href="#shared-hardware-info">→ Shared Hardware Info</a></td></tr>
           <tr><td>model</td><td><span class="type-badge">string</span></td><td><span class="req-no">no</span></td><td>-</td><td><a href="#shared-hardware-info">→ Shared Hardware Info</a></td></tr>
           <tr><td>serial_number</td><td><span class="type-badge">string</span></td><td><span class="req-no">no</span></td><td>-</td><td><a href="#shared-hardware-info">→ Shared Hardware Info</a></td></tr>
-          <tr><td>interfaces</td><td><span class="type-badge">integer</span></td><td><span class="req-no">no</span></td><td>-</td><td>Number of interfaces</td></tr>
         </tbody>
       </table>
       <p><strong>Ownership:</strong> rack</p>
+      <p><strong>Nestable Children:</strong> <code>ports</code> (interface), <code>interfaces</code> (interface)</p>
+      <p>各ポートは <code>interface</code> エンティティとして <code>ports</code> キー配下に定義し、<code>rt-core-01/ge0/0</code> のようにパス記法で参照します。</p>
 <pre class="language-yaml"><code>- id: rt-core-01
   kind: router
   name: Core Router 01
@@ -570,7 +586,12 @@
   spec:
     manufacturer: mikrotik
     model: CCR1036
-    interfaces: 36</code></pre>
+    ports:
+      - id: ge0/0
+        name: GigabitEthernet0/0
+        spec:
+          type: ethernet
+          speed_mbps: 1000</code></pre>
 
       <h3 id="firewall">firewall</h3>
       <p>A network firewall.</p>

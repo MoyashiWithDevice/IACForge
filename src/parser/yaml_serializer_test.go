@@ -438,6 +438,115 @@ objects:
 	}
 }
 
+func TestRoundTripSwitchRouterPorts(t *testing.T) {
+	yaml := `
+objects:
+  - id: sw-core-01
+    kind: switch
+    name: Core Switch 01
+    spec:
+      port_count: 24
+      ports:
+        - id: port1
+          name: port1
+          spec:
+            type: ethernet
+            speed_mbps: 10000
+            mode: trunk
+        - id: port2
+          name: port2
+          spec:
+            type: ethernet
+            speed_mbps: 1000
+            mode: access
+
+  - id: rt-core-01
+    kind: router
+    name: Core Router 01
+    spec:
+      ports:
+        - id: ge0/0
+          name: GigabitEthernet0/0
+          spec:
+            type: ethernet
+            speed_mbps: 1000
+`
+	// Parse original
+	parser1 := NewParser()
+	g1, err := parser1.Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("failed to parse original: %v", err)
+	}
+
+	// Serialize
+	serializer := NewSerializer()
+	data, err := serializer.Serialize(g1)
+	if err != nil {
+		t.Fatalf("failed to serialize: %v", err)
+	}
+
+	// The serialized output must use the `ports` nest key for switch/router,
+	// not the global `interfaces` nest key.
+	if !strings.Contains(string(data), "ports:") {
+		t.Errorf("serialized output missing 'ports:' nest key:\n%s", data)
+	}
+	if strings.Contains(string(data), "interfaces:") {
+		t.Errorf("serialized output should not use 'interfaces:' nest key:\n%s", data)
+	}
+
+	// Parse serialized data
+	parser2 := NewParser()
+	g2, err := parser2.Parse(data)
+	if err != nil {
+		t.Fatalf("failed to parse serialized data: %v", err)
+	}
+
+	if g1.EntityCount() != g2.EntityCount() {
+		t.Errorf("entity count mismatch: %d vs %d", g1.EntityCount(), g2.EntityCount())
+	}
+
+	// Verify all entities survive round-trip with same owner and kind
+	for _, e1 := range g1.Entities() {
+		e2, ok := g2.GetEntity(e1.ID)
+		if !ok {
+			t.Errorf("entity %s not found in round-trip", e1.ID)
+			continue
+		}
+		if e1.Kind != e2.Kind {
+			t.Errorf("kind mismatch for %s: %s vs %s", e1.ID, e1.Kind, e2.Kind)
+		}
+		if e1.Owner != e2.Owner {
+			t.Errorf("owner mismatch for %s: %s vs %s", e1.ID, e1.Owner, e2.Owner)
+		}
+	}
+
+	// port_count property must survive round-trip
+	sw2, ok := g2.GetEntity("sw-core-01")
+	if !ok {
+		t.Fatal("entity sw-core-01 not found after round-trip")
+	}
+	portCount, ok := sw2.GetProperty("port_count")
+	if !ok || portCount != 24 {
+		t.Errorf("expected port_count 24 after round-trip, got %v", portCount)
+	}
+
+	// Auto-generated belongs_to relations must be preserved
+	for _, relID := range []string{
+		"rel-auto-belongs_to-port1-sw-core-01",
+		"rel-auto-belongs_to-port2-sw-core-01",
+		"rel-auto-belongs_to-ge0/0-rt-core-01",
+	} {
+		r2, ok := g2.GetRelation(relID)
+		if !ok {
+			t.Errorf("auto relation %s not found after round-trip", relID)
+			continue
+		}
+		if r2.Type != types.BelongsTo {
+			t.Errorf("relation %s: expected belongs_to, got %s", relID, r2.Type)
+		}
+	}
+}
+
 func TestSerializeFile(t *testing.T) {
 	g := core.NewGraph()
 	e := core.NewEntity("test-entity", kinds.Server, "Test Entity")

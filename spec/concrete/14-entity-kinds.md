@@ -536,7 +536,7 @@ A network switch.
 | manufacturer | string | no | - | Hardware manufacturer |
 | model | string | no | - | Hardware model |
 | serial_number | string | no | - | Serial number |
-| ports | integer | no | - | Total port count |
+| port_count | integer | no | - | Total port count |
 | managed | boolean | no | true | Whether switch is managed |
 | stackable | boolean | no | false | Whether switch supports stacking |
 
@@ -548,7 +548,12 @@ A network switch.
 
 | Nest Key | Child Kind |
 |----------|------------|
+| ports | interface |
 | interfaces | interface |
+
+Each entry under `ports` is an `interface` entity representing a physical or logical port.
+
+Switch ports are referenced using path notation: `sw-core-01/port1`.
 
 #### Typical Relations
 
@@ -556,6 +561,32 @@ A network switch.
 - connects → server (via cable)
 - connects → switch (via cable)
 - connects → router (via cable)
+
+#### Example
+
+```yaml
+- id: sw-core-01
+  kind: switch
+  name: Core Switch 01
+  spec:
+    manufacturer: cisco
+    model: Catalyst 9300
+    port_count: 48
+    managed: true
+    ports:
+      - id: port1
+        name: Port 1 (Uplink)
+        spec:
+          type: ethernet
+          speed_mbps: 10000
+          mode: trunk
+      - id: port2
+        name: Port 2
+        spec:
+          type: ethernet
+          speed_mbps: 1000
+          mode: access
+```
 
 ---
 
@@ -570,7 +601,6 @@ A network router.
 | manufacturer | string | no | - | Hardware manufacturer |
 | model | string | no | - | Hardware model |
 | serial_number | string | no | - | Serial number |
-| interfaces | integer | no | - | Number of interfaces |
 
 #### Typical Ownership
 
@@ -580,13 +610,35 @@ A network router.
 
 | Nest Key | Child Kind |
 |----------|------------|
+| ports | interface |
 | interfaces | interface |
+
+Each entry under `ports` is an `interface` entity representing a physical or logical port.
+
+Router ports are referenced using path notation: `rt-core-01/ge0/0`.
 
 #### Typical Relations
 
 - belongs_to → rack
 - connects → switch (via cable)
 - connects → firewall (via cable)
+
+#### Example
+
+```yaml
+- id: rt-core-01
+  kind: router
+  name: Core Router 01
+  spec:
+    manufacturer: mikrotik
+    model: CCR1036
+    ports:
+      - id: ge0/0
+        name: GigabitEthernet0/0
+        spec:
+          type: ethernet
+          speed_mbps: 1000
+```
 
 ---
 

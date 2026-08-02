@@ -162,19 +162,23 @@ func (s *Schema) GetNestingDefs(kind core.EntityKind) []NestingDefinition {
 		return s.NestingDefs
 	}
 
-	// Build merged list: per-kind overrides global by NestKey
-	perKindByNestKey := make(map[string]bool, len(def.NestingDefs))
-	for _, nd := range def.NestingDefs {
-		perKindByNestKey[nd.NestKey] = true
-	}
-
+	// Build merged list: per-kind overrides global by NestKey.
+	// Per-kind defs are returned first so they take precedence for
+	// consumers that select the first match (e.g., serializer nest key).
 	result := make([]NestingDefinition, 0, len(s.NestingDefs)+len(def.NestingDefs))
+	result = append(result, def.NestingDefs...)
 	for _, nd := range s.NestingDefs {
-		if !perKindByNestKey[nd.NestKey] {
+		overridden := false
+		for _, pnd := range def.NestingDefs {
+			if pnd.NestKey == nd.NestKey {
+				overridden = true
+				break
+			}
+		}
+		if !overridden {
 			result = append(result, nd)
 		}
 	}
-	result = append(result, def.NestingDefs...)
 	return result
 }
 

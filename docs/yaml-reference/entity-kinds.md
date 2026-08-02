@@ -512,11 +512,15 @@ A network switch.
 | manufacturer | string | no | - | [→ Shared Hardware Info](#shared-hardware-info) |
 | model | string | no | - | [→ Shared Hardware Info](#shared-hardware-info) |
 | serial_number | string | no | - | [→ Shared Hardware Info](#shared-hardware-info) |
-| ports | integer | no | - | Total port count |
+| port_count | integer | no | - | Total port count |
 | managed | boolean | no | true | Whether switch is managed |
 | stackable | boolean | no | false | Whether switch supports stacking |
 
 **Ownership:** rack
+
+**Nestable Children:** `ports` (interface), `interfaces` (interface)
+
+各ポートは `interface` エンティティとして `ports` キー配下に定義し、`sw-core-01/port1` のようにパス記法で参照します。
 
 ```yaml
 - id: sw-core-01
@@ -528,8 +532,21 @@ A network switch.
   spec:
     manufacturer: cisco
     model: Catalyst 9300
-    ports: 48
+    port_count: 48
     managed: true
+    ports:
+      - id: port1
+        name: Port 1 (Uplink)
+        spec:
+          type: ethernet
+          speed_mbps: 10000
+          mode: trunk
+      - id: port2
+        name: Port 2
+        spec:
+          type: ethernet
+          speed_mbps: 1000
+          mode: access
 ```
 
 ---
@@ -543,9 +560,12 @@ A network router.
 | manufacturer | string | no | - | [→ Shared Hardware Info](#shared-hardware-info) |
 | model | string | no | - | [→ Shared Hardware Info](#shared-hardware-info) |
 | serial_number | string | no | - | [→ Shared Hardware Info](#shared-hardware-info) |
-| interfaces | integer | no | - | Number of interfaces |
 
 **Ownership:** rack
+
+**Nestable Children:** `ports` (interface), `interfaces` (interface)
+
+各ポートは `interface` エンティティとして `ports` キー配下に定義し、`rt-core-01/ge0/0` のようにパス記法で参照します。
 
 ```yaml
 - id: rt-core-01
@@ -556,7 +576,12 @@ A network router.
   spec:
     manufacturer: mikrotik
     model: CCR1036
-    interfaces: 36
+    ports:
+      - id: ge0/0
+        name: GigabitEthernet0/0
+        spec:
+          type: ethernet
+          speed_mbps: 1000
 ```
 
 ---

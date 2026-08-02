@@ -2484,6 +2484,132 @@ objects:
 	}
 }
 
+func TestParseSwitchRouterPorts(t *testing.T) {
+	yaml := `
+objects:
+  - id: sw-core-01
+    kind: switch
+    name: Core Switch 01
+    spec:
+      port_count: 24
+      ports:
+        - id: port1
+          name: port1
+          spec:
+            type: ethernet
+            speed_mbps: 10000
+            mode: trunk
+        - id: port2
+          name: port2
+          spec:
+            type: ethernet
+            speed_mbps: 1000
+            mode: access
+
+  - id: rt-core-01
+    kind: router
+    name: Core Router 01
+    spec:
+      ports:
+        - id: ge0/0
+          name: GigabitEthernet0/0
+          spec:
+            type: ethernet
+            speed_mbps: 1000
+`
+
+	parser := NewParser()
+	g, err := parser.Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+
+	sw, ok := g.GetEntity("sw-core-01")
+	if !ok {
+		t.Fatal("entity sw-core-01 not found")
+	}
+	portCount, ok := sw.GetProperty("port_count")
+	if !ok || portCount != 24 {
+		t.Errorf("expected port_count 24, got %v", portCount)
+	}
+
+	// Switch ports are interface entities owned by the switch
+	for _, pid := range []string{"port1", "port2"} {
+		port, ok := g.GetEntity(pid)
+		if !ok {
+			t.Fatalf("entity %s not found", pid)
+		}
+		if port.Kind != "interface" {
+			t.Errorf("port %s: expected kind interface, got %s", pid, port.Kind)
+		}
+		if port.Owner != "sw-core-01" {
+			t.Errorf("port %s: expected owner sw-core-01, got %s", pid, port.Owner)
+		}
+	}
+
+	// Router ports are interface entities owned by the router
+	ge, ok := g.GetEntity("ge0/0")
+	if !ok {
+		t.Fatal("entity ge0/0 not found")
+	}
+	if ge.Kind != "interface" {
+		t.Errorf("router port: expected kind interface, got %s", ge.Kind)
+	}
+	if ge.Owner != "rt-core-01" {
+		t.Errorf("router port: expected owner rt-core-01, got %s", ge.Owner)
+	}
+
+	// Auto-generated belongs_to relations for nested ports
+	belongsTo := g.RelationsByType(core.RelationType("belongs_to"))
+	if len(belongsTo) < 3 {
+		t.Errorf("expected at least 3 auto-generated belongs_to relations, got %d", len(belongsTo))
+	}
+}
+
+func TestParseSwitchPortCountPropertyOnly(t *testing.T) {
+	yaml := `
+objects:
+  - id: sw-core-01
+    kind: switch
+    name: Core Switch 01
+    spec:
+      port_count: 48
+`
+
+	parser := NewParser()
+	g, err := parser.Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+
+	sw, ok := g.GetEntity("sw-core-01")
+	if !ok {
+		t.Fatal("entity sw-core-01 not found")
+	}
+	portCount, ok := sw.GetProperty("port_count")
+	if !ok || portCount != 48 {
+		t.Errorf("expected port_count 48, got %v", portCount)
+	}
+}
+
+func TestParseRouterInterfacesCountRejected(t *testing.T) {
+	// The `interfaces` key is a nest key for router; an integer count must no
+	// longer be accepted (previously broken `interfaces: 36` property).
+	yaml := `
+objects:
+  - id: rt-core-01
+    kind: router
+    name: Core Router 01
+    spec:
+      interfaces: 36
+`
+
+	parser := NewParser()
+	if _, err := parser.Parse([]byte(yaml)); err == nil {
+		t.Error("expected error when router declares interfaces as an integer count")
+	}
+}
+
 func TestParseDirCrossFileReferences(t *testing.T) {
 	dir := t.TempDir()
 

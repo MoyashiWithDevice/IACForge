@@ -145,7 +145,14 @@
     spec:
       manufacturer: cisco
       model: Catalyst 9300
-      ports: 48
+      port_count: 48
+      ports:
+        - id: port1
+          name: port1
+          spec:
+            type: ethernet
+            speed_mbps: 10000
+            mode: trunk
 
   # Interfaces
   - id: eno1
@@ -168,15 +175,6 @@
       type: ethernet
       speed_mbps: 10000
       mac_address: "aa:bb:cc:dd:ee:f1"
-
-  - id: sw-port1
-    kind: interface
-    name: port1
-    attributes:
-      owner: sw-core-01
-    spec:
-      type: ethernet
-      speed_mbps: 10000
 
   # Network
   - id: mgmt-network-01

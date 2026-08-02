@@ -104,6 +104,8 @@
 | cluster | vms | vm |
 | cluster | servers | server |
 | server | vms | vm |
+| switch | ports | interface |
+| router | ports | interface |
 | firewall | acls | acl |
 | vm | applications | application |
 | application | open_ports | open_port |

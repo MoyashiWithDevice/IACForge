@@ -146,9 +146,12 @@ func registerEntityKinds(s *Schema) {
 			{Name: "manufacturer", Type: PropertyTypeString, Required: false, Description: "Hardware manufacturer"},
 			{Name: "model", Type: PropertyTypeString, Required: false, Description: "Hardware model"},
 			{Name: "serial_number", Type: PropertyTypeString, Required: false, Description: "Serial number"},
-			{Name: "ports", Type: PropertyTypeInteger, Required: false, Description: "Total port count"},
+			{Name: "port_count", Type: PropertyTypeInteger, Required: false, Description: "Total port count"},
 			{Name: "managed", Type: PropertyTypeBoolean, Required: false, Default: true, Description: "Whether switch is managed"},
 			{Name: "stackable", Type: PropertyTypeBoolean, Required: false, Default: false, Description: "Whether switch supports stacking"},
+		},
+		NestingDefs: []NestingDefinition{
+			{NestKey: "ports", ChildKind: kinds.Interface, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 		},
 	})
 
@@ -158,7 +161,9 @@ func registerEntityKinds(s *Schema) {
 			{Name: "manufacturer", Type: PropertyTypeString, Required: false, Description: "Hardware manufacturer"},
 			{Name: "model", Type: PropertyTypeString, Required: false, Description: "Hardware model"},
 			{Name: "serial_number", Type: PropertyTypeString, Required: false, Description: "Serial number"},
-			{Name: "interfaces", Type: PropertyTypeInteger, Required: false, Description: "Number of interfaces"},
+		},
+		NestingDefs: []NestingDefinition{
+			{NestKey: "ports", ChildKind: kinds.Interface, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 		},
 	})
 

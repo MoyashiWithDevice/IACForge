@@ -126,6 +126,8 @@ A nesting rule with `any` as the parent kind means the child can be nested under
 | site | racks | rack |
 | site | clusters | cluster |
 | server | vms | vm |
+| switch | ports | interface |
+| router | ports | interface |
 | firewall | acls | acl |
 | vm | applications | application |
 | application | open_ports | open_port |
@@ -179,6 +181,40 @@ objects:
 | kind | optional | Inferred from the nest key |
 | name | optional | Defaults to ID if omitted |
 | spec | optional | Kind-specific properties |
+
+### Switch and Router Ports
+
+Switch and router ports are declared under the `ports` nest key.
+
+Each port is an `interface` entity and is referenced using path notation:
+
+```yaml
+objects:
+  - id: sw-core-01
+    kind: switch
+    name: Core Switch 01
+    spec:
+      port_count: 24
+      ports:
+        - id: port1
+          name: Uplink
+          spec:
+            type: ethernet
+            speed_mbps: 10000
+            mode: trunk
+        - id: port2
+          name: Access
+          spec:
+            type: ethernet
+            speed_mbps: 1000
+            mode: access
+```
+
+```yaml
+participants:
+  - srv-proxmox-01/eno1
+  - sw-core-01/port1
+```
 
 ### Scoped IDs
 
