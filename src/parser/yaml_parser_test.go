@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -2479,5 +2481,155 @@ objects:
 	// Check auto-generated belongs_to relations for VLANs
 	if g.RelationCount() < 2 {
 		t.Errorf("expected at least 2 auto-generated belongs_to relations, got %d", g.RelationCount())
+	}
+}
+
+func TestParseDirCrossFileReferences(t *testing.T) {
+	dir := t.TempDir()
+
+	writeTestFile := func(relPath, content string) {
+		t.Helper()
+		full := filepath.Join(dir, relPath)
+		if err := os.MkdirAll(filepath.Dir(full), 0755); err != nil {
+			t.Fatalf("failed to create dir: %v", err)
+		}
+		if err := os.WriteFile(full, []byte(content), 0644); err != nil {
+			t.Fatalf("failed to write %s: %v", relPath, err)
+		}
+	}
+
+	// fileA defines entities that are referenced from the other files.
+	writeTestFile("fileA.yaml", `
+objects:
+  - id: site-tokyo-01
+    kind: site
+    name: Tokyo Datacenter 1
+
+  - id: srv-proxmox-01
+    kind: server
+    name: Proxmox Node 01
+    attributes:
+      owner: site-tokyo-01
+    spec:
+      networks:
+        - id: net-mgmt
+          name: Management
+          interfaces:
+            - id: eth0
+              name: eth0
+
+  - id: net-storage
+    kind: network
+    name: Storage Network
+    spec:
+      cidr: 192.168.10.0/24
+`)
+
+	// fileB references entities from fileA (owner, relation participant,
+	// path-based participant, and @-prefixed property reference).
+	writeTestFile("fileB.yaml", `
+objects:
+  - id: rack-a01
+    kind: rack
+    name: Rack A01
+    attributes:
+      owner: site-tokyo-01
+    spec:
+      height_units: 42
+
+  - id: vlan-100
+    kind: vlan
+    name: VLAN 100
+    attributes:
+      owner: site-tokyo-01
+    spec:
+      vlan_id: 100
+      associated_network: "@net-storage"
+
+  - id: rel-hosts
+    type: hosts
+    participants:
+      source: srv-proxmox-01
+      target: vlan-100
+
+  - id: rel-connects
+    type: connects
+    participants:
+      - srv-proxmox-01/net-mgmt/eth0
+      - sw-core-01/port1
+`)
+
+	// fileC lives in a nested subdirectory to exercise recursive walking.
+	writeTestFile("nested/fileC.yaml", `
+objects:
+  - id: sw-core-01
+    kind: switch
+    name: Core Switch 01
+    attributes:
+      owner: site-tokyo-01
+    spec:
+      interfaces:
+        - id: port1
+          name: port1
+`)
+
+	p := NewParser()
+	g, err := p.ParseDir(dir)
+	if err != nil {
+		t.Fatalf("failed to parse dir: %v", err)
+	}
+
+	// All entities from all files are merged into a single graph.
+	expectedEntities := []string{"site-tokyo-01", "srv-proxmox-01", "net-mgmt", "eth0", "net-storage", "rack-a01", "vlan-100", "sw-core-01", "port1"}
+	for _, id := range expectedEntities {
+		if _, ok := g.GetEntity(id); !ok {
+			t.Errorf("expected merged entity %s, not found", id)
+		}
+	}
+
+	// Explicit cross-file relations are present (nesting may also generate
+	// auto-relations, so verify by ID rather than exact count).
+	if _, ok := g.GetRelation("rel-hosts"); !ok {
+		t.Error("expected merged relation rel-hosts, not found")
+	}
+	if _, ok := g.GetRelation("rel-connects"); !ok {
+		t.Error("expected merged relation rel-connects, not found")
+	}
+
+	// Cross-file ownership resolves.
+	rack, ok := g.GetEntity("rack-a01")
+	if !ok {
+		t.Fatal("expected entity rack-a01")
+	}
+	if rack.Owner != "site-tokyo-01" {
+		t.Errorf("expected rack-a01 owner site-tokyo-01 (defined in fileA), got %s", rack.Owner)
+	}
+
+	// Cross-file @-prefixed property reference resolves.
+	vlan, ok := g.GetEntity("vlan-100")
+	if !ok {
+		t.Fatal("expected entity vlan-100")
+	}
+	v, ok := vlan.GetProperty("associated_network")
+	if !ok {
+		t.Fatal("expected property associated_network")
+	}
+	ref, ok := v.(core.ReferenceValue)
+	if !ok {
+		t.Fatalf("expected ReferenceValue, got %T", v)
+	}
+	if ref.RefTargetID() != "net-storage" {
+		t.Errorf("expected reference target net-storage (defined in fileA), got %s", ref.RefTargetID())
+	}
+
+	// All references resolve across the merged graph, including path references
+	// spanning nested entities defined in different files.
+	if errs := ResolveReferences(g); len(errs) != 0 {
+		t.Errorf("expected no reference errors, got %v", errs)
+	}
+
+	e, ok := g.ResolvePathEntity("srv-proxmox-01/net-mgmt/eth0")
+	if !ok || e.ID != "eth0" {
+		t.Errorf("expected path reference to resolve to eth0, got %v (ok=%v)", e, ok)
 	}
 }

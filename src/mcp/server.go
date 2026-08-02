@@ -17,6 +17,9 @@ func NewMCPServer(sm *SessionManager) *server.MCPServer {
 	registerEntityMCPTools(s, sm)
 	registerRelationMCPTools(s, sm)
 	registerGraphMCPTools(s, sm)
+	registerSchemaMCPTools(s, sm)
+	registerQueryMCPTools(s, sm)
+	registerRenderMCPTools(s, sm)
 
 	return s
 }

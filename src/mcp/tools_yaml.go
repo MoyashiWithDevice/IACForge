@@ -7,6 +7,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	mcpserver "github.com/mark3labs/mcp-go/server"
 
+	"IACForge/src/core"
 	"IACForge/src/parser"
 )
 
@@ -23,13 +24,31 @@ func registerYAMLMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 				return toolError(err.Error()), nil
 			}
 
-			p := parser.NewParserWithSchema(sd.Schema)
-			g, err := p.ParseFile(path)
+			msg, err := loadGraph(sd, path, false)
 			if err != nil {
 				return toolError(fmt.Sprintf("failed to parse %s: %v", path, err)), nil
 			}
-			sd.Graph = g
-			return toolResult(fmt.Sprintf("Loaded %d entities and %d relations from %s", len(g.Entities()), len(g.Relations()), path)), nil
+			return toolResult(msg), nil
+		},
+	)
+
+	s.AddTool(
+		mcp.NewTool("load_dir",
+			mcp.WithDescription("Recursively load all YAML files from a directory and merge them into the in-memory graph. References may span files: relation participants, owners, and @-prefixed property references resolve against the merged graph."),
+			mcp.WithString("path", mcp.Required(), mcp.Description("Path to the directory to load recursively")),
+		),
+		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			sd := getOrCreateSession(ctx, sm)
+			path, err := req.RequireString("path")
+			if err != nil {
+				return toolError(err.Error()), nil
+			}
+
+			msg, err := loadGraph(sd, path, true)
+			if err != nil {
+				return toolError(fmt.Sprintf("failed to load directory %s: %v", path, err)), nil
+			}
+			return toolResult(msg), nil
 		},
 	)
 
@@ -90,6 +109,33 @@ func registerYAMLMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 			return toolResult(string(data)), nil
 		},
 	)
+}
+
+// loadGraph parses a file or directory into the session graph and returns a summary.
+// Cross-file references are resolved against the merged graph; any unresolved
+// references are appended to the summary as warnings.
+func loadGraph(sd *SessionData, path string, isDir bool) (string, error) {
+	p := parser.NewParserWithSchema(sd.Schema)
+	var g *core.Graph
+	var err error
+	if isDir {
+		g, err = p.ParseDir(path)
+	} else {
+		g, err = p.ParseFile(path)
+	}
+	if err != nil {
+		return "", err
+	}
+	sd.Graph = g
+
+	msg := fmt.Sprintf("Loaded %d entities and %d relations from %s", len(g.Entities()), len(g.Relations()), path)
+	if errs := parser.ResolveReferences(g); len(errs) > 0 {
+		msg += "\nUnresolved references:"
+		for _, e := range errs {
+			msg += "\n  - " + e.Error()
+		}
+	}
+	return msg, nil
 }
 
 func getOrCreateSession(ctx context.Context, sm *SessionManager) *SessionData {
