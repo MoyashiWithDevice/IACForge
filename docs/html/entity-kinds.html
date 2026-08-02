@@ -262,12 +262,14 @@
           <tr><th>Property</th><th>Type</th><th>Required</th><th>Default</th><th>Description</th></tr>
         </thead>
         <tbody>
-          <tr><td>type</td><td><span class="type-badge">string</span></td><td><span class="req-no">no</span></td><td>ethernet</td><td>Interface type (ethernet, fiber, wireless, virtual, bond)</td></tr>
+          <tr><td>type</td><td><span class="type-badge">string</span></td><td><span class="req-no">no</span></td><td>ethernet</td><td>Interface type (ethernet, fiber, wireless, virtual, bond, vlan, bridge, loopback)</td></tr>
+          <tr><td>mode</td><td><span class="type-badge">string</span></td><td><span class="req-no">no</span></td><td>none</td><td>Interface mode (access, trunk, hybrid, none)</td></tr>
           <tr><td>speed_mbps</td><td><span class="type-badge">integer</span></td><td><span class="req-no">no</span></td><td>-</td><td>Interface speed in Mbps</td></tr>
           <tr><td>mac_address</td><td><span class="type-badge">string</span></td><td><span class="req-no">no</span></td><td>-</td><td>MAC address</td></tr>
-          <tr><td>ip_address</td><td><span class="type-badge">string</span></td><td><span class="req-no">no</span></td><td>-</td><td>IP address if configured</td></tr>
+          <tr><td>ip_address</td><td><span class="type-badge">list[string]</span></td><td><span class="req-no">no</span></td><td>-</td><td>IP addresses if configured</td></tr>
+          <tr><td>vlan_id</td><td><span class="type-badge">integer</span></td><td><span class="req-no">no</span></td><td>-</td><td>VLAN identifier (1-4094) for a VLAN sub-interface</td></tr>
           <tr><td>mtu</td><td><span class="type-badge">integer</span></td><td><span class="req-no">no</span></td><td>1500</td><td>Maximum transmission unit</td></tr>
-          <tr><td>interfaces</td><td><span class="type-badge">list[object]</span></td><td><span class="req-no">no</span></td><td>-</td><td>Nested child interfaces (VRRP, LACP/bond, etc.)</td></tr>
+          <tr><td>interfaces</td><td><span class="type-badge">list[object]</span></td><td><span class="req-no">no</span></td><td>-</td><td>Nested child interfaces (VRRP, LACP/bond, VLAN sub-interface, etc.)</td></tr>
         </tbody>
       </table>
       <p><strong>Ownership:</strong> server, switch, router, vm, container, network</p>
@@ -281,7 +283,8 @@
     type: ethernet
     speed_mbps: 10000
     mac_address: "aa:bb:cc:dd:ee:f0"
-    ip_address: 10.0.1.10
+    ip_address:
+      - 10.0.1.10
     vlans:
       - id: eno1-vlan100
         spec:
@@ -352,6 +355,75 @@
           type: ethernet
           ip_address:
             - 192.168.1.2</code></pre>
+
+      <h4 id="trunk-port-example">Trunk Port Carrying Multiple VLANs</h4>
+<pre class="language-yaml"><code>- id: trunk-port1
+  kind: interface
+  name: Trunk Port to Access Switch
+  attributes:
+    owner: sw-core-01
+  spec:
+    type: ethernet
+    mode: trunk
+    vlans:
+      - id: trunk-port1-vlan10
+        kind: vlan
+        name: VLAN 10 - Management
+        spec:
+          vlan_id: 10
+          tagged: false
+          associated_network: "@mgmt-network"
+      - id: trunk-port1-vlan100
+        kind: vlan
+        name: VLAN 100 - Production
+        spec:
+          vlan_id: 100
+          tagged: true
+          associated_network: "@prod-network"
+      - id: trunk-port1-vlan200
+        kind: vlan
+        name: VLAN 200 - Storage
+        spec:
+          vlan_id: 200
+          tagged: true
+          associated_network: "@storage-network"</code></pre>
+
+      <h4 id="vlan-subinterface-example">VLAN Sub-interface Example (<code>vmbr.20</code> style)</h4>
+<pre class="language-yaml"><code>- id: vmbr0
+  kind: interface
+  name: Linux Bridge vmbr0
+  attributes:
+    owner: srv-proxmox-01
+  spec:
+    type: bridge
+    interfaces:
+      - id: vmbr0.20
+        kind: interface
+        name: VLAN 20 on vmbr0
+        spec:
+          type: vlan
+          vlan_id: 20
+          ip_address:
+            - 10.0.20.1/24
+      - id: vmbr0.100
+        kind: interface
+        name: VLAN 100 on vmbr0
+        spec:
+          type: vlan
+          vlan_id: 100
+          ip_address:
+            - 10.0.100.1/24</code></pre>
+
+      <h4 id="loopback-example">Loopback Interface Example</h4>
+<pre class="language-yaml"><code>- id: lo0
+  kind: interface
+  name: Loopback 0
+  attributes:
+    owner: rt-core-01
+  spec:
+    type: loopback
+    ip_address:
+      - 10.255.255.1/32</code></pre>
 
       <h3 id="cable">cable</h3>
       <p>A physical cable connecting two or more interfaces.</p>
@@ -433,7 +505,7 @@
         </thead>
         <tbody>
           <tr><td>vlan_id</td><td><span class="type-badge">integer</span></td><td><span class="req-yes">yes</span></td><td>-</td><td>VLAN identifier (1-4094)</td></tr>
-          <tr><td>name</td><td><span class="type-badge">string</span></td><td><span class="req-no">no</span></td><td>-</td><td>VLAN name</td></tr>
+          <tr><td>tagged</td><td><span class="type-badge">boolean</span></td><td><span class="req-no">no</span></td><td>false</td><td>Whether this VLAN carries tagged traffic on a trunk port</td></tr>
           <tr><td>associated_network</td><td><span class="type-badge">string</span></td><td><span class="req-no">no</span></td><td>-</td><td>Reference to parent network</td></tr>
         </tbody>
       </table>
@@ -445,6 +517,7 @@
     owner: mgmt-network-01
   spec:
     vlan_id: 100
+    tagged: true
     associated_network: mgmt-network-01</code></pre>
 
       <h3 id="switch">switch</h3>

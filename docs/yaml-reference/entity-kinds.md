@@ -212,12 +212,14 @@ A network interface on a device.
 
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
-| type | string | no | ethernet | Interface type (ethernet, fiber, wireless, virtual, bond) |
+| type | string | no | ethernet | Interface type (ethernet, fiber, wireless, virtual, bond, vlan, bridge, loopback) |
+| mode | string | no | none | Interface mode (access, trunk, hybrid, none) |
 | speed_mbps | integer | no | - | Interface speed in Mbps |
 | mac_address | string | no | - | MAC address |
-| ip_address | string | no | - | IP address if configured |
+| ip_address | list[string] | no | - | IP addresses if configured |
+| vlan_id | integer | no | - | VLAN identifier (1-4094) for a VLAN sub-interface |
 | mtu | integer | no | 1500 | Maximum transmission unit |
-| interfaces | list[object] | no | - | Nested child interfaces (VRRP, LACP/bond, etc.) |
+| interfaces | list[object] | no | - | Nested child interfaces (VRRP, LACP/bond, VLAN sub-interface, etc.) |
 
 **Ownership:** server, switch, router, vm, container, network
 
@@ -233,7 +235,8 @@ A network interface on a device.
     type: ethernet
     speed_mbps: 10000
     mac_address: "aa:bb:cc:dd:ee:f0"
-    ip_address: 10.0.1.10
+    ip_address:
+      - 10.0.1.10
     vlans:
       - id: eno1-vlan100
         spec:
@@ -311,6 +314,84 @@ An interface can nest child interfaces via the `interfaces` key. This is useful 
           type: ethernet
           ip_address:
             - 192.168.1.2
+```
+
+**Trunk Port Carrying Multiple VLANs:**
+
+```yaml
+- id: trunk-port1
+  kind: interface
+  name: Trunk Port to Access Switch
+  attributes:
+    owner: sw-core-01
+  spec:
+    type: ethernet
+    mode: trunk
+    vlans:
+      - id: trunk-port1-vlan10
+        kind: vlan
+        name: VLAN 10 - Management
+        spec:
+          vlan_id: 10
+          tagged: false
+          associated_network: "@mgmt-network"
+      - id: trunk-port1-vlan100
+        kind: vlan
+        name: VLAN 100 - Production
+        spec:
+          vlan_id: 100
+          tagged: true
+          associated_network: "@prod-network"
+      - id: trunk-port1-vlan200
+        kind: vlan
+        name: VLAN 200 - Storage
+        spec:
+          vlan_id: 200
+          tagged: true
+          associated_network: "@storage-network"
+```
+
+**VLAN Sub-interface Example (`vmbr.20` style):**
+
+```yaml
+- id: vmbr0
+  kind: interface
+  name: Linux Bridge vmbr0
+  attributes:
+    owner: srv-proxmox-01
+  spec:
+    type: bridge
+    interfaces:
+      - id: vmbr0.20
+        kind: interface
+        name: VLAN 20 on vmbr0
+        spec:
+          type: vlan
+          vlan_id: 20
+          ip_address:
+            - 10.0.20.1/24
+      - id: vmbr0.100
+        kind: interface
+        name: VLAN 100 on vmbr0
+        spec:
+          type: vlan
+          vlan_id: 100
+          ip_address:
+            - 10.0.100.1/24
+```
+
+**Loopback Interface Example:**
+
+```yaml
+- id: lo0
+  kind: interface
+  name: Loopback 0
+  attributes:
+    owner: rt-core-01
+  spec:
+    type: loopback
+    ip_address:
+      - 10.255.255.1/32
 ```
 
 ---
@@ -403,7 +484,7 @@ A virtual LAN configuration.
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
 | vlan_id | integer | yes | - | VLAN identifier (1-4094) |
-| name | string | no | - | VLAN name |
+| tagged | boolean | no | false | Whether this VLAN carries tagged traffic on a trunk port |
 | associated_network | string | no | - | Reference to parent network |
 
 **Ownership:** network, site
@@ -416,6 +497,7 @@ A virtual LAN configuration.
     owner: mgmt-network-01
   spec:
     vlan_id: 100
+    tagged: true
     associated_network: mgmt-network-01
 ```
 

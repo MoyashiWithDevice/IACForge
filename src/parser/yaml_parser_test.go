@@ -1032,6 +1032,158 @@ objects:
 	}
 }
 
+func TestParseNestedInterfaceVLANSubinterface(t *testing.T) {
+	yaml := `
+objects:
+  - id: srv-proxmox-01
+    kind: server
+    name: Proxmox Node 01
+    spec:
+      interfaces:
+        - id: vmbr0
+          kind: interface
+          name: Linux Bridge vmbr0
+          spec:
+            type: bridge
+            interfaces:
+              - id: vmbr0.20
+                kind: interface
+                name: VLAN 20 on vmbr0
+                spec:
+                  type: vlan
+                  vlan_id: 20
+                  ip_address:
+                    - 10.0.20.1/24
+              - id: vmbr0.100
+                kind: interface
+                name: VLAN 100 on vmbr0
+                spec:
+                  type: vlan
+                  vlan_id: 100
+                  ip_address:
+                    - 10.0.100.1/24
+`
+
+	parser := NewParser()
+	g, err := parser.Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+
+	// 1 server + 1 bridge + 2 VLAN sub-interfaces = 4
+	if g.EntityCount() != 4 {
+		t.Fatalf("expected 4 entities, got %d", g.EntityCount())
+	}
+
+	// Check bridge interface
+	vmbr0, ok := g.GetEntity("vmbr0")
+	if !ok {
+		t.Fatal("entity vmbr0 not found")
+	}
+	if vmbr0.Owner != "srv-proxmox-01" {
+		t.Errorf("expected owner srv-proxmox-01, got %s", vmbr0.Owner)
+	}
+	if vtype, ok := vmbr0.GetProperty("type"); !ok || vtype != "bridge" {
+		t.Errorf("expected type bridge, got %v", vtype)
+	}
+
+	// Check VLAN sub-interface 20
+	vlan20, ok := g.GetEntity("vmbr0.20")
+	if !ok {
+		t.Fatal("entity vmbr0.20 not found")
+	}
+	if vlan20.Owner != "vmbr0" {
+		t.Errorf("expected owner vmbr0, got %s", vlan20.Owner)
+	}
+	if vlan20.Kind != kinds.Interface {
+		t.Errorf("expected kind interface, got %s", vlan20.Kind)
+	}
+	if vtype, ok := vlan20.GetProperty("type"); !ok || vtype != "vlan" {
+		t.Errorf("expected type vlan, got %v", vtype)
+	}
+	if vlanID, ok := vlan20.GetProperty("vlan_id"); !ok || vlanID != 20 {
+		t.Errorf("expected vlan_id 20, got %v", vlanID)
+	}
+	if ips, ok := vlan20.GetProperty("ip_address"); !ok || len(ips.([]interface{})) != 1 {
+		t.Errorf("expected 1 ip_address, got %v", ips)
+	}
+
+	// Check VLAN sub-interface 100
+	vlan100, ok := g.GetEntity("vmbr0.100")
+	if !ok {
+		t.Fatal("entity vmbr0.100 not found")
+	}
+	if vlan100.Owner != "vmbr0" {
+		t.Errorf("expected owner vmbr0, got %s", vlan100.Owner)
+	}
+	if vlanID, ok := vlan100.GetProperty("vlan_id"); !ok || vlanID != 100 {
+		t.Errorf("expected vlan_id 100, got %v", vlanID)
+	}
+
+	// Auto-generated belongs_to relations for nested interfaces
+	if g.RelationCount() != 3 {
+		t.Fatalf("expected 3 auto-generated belongs_to relations, got %d", g.RelationCount())
+	}
+	found := false
+	for _, r := range g.Relations() {
+		if r.Type == types.BelongsTo && r.Participants.Source == "vmbr0.20" && r.Participants.Target == "vmbr0" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("expected belongs_to relation from vmbr0.20 to vmbr0")
+	}
+}
+
+func TestParseLoopbackInterface(t *testing.T) {
+	yaml := `
+objects:
+  - id: rt-core-01
+    kind: router
+    name: Core Router 01
+    spec:
+      interfaces:
+        - id: lo0
+          kind: interface
+          name: Loopback 0
+          spec:
+            type: loopback
+            ip_address:
+              - 10.255.255.1/32
+`
+
+	parser := NewParser()
+	g, err := parser.Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+
+	// 1 router + 1 loopback interface = 2
+	if g.EntityCount() != 2 {
+		t.Fatalf("expected 2 entities, got %d", g.EntityCount())
+	}
+
+	lo0, ok := g.GetEntity("lo0")
+	if !ok {
+		t.Fatal("entity lo0 not found")
+	}
+	if lo0.Owner != "rt-core-01" {
+		t.Errorf("expected owner rt-core-01, got %s", lo0.Owner)
+	}
+	if ltype, ok := lo0.GetProperty("type"); !ok || ltype != "loopback" {
+		t.Errorf("expected type loopback, got %v", ltype)
+	}
+	if ips, ok := lo0.GetProperty("ip_address"); !ok || len(ips.([]interface{})) != 1 {
+		t.Errorf("expected 1 ip_address, got %v", ips)
+	}
+
+	// Auto-generated belongs_to relation from lo0 to router
+	if g.RelationCount() != 1 {
+		t.Fatalf("expected 1 auto-generated belongs_to relation, got %d", g.RelationCount())
+	}
+}
+
 func TestRoundTripNestedEntities(t *testing.T) {
 	yaml := `
 objects:

@@ -87,11 +87,12 @@ func registerEntityKinds(s *Schema) {
 	s.AddEntityKind(kinds.Interface, &EntityKindDefinition{
 		Description: "Network interface on a device",
 		Properties: []PropertyDefinition{
-			{Name: "type", Type: PropertyTypeString, Required: false, Default: "ethernet", Description: "Interface type (ethernet, fiber, wireless, virtual, bond)"},
+			{Name: "type", Type: PropertyTypeString, Required: false, Default: "ethernet", Constraints: &Constraint{Enum: []string{"ethernet", "fiber", "wireless", "virtual", "bond", "vlan", "bridge", "loopback"}}, Description: "Interface type (ethernet, fiber, wireless, virtual, bond, vlan, bridge, loopback)"},
 			{Name: "mode", Type: PropertyTypeString, Required: false, Default: "none", Constraints: &Constraint{Enum: []string{"access", "trunk", "hybrid", "none"}}, Description: "Interface mode (access, trunk, hybrid, none)"},
 			{Name: "speed_mbps", Type: PropertyTypeInteger, Required: false, Description: "Interface speed in Mbps"},
 			{Name: "mac_address", Type: PropertyTypeString, Required: false, Description: "MAC address"},
 			{Name: "ip_address", Type: PropertyTypeList, Required: false, Description: "IP addresses if configured"},
+			{Name: "vlan_id", Type: PropertyTypeInteger, Required: false, Constraints: &Constraint{Min: intPtr(1), Max: intPtr(4094)}, Description: "VLAN identifier for a VLAN sub-interface (e.g., vmbr.20)"},
 			{Name: "mtu", Type: PropertyTypeInteger, Required: false, Default: 1500, Description: "Maximum transmission unit"},
 		},
 		NestingDefs: []NestingDefinition{

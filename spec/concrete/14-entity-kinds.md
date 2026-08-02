@@ -249,11 +249,12 @@ A network interface (physical or virtual).
 
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
-| type | string | no | ethernet | Interface type (ethernet, fiber, wireless, virtual, bond) |
+| type | string | no | ethernet | Interface type (ethernet, fiber, wireless, virtual, bond, vlan, bridge, loopback) |
 | mode | string | no | none | Interface mode (access, trunk, hybrid, none) |
 | speed_mbps | integer | no | - | Interface speed in Mbps |
 | mac_address | string | no | - | MAC address |
 | ip_address | list[string] | no | - | IP addresses if configured |
+| vlan_id | integer | no | - | VLAN identifier (1-4094) for a VLAN sub-interface |
 | mtu | integer | no | 1500 | Maximum transmission unit |
 
 #### Typical Ownership
@@ -374,6 +375,45 @@ Trunk port carrying multiple VLANs:
           vlan_id: 200
           tagged: true
           associated_network: "@storage-network"
+```
+
+VLAN sub-interface (e.g., `vmbr.20`):
+
+```yaml
+- id: vmbr0
+  kind: interface
+  name: Linux Bridge vmbr0
+  spec:
+    type: bridge
+    interfaces:
+      - id: vmbr0.20
+        kind: interface
+        name: VLAN 20 on vmbr0
+        spec:
+          type: vlan
+          vlan_id: 20
+          ip_address:
+            - 10.0.20.1/24
+      - id: vmbr0.100
+        kind: interface
+        name: VLAN 100 on vmbr0
+        spec:
+          type: vlan
+          vlan_id: 100
+          ip_address:
+            - 10.0.100.1/24
+```
+
+Loopback interface:
+
+```yaml
+- id: lo0
+  kind: interface
+  name: Loopback 0
+  spec:
+    type: loopback
+    ip_address:
+      - 10.255.255.1/32
 ```
 
 ---

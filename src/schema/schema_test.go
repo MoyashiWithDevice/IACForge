@@ -532,3 +532,69 @@ func TestCoreSchemaVlanTaggedProperty(t *testing.T) {
 		t.Errorf("expected default false, got %v", taggedProp.Default)
 	}
 }
+
+func TestCoreSchemaInterfaceTypeEnum(t *testing.T) {
+	s := CoreSchema()
+	def, ok := s.GetEntityKindDef(kinds.Interface)
+	if !ok {
+		t.Fatal("interface kind not found")
+	}
+
+	var typeProp *PropertyDefinition
+	for _, p := range def.Properties {
+		if p.Name == "type" {
+			typeProp = &p
+			break
+		}
+	}
+	if typeProp == nil {
+		t.Fatal("type property not found on interface")
+	}
+	if typeProp.Constraints == nil || len(typeProp.Constraints.Enum) != 8 {
+		t.Fatalf("expected 8 enum values, got %v", typeProp.Constraints)
+	}
+
+	validTypes := map[string]bool{
+		"ethernet": true, "fiber": true, "wireless": true, "virtual": true,
+		"bond": true, "vlan": true, "bridge": true, "loopback": true,
+	}
+	for _, v := range typeProp.Constraints.Enum {
+		if !validTypes[v] {
+			t.Errorf("unexpected enum value %q", v)
+		}
+	}
+}
+
+func TestCoreSchemaInterfaceVlanIDProperty(t *testing.T) {
+	s := CoreSchema()
+	def, ok := s.GetEntityKindDef(kinds.Interface)
+	if !ok {
+		t.Fatal("interface kind not found")
+	}
+
+	var vlanIDProp *PropertyDefinition
+	for _, p := range def.Properties {
+		if p.Name == "vlan_id" {
+			vlanIDProp = &p
+			break
+		}
+	}
+	if vlanIDProp == nil {
+		t.Fatal("vlan_id property not found on interface")
+	}
+	if vlanIDProp.Type != PropertyTypeInteger {
+		t.Errorf("expected type integer, got %s", vlanIDProp.Type)
+	}
+	if vlanIDProp.Required {
+		t.Errorf("vlan_id should be optional, but is required")
+	}
+	if vlanIDProp.Constraints == nil || vlanIDProp.Constraints.Min == nil || vlanIDProp.Constraints.Max == nil {
+		t.Fatal("vlan_id should have min/max constraints")
+	}
+	if *vlanIDProp.Constraints.Min != 1 {
+		t.Errorf("expected min 1, got %v", *vlanIDProp.Constraints.Min)
+	}
+	if *vlanIDProp.Constraints.Max != 4094 {
+		t.Errorf("expected max 4094, got %v", *vlanIDProp.Constraints.Max)
+	}
+}
