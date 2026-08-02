@@ -269,6 +269,43 @@ func TestGraphResolveReference(t *testing.T) {
 	}
 }
 
+func TestGraphResolvePathReference(t *testing.T) {
+	g := NewGraph()
+	srv := NewEntity("pve-1", "server", "Server 01")
+	bond := NewEntity("bond0", "interface", "Bond 0")
+	bond.SetOwner("pve-1")
+	nic := NewEntity("nic1", "interface", "NIC 1")
+	nic.SetOwner("bond0")
+	for _, e := range []*Entity{srv, bond, nic} {
+		if err := g.AddEntity(e); err != nil {
+			t.Fatalf("unexpected error adding entity: %v", err)
+		}
+	}
+
+	e, ok := g.ResolvePathEntity("pve-1/bond0/nic1")
+	if !ok {
+		t.Fatal("expected to resolve path reference to entity")
+	}
+	if e.ID != "nic1" {
+		t.Errorf("expected resolved entity nic1, got %s", e.ID)
+	}
+
+	obj, ok := g.ResolveReference("pve-1/bond0/nic1")
+	if !ok {
+		t.Fatal("expected ResolveReference to resolve path reference")
+	}
+	if _, ok := obj.(*Entity); !ok {
+		t.Error("expected resolved path reference to be Entity")
+	}
+
+	if _, ok := g.ResolvePathEntity("unknown/bond0/nic1"); ok {
+		t.Error("expected not to resolve path with missing entity")
+	}
+	if _, ok := g.ResolvePathEntity("pve-1/missing/nic1"); ok {
+		t.Error("expected not to resolve path with broken ownership chain")
+	}
+}
+
 func TestGraphOwnershipPaths(t *testing.T) {
 	g := NewGraph()
 	site := NewEntity("site-01", "site", "Site 01")

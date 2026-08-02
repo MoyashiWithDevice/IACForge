@@ -821,51 +821,8 @@ func ResolveReferences(g *core.Graph) []error {
 // 2. Path notation: last segment is the entity ID, parent segments are verified
 // 3. Legacy interface notation: entityID/interfaceName (still supported for backward compat)
 func resolvePathReference(g *core.Graph, ref string) (*core.Entity, error) {
-	// 1. Direct ID match
-	if e, ok := g.GetEntity(ref); ok {
+	if e, ok := g.ResolvePathEntity(ref); ok {
 		return e, nil
 	}
-
-	// 2. Path notation (contains "/")
-	if idx := strings.Index(ref, "/"); idx != -1 {
-		segments := strings.Split(ref, "/")
-		lastSegment := segments[len(segments)-1]
-		entityID := lastSegment
-
-		// Try the last segment as a direct entity ID
-		if e, ok := g.GetEntity(entityID); ok {
-			// Verify parent relationship if there are more than 2 segments
-			if len(segments) > 2 {
-				if err := verifyPathOwnership(g, segments); err != nil {
-					return nil, err
-				}
-			}
-			return e, nil
-		}
-
-		// Legacy interface reference: first segment is entity, rest is interface name
-		entityID = segments[0]
-		if e, ok := g.GetEntity(entityID); ok {
-			return e, nil
-		}
-	}
-
 	return nil, fmt.Errorf("reference %q could not be resolved", ref)
-}
-
-// verifyPathOwnership verifies that the ownership chain in the path is valid.
-func verifyPathOwnership(g *core.Graph, segments []string) error {
-	for i := 1; i < len(segments); i++ {
-		childID := segments[i]
-		parentID := segments[i-1]
-
-		child, ok := g.GetEntity(childID)
-		if !ok {
-			return fmt.Errorf("entity %q not found in path", childID)
-		}
-		if child.Owner != parentID {
-			return fmt.Errorf("entity %q is not owned by %q", childID, parentID)
-		}
-	}
-	return nil
 }

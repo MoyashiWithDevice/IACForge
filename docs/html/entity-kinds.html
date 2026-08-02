@@ -871,6 +871,8 @@
         </tbody>
       </table>
       <p><strong>Ownership:</strong> site</p>
+      <p><strong>Nestable children:</strong> <code>vms</code> (vm), <code>servers</code> (server)</p>
+      <p>Nested nodes receive the cluster as their <code>owner</code> and an auto-generated <code>belongs_to</code> relation (member → cluster) is created.</p>
 <pre class="language-yaml"><code>- id: cluster-prod-01
   kind: cluster
   name: Production Cluster 01
@@ -879,7 +881,25 @@
   spec:
     cluster_type: hyperconverged
     ha_enabled: true
-    drs_enabled: true</code></pre>
+    drs_enabled: true
+    vms:
+      - id: vm-k8s-node-01
+        name: K8s Node 01
+        spec:
+          cpu:
+            - cores: 4
+          memory:
+            - size_gb: 16
+      - id: vm-k8s-node-02
+        name: K8s Node 02
+        spec:
+          cpu:
+            - cores: 4
+          memory:
+            - size_gb: 16
+    servers:
+      - id: srv-k8s-node-01
+        name: K8s Bare-metal Node 01</code></pre>
 
       <h3 id="availability_zone">availability_zone</h3>
       <p>A logical availability zone within a site.</p>

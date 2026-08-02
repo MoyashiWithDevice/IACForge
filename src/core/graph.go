@@ -208,13 +208,68 @@ func (g *Graph) RelationCount() int {
 }
 
 func (g *Graph) ResolveReference(id string) (interface{}, bool) {
-	if e, ok := g.entities[id]; ok {
+	if e, ok := g.ResolvePathEntity(id); ok {
 		return e, true
 	}
 	if r, ok := g.relations[id]; ok {
 		return r, true
 	}
 	return nil, false
+}
+
+// ResolvePathEntity resolves a reference string to an entity.
+// Resolution strategy:
+//  1. Direct ID match
+//  2. Path notation: last segment is the entity ID, parent segments are verified
+//  3. Legacy interface notation: entityID/interfaceName (still supported for backward compat)
+func (g *Graph) ResolvePathEntity(ref string) (*Entity, bool) {
+	// 1. Direct ID match
+	if e, ok := g.entities[ref]; ok {
+		return e, true
+	}
+
+	// 2. Path notation (contains "/")
+	if idx := strings.Index(ref, "/"); idx != -1 {
+		segments := strings.Split(ref, "/")
+		lastSegment := segments[len(segments)-1]
+		entityID := lastSegment
+
+		// Try the last segment as a direct entity ID
+		if e, ok := g.entities[entityID]; ok {
+			// Verify parent relationship if there are more than 2 segments
+			if len(segments) > 2 {
+				if err := g.verifyPathOwnership(segments); err != nil {
+					return nil, false
+				}
+			}
+			return e, true
+		}
+
+		// Legacy interface reference: first segment is entity, rest is interface name
+		entityID = segments[0]
+		if e, ok := g.entities[entityID]; ok {
+			return e, true
+		}
+	}
+
+	return nil, false
+}
+
+// verifyPathOwnership verifies that the ownership chain in the path is valid.
+func (g *Graph) verifyPathOwnership(segments []string) error {
+	for i := 1; i < len(segments); i++ {
+		childID := segments[i]
+		parentID := segments[i-1]
+
+		child, ok := g.entities[childID]
+		if !ok {
+			return fmt.Errorf("entity %q not found in path", childID)
+		}
+		if child.Owner != parentID {
+			return fmt.Errorf("entity %q is not owned by %q", childID, parentID)
+		}
+	}
+	return nil
 }
 
 func (g *Graph) BuildOwnershipPaths() error {

@@ -460,6 +460,33 @@ func TestValidateNoRoot(t *testing.T) {
 	}
 }
 
+func TestValidatePathReferenceParticipant(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+
+	site := core.NewEntity("site-01", kinds.Site, "Site 1")
+	graph.AddEntity(site)
+	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
+	server.SetOwner("site-01")
+	graph.AddEntity(server)
+	network := core.NewEntity("net-01", kinds.Network, "Network 1")
+	network.SetOwner("site-01")
+	graph.AddEntity(network)
+	intf := core.NewEntity("eth0", kinds.Interface, "eth0")
+	intf.SetOwner("srv-01")
+	graph.AddEntity(intf)
+
+	r := core.NewDirectedRelation("rel-01", types.BelongsTo, "srv-01/eth0", "net-01")
+	graph.AddRelation(r)
+
+	result := e.Validate(graph, nil)
+	for _, f := range result.Findings {
+		if (f.RuleID == "valid-reference" || f.RuleID == "dangling-reference") && f.Severity == SeverityError {
+			t.Errorf("unexpected %s error: %s", f.RuleID, f.Message)
+		}
+	}
+}
+
 func TestValidateDanglingReference(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()

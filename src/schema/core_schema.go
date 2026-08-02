@@ -294,6 +294,10 @@ func registerEntityKinds(s *Schema) {
 			{Name: "ha_enabled", Type: PropertyTypeBoolean, Required: false, Default: false, Description: "Whether HA is enabled"},
 			{Name: "drs_enabled", Type: PropertyTypeBoolean, Required: false, Default: false, Description: "Whether DRS is enabled"},
 		},
+		NestingDefs: []NestingDefinition{
+			{NestKey: "vms", ChildKind: kinds.VM, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
+			{NestKey: "servers", ChildKind: kinds.Server, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
+		},
 	})
 
 	s.AddEntityKind(kinds.AvailabilityZone, &EntityKindDefinition{

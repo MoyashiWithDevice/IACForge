@@ -883,6 +883,10 @@ A logical grouping of compute resources.
 
 **Ownership:** site
 
+**ネスト可能な子:** `vms` (vm), `servers` (server)
+
+ネストしたノードは `owner` としてクラスタを受け取り、`belongs_to` リレーション（メンバー → クラスタ）が自動生成されます。
+
 ```yaml
 - id: cluster-prod-01
   kind: cluster
@@ -893,6 +897,24 @@ A logical grouping of compute resources.
     cluster_type: hyperconverged
     ha_enabled: true
     drs_enabled: true
+    vms:
+      - id: vm-k8s-node-01
+        name: K8s Node 01
+        spec:
+          cpu:
+            - cores: 4
+          memory:
+            - size_gb: 16
+      - id: vm-k8s-node-02
+        name: K8s Node 02
+        spec:
+          cpu:
+            - cores: 4
+          memory:
+            - size_gb: 16
+    servers:
+      - id: srv-k8s-node-01
+        name: K8s Bare-metal Node 01
 ```
 
 ---

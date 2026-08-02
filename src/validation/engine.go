@@ -890,17 +890,14 @@ func ruleDanglingReference(ctx *Context) []Finding {
 
 	for _, r := range g.Relations() {
 		for _, participantID := range r.ParticipantIDs() {
-			_, found := g.GetEntity(participantID)
+			_, found := g.ResolveReference(participantID)
 			if !found {
-				_, foundRel := g.GetRelation(participantID)
-				if !foundRel {
-					findings = append(findings, Finding{
-						Severity:   SeverityError,
-						Message:    fmt.Sprintf("relation %q references non-existent object %q", r.ID, participantID),
-						ObjectID:   r.ID,
-						ObjectType: ObjectTypeRelation,
-					})
-				}
+				findings = append(findings, Finding{
+					Severity:   SeverityError,
+					Message:    fmt.Sprintf("relation %q references non-existent object %q", r.ID, participantID),
+					ObjectID:   r.ID,
+					ObjectType: ObjectTypeRelation,
+				})
 			}
 		}
 	}
@@ -921,17 +918,13 @@ func ruleDanglingReference(ctx *Context) []Finding {
 		// Check entity property references (@ prefix)
 		for key, value := range e.Properties {
 			if targetID, ok := core.ExtractReferenceValue(value); ok {
-				_, foundEntity := g.GetEntity(targetID)
-				if !foundEntity {
-					_, foundRel := g.GetRelation(targetID)
-					if !foundRel {
-						findings = append(findings, Finding{
-							Severity:   SeverityError,
-							Message:    fmt.Sprintf("entity %q property %q references non-existent object %q", e.ID, key, targetID),
-							ObjectID:   e.ID,
-							ObjectType: ObjectTypeEntity,
-						})
-					}
+				if _, found := g.ResolveReference(targetID); !found {
+					findings = append(findings, Finding{
+						Severity:   SeverityError,
+						Message:    fmt.Sprintf("entity %q property %q references non-existent object %q", e.ID, key, targetID),
+						ObjectID:   e.ID,
+						ObjectType: ObjectTypeEntity,
+					})
 				}
 			}
 		}
@@ -941,17 +934,13 @@ func ruleDanglingReference(ctx *Context) []Finding {
 	for _, r := range g.Relations() {
 		for key, value := range r.Properties {
 			if targetID, ok := core.ExtractReferenceValue(value); ok {
-				_, foundEntity := g.GetEntity(targetID)
-				if !foundEntity {
-					_, foundRel := g.GetRelation(targetID)
-					if !foundRel {
-						findings = append(findings, Finding{
-							Severity:   SeverityError,
-							Message:    fmt.Sprintf("relation %q property %q references non-existent object %q", r.ID, key, targetID),
-							ObjectID:   r.ID,
-							ObjectType: ObjectTypeRelation,
-						})
-					}
+				if _, found := g.ResolveReference(targetID); !found {
+					findings = append(findings, Finding{
+						Severity:   SeverityError,
+						Message:    fmt.Sprintf("relation %q property %q references non-existent object %q", r.ID, key, targetID),
+						ObjectID:   r.ID,
+						ObjectType: ObjectTypeRelation,
+					})
 				}
 			}
 		}

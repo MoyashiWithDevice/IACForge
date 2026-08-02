@@ -232,6 +232,9 @@ func TestCoreSchemaNestingDefinitions(t *testing.T) {
 		// Application can nest Containers and OpenPorts
 		{kinds.Application, "containers", kinds.Container, types.Hosts},
 		{kinds.Application, "open_ports", kinds.OpenPort, types.BelongsTo},
+		// Cluster can nest VMs and Servers as nodes (belongs_to membership)
+		{kinds.Cluster, "vms", kinds.VM, types.BelongsTo},
+		{kinds.Cluster, "servers", kinds.Server, types.BelongsTo},
 	}
 
 	for _, tt := range tests {

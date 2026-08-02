@@ -1845,6 +1845,71 @@ objects:
 		}
 	})
 
+	t.Run("cluster nesting vms and servers generates belongs_to relations", func(t *testing.T) {
+		yaml := `
+objects:
+  - id: k8s-prod
+    kind: cluster
+    name: Production K8s Cluster
+    spec:
+      vms:
+        - id: vm-k8s-node-01
+          name: K8s Node 01
+          spec:
+            cpu:
+              - cores: 4
+            memory:
+              - size_gb: 16
+        - id: vm-k8s-node-02
+          name: K8s Node 02
+          spec:
+            cpu:
+              - cores: 4
+            memory:
+              - size_gb: 16
+      servers:
+        - id: srv-k8s-node-01
+          name: K8s Bare-metal Node 01
+`
+		parser := NewParser()
+		g, err := parser.Parse([]byte(yaml))
+		if err != nil {
+			t.Fatalf("failed to parse: %v", err)
+		}
+
+		// Verify nested entities are owned by the cluster
+		for _, id := range []string{"vm-k8s-node-01", "vm-k8s-node-02", "srv-k8s-node-01"} {
+			e, ok := g.GetEntity(id)
+			if !ok {
+				t.Fatalf("entity %s not found", id)
+			}
+			if e.Owner != "k8s-prod" {
+				t.Errorf("entity %s owner should be k8s-prod, got %s", id, e.Owner)
+			}
+		}
+
+		// Verify auto-generated belongs_to relations (member -> cluster)
+		rels := map[string]string{
+			"rel-auto-belongs_to-vm-k8s-node-01-k8s-prod": "vm-k8s-node-01",
+			"rel-auto-belongs_to-vm-k8s-node-02-k8s-prod": "vm-k8s-node-02",
+			"rel-auto-belongs_to-srv-k8s-node-01-k8s-prod": "srv-k8s-node-01",
+		}
+		for relID, memberID := range rels {
+			rel, ok := g.GetRelation(relID)
+			if !ok {
+				t.Errorf("missing auto relation %s", relID)
+				continue
+			}
+			if rel.Type != types.BelongsTo {
+				t.Errorf("relation %s: expected belongs_to, got %s", relID, rel.Type)
+			}
+			if rel.Participants.Source != memberID || rel.Participants.Target != "k8s-prod" {
+				t.Errorf("relation %s: expected source %s -> target k8s-prod, got %s -> %s",
+					relID, memberID, rel.Participants.Source, rel.Participants.Target)
+			}
+		}
+	})
+
 	t.Run("container on multiple servers via hosts relations", func(t *testing.T) {
 		yaml := `
 objects:

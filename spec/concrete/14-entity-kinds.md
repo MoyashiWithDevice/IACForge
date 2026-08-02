@@ -981,10 +981,21 @@ A logical grouping of compute resources.
 
 - owned by: site
 
+#### Nestable Children
+
+| Nest Key | Child Kind | Description |
+|----------|------------|-------------|
+| vms | vm | VM nodes that compose the cluster |
+| servers | server | Bare-metal nodes that compose the cluster |
+
+Nested nodes receive the cluster as their `owner` and an auto-generated `belongs_to` relation (member → cluster) is created.
+
 #### Typical Relations
 
 - belongs_to → site
 - belongs_to → network
+- belongs_to ← server (nodes)
+- belongs_to ← vm (nodes)
 
 #### Example
 
@@ -995,6 +1006,37 @@ A logical grouping of compute resources.
   cluster_type: hyperconverged
   ha_enabled: true
   drs_enabled: true
+```
+
+Kubernetes cluster with nested node machines:
+
+```yaml
+- id: k8s-prod
+  kind: cluster
+  name: Production Kubernetes Cluster
+  attributes:
+    owner: site-tokyo-01
+  spec:
+    cluster_type: compute
+    ha_enabled: true
+    vms:
+      - id: vm-k8s-node-01
+        name: K8s Node 01
+        spec:
+          cpu:
+            - cores: 4
+          memory:
+            - size_gb: 16
+      - id: vm-k8s-node-02
+        name: K8s Node 02
+        spec:
+          cpu:
+            - cores: 4
+          memory:
+            - size_gb: 16
+    servers:
+      - id: srv-k8s-node-01
+        name: K8s Bare-metal Node 01
 ```
 
 ---

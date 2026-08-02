@@ -101,6 +101,8 @@
 | any | networks | network |
 | site | racks | rack |
 | site | clusters | cluster |
+| cluster | vms | vm |
+| cluster | servers | server |
 | server | vms | vm |
 | firewall | acls | acl |
 | vm | applications | application |

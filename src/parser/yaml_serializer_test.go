@@ -349,6 +349,95 @@ objects:
 	}
 }
 
+func TestRoundTripClusterNestedNodes(t *testing.T) {
+	yaml := `
+objects:
+  - id: site-tokyo-01
+    kind: site
+    name: Tokyo Datacenter 1
+  - id: k8s-prod
+    kind: cluster
+    name: Production K8s Cluster
+    attributes:
+      owner: site-tokyo-01
+    spec:
+      cluster_type: compute
+      ha_enabled: true
+      vms:
+        - id: vm-k8s-node-01
+          name: K8s Node 01
+          spec:
+            cpu:
+              - cores: 4
+            memory:
+              - size_gb: 16
+        - id: vm-k8s-node-02
+          name: K8s Node 02
+      servers:
+        - id: srv-k8s-node-01
+          name: K8s Bare-metal Node 01
+`
+	// Parse original
+	parser1 := NewParser()
+	g1, err := parser1.Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("failed to parse original: %v", err)
+	}
+
+	// Serialize
+	serializer := NewSerializer()
+	data, err := serializer.Serialize(g1)
+	if err != nil {
+		t.Fatalf("failed to serialize: %v", err)
+	}
+
+	// Parse serialized data
+	parser2 := NewParser()
+	g2, err := parser2.Parse(data)
+	if err != nil {
+		t.Fatalf("failed to parse serialized data: %v", err)
+	}
+
+	if g1.EntityCount() != g2.EntityCount() {
+		t.Errorf("entity count mismatch: %d vs %d", g1.EntityCount(), g2.EntityCount())
+	}
+
+	// Verify all entities survive round-trip with same owner
+	for _, e1 := range g1.Entities() {
+		e2, ok := g2.GetEntity(e1.ID)
+		if !ok {
+			t.Errorf("entity %s not found in round-trip", e1.ID)
+			continue
+		}
+		if e1.Kind != e2.Kind {
+			t.Errorf("kind mismatch for %s: %s vs %s", e1.ID, e1.Kind, e2.Kind)
+		}
+		if e1.Owner != e2.Owner {
+			t.Errorf("owner mismatch for %s: %s vs %s", e1.ID, e1.Owner, e2.Owner)
+		}
+	}
+
+	// Auto-generated belongs_to relations must be preserved
+	for _, relID := range []string{
+		"rel-auto-belongs_to-vm-k8s-node-01-k8s-prod",
+		"rel-auto-belongs_to-vm-k8s-node-02-k8s-prod",
+		"rel-auto-belongs_to-srv-k8s-node-01-k8s-prod",
+	} {
+		r2, ok := g2.GetRelation(relID)
+		if !ok {
+			t.Errorf("auto relation %s not found after round-trip", relID)
+			continue
+		}
+		if r2.Type != types.BelongsTo {
+			t.Errorf("relation %s: expected belongs_to, got %s", relID, r2.Type)
+		}
+		if r2.Source() == "" || r2.Target() != "k8s-prod" {
+			t.Errorf("relation %s: expected source member -> target k8s-prod, got %s -> %s",
+				relID, r2.Source(), r2.Target())
+		}
+	}
+}
+
 func TestSerializeFile(t *testing.T) {
 	g := core.NewGraph()
 	e := core.NewEntity("test-entity", kinds.Server, "Test Entity")
