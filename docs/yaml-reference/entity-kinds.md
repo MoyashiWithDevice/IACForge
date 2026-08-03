@@ -217,6 +217,7 @@ A network interface on a device.
 | speed_mbps | integer | no | - | Interface speed in Mbps |
 | mac_address | string | no | - | MAC address |
 | ip_address | list[string] | no | - | IP addresses if configured |
+| network | reference | no | - | Reference to the network this interface belongs to (e.g., `@mgmt-network`) |
 | vlan_id | integer | no | - | VLAN identifier (1-4094) for a VLAN sub-interface |
 | mtu | integer | no | 1500 | Maximum transmission unit |
 | interfaces | list[object] | no | - | Nested child interfaces (VRRP, LACP/bond, VLAN sub-interface, etc.) |
@@ -224,6 +225,8 @@ A network interface on a device.
 **Ownership:** server, switch, router, vm, container, network
 
 **Nestable Children:** vlans (vlan), cables (cable), interfaces (interface)
+
+> **Note:** An interface that carries IP addresses SHOULD reference a network, either via the `network` property or a `belongs_to` relation to a `network` entity. IP addresses are validated against the referenced network's `cidr`.
 
 ```yaml
 - id: eno1
@@ -235,6 +238,7 @@ A network interface on a device.
     type: ethernet
     speed_mbps: 10000
     mac_address: "aa:bb:cc:dd:ee:f0"
+    network: "@mgmt-network"
     ip_address:
       - 10.0.1.10
     vlans:

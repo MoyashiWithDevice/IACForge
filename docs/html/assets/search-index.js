@@ -31,7 +31,7 @@ window.IACFORGE_SEARCH_INDEX = [
     title: "Entity Kinds",
     section: "YAML Reference",
     description: "全Entity種類の定義とプロパティ。site, rack, server, vm, network, storageなど。",
-    keywords: "entity kinds site rack server interface cable power_distribution network vlan switch router firewall acl acl_rule vm container application open_port storage volume cluster availability_zone mode trunk access hybrid tagged port_count ports kind 種類 定義",
+    keywords: "entity kinds site rack server interface cable power_distribution network vlan switch router firewall acl acl_rule vm container application open_port storage volume cluster availability_zone mode trunk access hybrid tagged port_count ports ip_address cidr kind 種類 定義",
   },
   {
     path: "relation-syntax.html",
@@ -58,8 +58,8 @@ window.IACFORGE_SEARCH_INDEX = [
     path: "validation.html",
     title: "Validation",
     section: "YAML Reference",
-    description: "検証ルール、命名規則、Graph制約（Ownership, Reference, Nesting, Cardinality）。",
-    keywords: "validation rules constraints ownership tree no_cycles unique_id cardinality naming kebab-case 検証 ルール 制約 命名規則 カーディナリティ",
+    description: "検証ルール、命名規則、Graph制約（Ownership, Reference, Nesting, Cardinality, Network整合性）。",
+    keywords: "validation rules constraints ownership tree no_cycles unique_id cardinality naming kebab-case ip-requires-network ip-in-cidr network-reference-kind network-cidr-required gateway-in-cidr ip-unique-in-network valid-ip-format 検証 ルール 制約 命名規則 カーディナリティ ネットワーク 整合性",
   },
   {
     path: "example.html",

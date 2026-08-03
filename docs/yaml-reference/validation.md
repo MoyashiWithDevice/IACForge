@@ -67,3 +67,42 @@
 | belongs_to | N:N | 複数メンバー、複数グループ |
 | applies_to | N:N | 1 ACL、複数ターゲット |
 | listens_on | N:1 | 複数ポート、1インターフェース |
+
+---
+
+## ネットワーク整合性ルール
+
+InterfaceのIPアドレスとNetworkの整合性を保証する検証ルールです。
+
+> 導入時点ではすべて **warning** です。ドキュメント・モデル更新後、`ip-requires-network` と `ip-in-cidr` は **error** へ昇格予定です。
+
+| Rule ID | Severity | Description |
+|---------|----------|-------------|
+| valid-ip-format | warning | interfaceの`ip_address`は有効なIPアドレスまたはCIDR表記であること |
+| ip-requires-network | warning | IPアドレスを持つinterfaceは`network`プロパティまたは`belongs_to` relationでnetworkを参照すること |
+| network-reference-kind | warning | interfaceの`network`参照はkind=networkのentityを指すこと |
+| ip-in-cidr | warning | interfaceのIPは参照networkの`cidr`内にあること |
+| network-cidr-required | warning | IPを持つmemberがいるnetworkは`cidr`を定義すること |
+| gateway-in-cidr | warning | networkの`gateway`は`cidr`内にあること |
+| ip-unique-in-network | warning | 同一network内でIPが重複しないこと |
+
+### 例: IPを持つinterfaceはnetworkを参照する
+
+```yaml
+- id: mgmt-network
+  kind: network
+  name: Management Network
+  spec:
+    cidr: 10.0.0.0/24
+    gateway: 10.0.0.1
+
+- id: eno1
+  kind: interface
+  name: eno1
+  attributes:
+    owner: srv-proxmox-01
+  spec:
+    network: "@mgmt-network"
+    ip_address:
+      - 10.0.0.10
+```

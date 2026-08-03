@@ -92,6 +92,7 @@ func registerEntityKinds(s *Schema) {
 			{Name: "speed_mbps", Type: PropertyTypeInteger, Required: false, Description: "Interface speed in Mbps"},
 			{Name: "mac_address", Type: PropertyTypeString, Required: false, Description: "MAC address"},
 			{Name: "ip_address", Type: PropertyTypeList, Required: false, Description: "IP addresses if configured"},
+			{Name: "network", Type: PropertyTypeReference, Required: false, Description: "Reference to the network this interface belongs to"},
 			{Name: "vlan_id", Type: PropertyTypeInteger, Required: false, Constraints: &Constraint{Min: intPtr(1), Max: intPtr(4094)}, Description: "VLAN identifier for a VLAN sub-interface (e.g., vmbr.20)"},
 			{Name: "mtu", Type: PropertyTypeInteger, Required: false, Default: 1500, Description: "Maximum transmission unit"},
 		},

@@ -267,6 +267,7 @@
           <tr><td>speed_mbps</td><td><span class="type-badge">integer</span></td><td><span class="req-no">no</span></td><td>-</td><td>Interface speed in Mbps</td></tr>
           <tr><td>mac_address</td><td><span class="type-badge">string</span></td><td><span class="req-no">no</span></td><td>-</td><td>MAC address</td></tr>
           <tr><td>ip_address</td><td><span class="type-badge">list[string]</span></td><td><span class="req-no">no</span></td><td>-</td><td>IP addresses if configured</td></tr>
+          <tr><td>network</td><td><span class="type-badge">reference</span></td><td><span class="req-no">no</span></td><td>-</td><td>Reference to the network this interface belongs to (e.g., <code>@mgmt-network</code>)</td></tr>
           <tr><td>vlan_id</td><td><span class="type-badge">integer</span></td><td><span class="req-no">no</span></td><td>-</td><td>VLAN identifier (1-4094) for a VLAN sub-interface</td></tr>
           <tr><td>mtu</td><td><span class="type-badge">integer</span></td><td><span class="req-no">no</span></td><td>1500</td><td>Maximum transmission unit</td></tr>
           <tr><td>interfaces</td><td><span class="type-badge">list[object]</span></td><td><span class="req-no">no</span></td><td>-</td><td>Nested child interfaces (VRRP, LACP/bond, VLAN sub-interface, etc.)</td></tr>
@@ -274,6 +275,13 @@
       </table>
       <p><strong>Ownership:</strong> server, switch, router, vm, container, network</p>
       <p><strong>Nestable Children:</strong> vlans (vlan), cables (cable), interfaces (interface)</p>
+      <div class="callout note">
+        <span class="callout-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span>
+        <div>
+          <div class="callout-title">Note</div>
+          <p>An interface that carries IP addresses SHOULD reference a network, either via the <code>network</code> property or a <code>belongs_to</code> relation to a <code>network</code> entity. IP addresses are validated against the referenced network&rsquo;s <code>cidr</code>.</p>
+        </div>
+      </div>
 <pre class="language-yaml"><code>- id: eno1
   kind: interface
   name: eno1
@@ -283,6 +291,7 @@
     type: ethernet
     speed_mbps: 10000
     mac_address: "aa:bb:cc:dd:ee:f0"
+    network: "@mgmt-network"
     ip_address:
       - 10.0.1.10
     vlans:

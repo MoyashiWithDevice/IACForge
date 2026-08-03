@@ -88,6 +88,13 @@ Validation produces Findings.
 | valid-status | warning | Status SHOULD be a valid enum value |
 | valid-port-range | error | open_port port MUST be between 1 and 65535 |
 | valid-acl-rule-parent | error | acl_rule MUST have owner referencing an acl |
+| valid-ip-format | warning | interface ip_address values SHOULD be valid IP addresses or CIDR notation |
+| ip-requires-network | warning | interface with IP addresses SHOULD reference a network (via `network` property or `belongs_to` relation) |
+| network-reference-kind | warning | interface `network` reference SHOULD point to an entity of kind network |
+| ip-in-cidr | warning | interface IP addresses SHOULD be within the CIDR of a referenced network |
+| network-cidr-required | warning | network with member interfaces that have IP addresses SHOULD define a valid cidr |
+| gateway-in-cidr | warning | network gateway SHOULD be within the network cidr |
+| ip-unique-in-network | warning | IP addresses SHOULD be unique within a network |
 
 ### Relation Rules
 
@@ -321,6 +328,83 @@ description: "acl_rule MUST have owner referencing an acl"
 severity: error
 scope: entity
 condition: "entity.kind == 'acl_rule' implies entity.owner is defined and entity(entity.id == entity.owner).kind == 'acl'"
+```
+
+### valid-ip-format
+
+```yaml
+id: valid-ip-format
+name: Valid IP Address Format
+description: "interface ip_address values SHOULD be valid IP addresses or CIDR notation"
+severity: warning
+scope: entity
+condition: "entity.kind == 'interface' implies all entity.ip_address parse as IP or CIDR"
+```
+
+### ip-requires-network
+
+```yaml
+id: ip-requires-network
+name: IP Requires Network
+description: "interface with IP addresses SHOULD reference a network"
+severity: warning
+scope: entity
+condition: "entity.kind == 'interface' and entity.ip_address is defined and not empty implies entity.network is defined or exists relation type == 'belongs_to' where source == entity.id and target.kind == 'network'"
+```
+
+### network-reference-kind
+
+```yaml
+id: network-reference-kind
+name: Network Reference Kind
+description: "interface network reference SHOULD point to an entity of kind network"
+severity: warning
+scope: entity
+condition: "entity.kind == 'interface' and entity.network is defined implies entity(entity.id == entity.network).kind == 'network'"
+```
+
+### ip-in-cidr
+
+```yaml
+id: ip-in-cidr
+name: IP Within Network CIDR
+description: "interface IP addresses SHOULD be within the CIDR of a referenced network"
+severity: warning
+scope: entity
+condition: "entity.kind == 'interface' implies all entity.ip_address are within the cidr of a referenced network"
+```
+
+### network-cidr-required
+
+```yaml
+id: network-cidr-required
+name: Network CIDR Required
+description: "network with member interfaces that have IP addresses SHOULD define a valid cidr"
+severity: warning
+scope: entity
+condition: "entity.kind == 'network' and exists interface with ip_address belonging to entity implies entity.cidr is defined and valid"
+```
+
+### gateway-in-cidr
+
+```yaml
+id: gateway-in-cidr
+name: Gateway Within Network CIDR
+description: "network gateway SHOULD be within the network cidr"
+severity: warning
+scope: entity
+condition: "entity.kind == 'network' and entity.gateway is defined implies entity.gateway is within entity.cidr"
+```
+
+### ip-unique-in-network
+
+```yaml
+id: ip-unique-in-network
+name: Unique IP Within Network
+description: "IP addresses SHOULD be unique within a network"
+severity: warning
+scope: graph
+condition: "for each network, all member interface ip_address are unique"
 ```
 
 ---

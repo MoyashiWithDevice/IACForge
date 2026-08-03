@@ -634,3 +634,60 @@ objects:
 		t.Errorf("expected reference target net-mgmt, got %s", ref.RefTargetID())
 	}
 }
+
+func TestRoundTripInterfaceNetworkReference(t *testing.T) {
+	input := `
+objects:
+  - id: net-mgmt
+    kind: network
+    name: Management Network
+    spec:
+      cidr: 10.0.0.0/24
+
+  - id: eno1
+    kind: interface
+    name: eno1
+    spec:
+      network: "@net-mgmt"
+      ip_address:
+        - 10.0.0.10
+`
+	parser := NewParser()
+	g, err := parser.Parse([]byte(input))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+
+	serializer := NewSerializer()
+	data, err := serializer.Serialize(g)
+	if err != nil {
+		t.Fatalf("failed to serialize: %v", err)
+	}
+
+	output := string(data)
+	if !strings.Contains(output, "@net-mgmt") {
+		t.Errorf("serialized output should contain @net-mgmt reference, got:\n%s", output)
+	}
+
+	g2, err := parser.Parse(data)
+	if err != nil {
+		t.Fatalf("failed to re-parse: %v", err)
+	}
+
+	intf, ok := g2.GetEntity("eno1")
+	if !ok {
+		t.Fatal("expected entity eno1")
+	}
+
+	v, ok := intf.GetProperty("network")
+	if !ok {
+		t.Fatal("expected property network")
+	}
+	ref, ok := v.(core.ReferenceValue)
+	if !ok {
+		t.Fatalf("expected ReferenceValue after round-trip, got %T", v)
+	}
+	if ref.RefTargetID() != "net-mgmt" {
+		t.Errorf("expected reference target net-mgmt, got %s", ref.RefTargetID())
+	}
+}

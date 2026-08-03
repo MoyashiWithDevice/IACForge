@@ -39,6 +39,9 @@ func TestEngineCoreRulesRegistered(t *testing.T) {
 		"valid-cardinality", "valid-participant-kind",
 		"ownership-tree", "no-ownership-cycle", "root-entity",
 		"dangling-reference", "invalid-path",
+		"valid-ip-format", "ip-requires-network", "network-reference-kind",
+		"ip-in-cidr", "network-cidr-required", "gateway-in-cidr",
+		"ip-unique-in-network",
 	}
 
 	for _, ruleID := range expectedRules {
@@ -787,6 +790,261 @@ func TestValidPath(t *testing.T) {
 	for _, f := range result.Findings {
 		if f.RuleID == "invalid-path" && f.Severity == SeverityError {
 			t.Errorf("unexpected invalid-path error: %s", f.Message)
+		}
+	}
+}
+
+// --- Network Rules ---
+
+func newNetworkGraph() *core.Graph {
+	g := core.NewGraph()
+	site := core.NewEntity("site-01", kinds.Site, "Site 01")
+	g.AddEntity(site)
+	server := core.NewEntity("srv-01", kinds.Server, "Server 01")
+	server.SetOwner("site-01")
+	g.AddEntity(server)
+	net := core.NewEntity("net-01", kinds.Network, "Network 01")
+	net.SetOwner("site-01")
+	net.SetProperty("cidr", "10.0.1.0/24")
+	g.AddEntity(net)
+	return g
+}
+
+func newServerInterface(graph *core.Graph, id string) *core.Entity {
+	intf := core.NewEntity(id, kinds.Interface, id)
+	intf.SetOwner("srv-01")
+	graph.AddEntity(intf)
+	return intf
+}
+
+func hasFindingByRule(result *Result, ruleID string) bool {
+	for _, f := range result.Findings {
+		if f.RuleID == ruleID {
+			return true
+		}
+	}
+	return false
+}
+
+func TestRuleValidIPFormat(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+	graph.AddEntity(core.NewEntity("site-01", kinds.Site, "Site 01"))
+
+	valid := core.NewEntity("eth0", kinds.Interface, "eth0")
+	valid.SetOwner("site-01")
+	valid.SetProperty("ip_address", "10.0.1.10")
+	graph.AddEntity(valid)
+
+	invalid := core.NewEntity("eth1", kinds.Interface, "eth1")
+	invalid.SetOwner("site-01")
+	invalid.SetProperty("ip_address", []interface{}{"10.0.1.10", "not-an-ip"})
+	graph.AddEntity(invalid)
+
+	result := e.Validate(graph, nil)
+	if hasFindingByRule(result, "valid-ip-format") == false {
+		t.Error("expected valid-ip-format warning for invalid IP address")
+	}
+	for _, f := range result.Findings {
+		if f.RuleID == "valid-ip-format" && f.ObjectID == "eth0" {
+			t.Error("eth0 should not have valid-ip-format warning")
+		}
+		if f.RuleID == "valid-ip-format" && f.Severity != SeverityWarning {
+			t.Errorf("valid-ip-format should be warning severity, got %s", f.Severity)
+		}
+	}
+}
+
+func TestRuleIPRequiresNetwork(t *testing.T) {
+	e := newTestEngine()
+	graph := newNetworkGraph()
+
+	withNetwork := newServerInterface(graph, "eth0")
+	withNetwork.SetProperty("ip_address", []interface{}{"10.0.1.10"})
+	withNetwork.SetProperty("network", core.NewReferenceValue("@net-01"))
+
+	withoutNetwork := newServerInterface(graph, "eth1")
+	withoutNetwork.SetProperty("ip_address", []interface{}{"10.0.1.11"})
+
+	newServerInterface(graph, "eth2")
+
+	result := e.Validate(graph, nil)
+	if !hasFindingByRule(result, "ip-requires-network") {
+		t.Error("expected ip-requires-network warning for interface without network")
+	}
+	for _, f := range result.Findings {
+		if f.RuleID == "ip-requires-network" && f.ObjectID == "eth0" {
+			t.Error("eth0 references a network and should not have ip-requires-network warning")
+		}
+		if f.RuleID == "ip-requires-network" && f.ObjectID == "eth2" {
+			t.Error("eth2 has no IP address and should not have ip-requires-network warning")
+		}
+	}
+}
+
+func TestRuleIPRequiresNetworkViaBelongsTo(t *testing.T) {
+	e := newTestEngine()
+	graph := newNetworkGraph()
+
+	intf := newServerInterface(graph, "eth0")
+	intf.SetProperty("ip_address", []interface{}{"10.0.1.10"})
+
+	rel := core.NewDirectedRelation("rel-intf-net", types.BelongsTo, "eth0", "net-01")
+	graph.AddRelation(rel)
+
+	result := e.Validate(graph, nil)
+	if hasFindingByRule(result, "ip-requires-network") {
+		t.Error("interface with belongs_to relation to a network should not have ip-requires-network warning")
+	}
+}
+
+func TestRuleNetworkReferenceKind(t *testing.T) {
+	e := newTestEngine()
+	graph := newNetworkGraph()
+
+	// net-01 is referenced correctly (kind network); create a server reference too
+	intf := newServerInterface(graph, "eth0")
+	intf.SetProperty("ip_address", []interface{}{"10.0.1.10"})
+	intf.SetProperty("network", core.NewReferenceValue("@net-01"))
+
+	bad := newServerInterface(graph, "eth1")
+	bad.SetProperty("ip_address", []interface{}{"10.0.1.11"})
+	bad.SetProperty("network", core.NewReferenceValue("@srv-01"))
+
+	result := e.Validate(graph, nil)
+	if !hasFindingByRule(result, "network-reference-kind") {
+		t.Error("expected network-reference-kind warning for network property referencing non-network entity")
+	}
+	for _, f := range result.Findings {
+		if f.RuleID == "network-reference-kind" && f.ObjectID == "eth0" {
+			t.Error("eth0 references a network and should not have network-reference-kind warning")
+		}
+	}
+}
+
+func TestRuleIPInCIDR(t *testing.T) {
+	e := newTestEngine()
+	graph := newNetworkGraph()
+
+	inRange := newServerInterface(graph, "eth0")
+	inRange.SetProperty("ip_address", []interface{}{"10.0.1.10/24"})
+	inRange.SetProperty("network", core.NewReferenceValue("@net-01"))
+
+	outOfRange := newServerInterface(graph, "eth1")
+	outOfRange.SetProperty("ip_address", []interface{}{"192.168.0.10"})
+	outOfRange.SetProperty("network", core.NewReferenceValue("@net-01"))
+
+	result := e.Validate(graph, nil)
+	if !hasFindingByRule(result, "ip-in-cidr") {
+		t.Error("expected ip-in-cidr warning for IP outside network CIDR")
+	}
+	for _, f := range result.Findings {
+		if f.RuleID == "ip-in-cidr" && f.ObjectID == "eth0" {
+			t.Error("eth0 IP is within network CIDR and should not have ip-in-cidr warning")
+		}
+	}
+}
+
+func TestRuleNetworkCIDRRequired(t *testing.T) {
+	e := newTestEngine()
+	graph := newNetworkGraph()
+
+	net2 := core.NewEntity("net-02", kinds.Network, "Network 02")
+	net2.SetOwner("site-01")
+	graph.AddEntity(net2)
+
+	withNetwork := newServerInterface(graph, "eth0")
+	withNetwork.SetProperty("ip_address", []interface{}{"10.0.1.10"})
+	withNetwork.SetProperty("network", core.NewReferenceValue("@net-01"))
+
+	noCidr := newServerInterface(graph, "eth1")
+	noCidr.SetProperty("ip_address", []interface{}{"10.0.2.10"})
+	noCidr.SetProperty("network", core.NewReferenceValue("@net-02"))
+
+	result := e.Validate(graph, nil)
+	if !hasFindingByRule(result, "network-cidr-required") {
+		t.Error("expected network-cidr-required warning for network without cidr that has IP members")
+	}
+	for _, f := range result.Findings {
+		if f.RuleID == "network-cidr-required" && f.ObjectID == "net-01" {
+			t.Error("net-01 defines a cidr and should not have network-cidr-required warning")
+		}
+	}
+}
+
+func TestRuleGatewayInCIDR(t *testing.T) {
+	e := newTestEngine()
+	graph := newNetworkGraph()
+
+	good := core.NewEntity("net-good", kinds.Network, "Good Network")
+	good.SetOwner("site-01")
+	good.SetProperty("cidr", "10.0.1.0/24")
+	good.SetProperty("gateway", "10.0.1.1")
+	graph.AddEntity(good)
+
+	bad := core.NewEntity("net-bad", kinds.Network, "Bad Network")
+	bad.SetOwner("site-01")
+	bad.SetProperty("cidr", "10.0.1.0/24")
+	bad.SetProperty("gateway", "192.168.0.1")
+	graph.AddEntity(bad)
+
+	invalid := core.NewEntity("net-invalid", kinds.Network, "Invalid Gateway Network")
+	invalid.SetOwner("site-01")
+	invalid.SetProperty("cidr", "10.0.1.0/24")
+	invalid.SetProperty("gateway", "not-an-ip")
+	graph.AddEntity(invalid)
+
+	result := e.Validate(graph, nil)
+	if !hasFindingByRule(result, "gateway-in-cidr") {
+		t.Error("expected gateway-in-cidr warning for gateway outside CIDR or invalid gateway")
+	}
+	for _, f := range result.Findings {
+		if f.RuleID == "gateway-in-cidr" && f.ObjectID == "net-good" {
+			t.Error("net-good gateway is within CIDR and should not have gateway-in-cidr warning")
+		}
+	}
+}
+
+func TestRuleIPUniqueInNetwork(t *testing.T) {
+	e := newTestEngine()
+	graph := newNetworkGraph()
+
+	intf1 := newServerInterface(graph, "eth0")
+	intf1.SetProperty("ip_address", []interface{}{"10.0.1.10"})
+	intf1.SetProperty("network", core.NewReferenceValue("@net-01"))
+
+	intf2 := newServerInterface(graph, "eth1")
+	intf2.SetProperty("ip_address", []interface{}{"10.0.1.10"})
+	intf2.SetProperty("network", core.NewReferenceValue("@net-01"))
+
+	intf3 := newServerInterface(graph, "eth2")
+	intf3.SetProperty("ip_address", []interface{}{"10.0.1.11"})
+	intf3.SetProperty("network", core.NewReferenceValue("@net-01"))
+
+	result := e.Validate(graph, nil)
+	if !hasFindingByRule(result, "ip-unique-in-network") {
+		t.Error("expected ip-unique-in-network warning for duplicate IP within a network")
+	}
+}
+
+func TestNetworkRulesNoWarningsForCompliantGraph(t *testing.T) {
+	e := newTestEngine()
+	graph := newNetworkGraph()
+
+	intf := newServerInterface(graph, "eth0")
+	intf.SetProperty("ip_address", []interface{}{"10.0.1.10"})
+	intf.SetProperty("network", core.NewReferenceValue("@net-01"))
+
+	result := e.Validate(graph, nil)
+	networkRules := map[string]bool{
+		"valid-ip-format": false, "ip-requires-network": false,
+		"network-reference-kind": false, "ip-in-cidr": false,
+		"network-cidr-required": false, "gateway-in-cidr": false,
+		"ip-unique-in-network": false,
+	}
+	for _, f := range result.Findings {
+		if _, ok := networkRules[f.RuleID]; ok {
+			t.Errorf("unexpected %s warning: %s", f.RuleID, f.Message)
 		}
 	}
 }

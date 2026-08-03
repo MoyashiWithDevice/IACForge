@@ -254,8 +254,11 @@ A network interface (physical or virtual).
 | speed_mbps | integer | no | - | Interface speed in Mbps |
 | mac_address | string | no | - | MAC address |
 | ip_address | list[string] | no | - | IP addresses if configured |
+| network | reference | no | - | Reference to the network this interface belongs to (e.g., `@mgmt-network`) |
 | vlan_id | integer | no | - | VLAN identifier (1-4094) for a VLAN sub-interface |
 | mtu | integer | no | 1500 | Maximum transmission unit |
+
+> **Note:** An interface that carries IP addresses SHOULD reference a network, either via the `network` property or a `belongs_to` relation to a `network` entity. IP addresses are validated against the referenced network's `cidr`.
 
 #### Typical Ownership
 
@@ -285,6 +288,7 @@ Physical interface:
   type: ethernet
   speed_mbps: 1000
   mac_address: "00:1a:2b:3c:4d:5e"
+  network: "@mgmt-network"
   ip_address:
     - 10.0.1.10
 ```

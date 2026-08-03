@@ -109,7 +109,8 @@ objects:
       type: ethernet
       speed_mbps: 10000
       mac_address: "aa:bb:cc:dd:ee:f0"
-      ip_address: 10.0.1.10
+      network: "@mgmt-network-01"
+      ip_address: 10.0.0.10
 
   - id: eno2
     kind: interface

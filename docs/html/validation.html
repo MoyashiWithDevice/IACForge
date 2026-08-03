@@ -143,6 +143,48 @@
         </tbody>
       </table>
 
+      <h2 id="network-integrity-rules">ネットワーク整合性ルール</h2>
+      <p>InterfaceのIPアドレスとNetworkの整合性を保証する検証ルールです。</p>
+      <div class="callout warning">
+        <span class="callout-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></span>
+        <div>
+          <div class="callout-title">Warning</div>
+          <p>導入時点ではすべて <strong>warning</strong> です。ドキュメント・モデル更新後、<code>ip-requires-network</code> と <code>ip-in-cidr</code> は <strong>error</strong> へ昇格予定です。</p>
+        </div>
+      </div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Rule ID</th><th>Severity</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>valid-ip-format</td><td>warning</td><td>interfaceの<code>ip_address</code>は有効なIPアドレスまたはCIDR表記であること</td></tr>
+          <tr><td>ip-requires-network</td><td>warning</td><td>IPアドレスを持つinterfaceは<code>network</code>プロパティまたは<code>belongs_to</code> relationでnetworkを参照すること</td></tr>
+          <tr><td>network-reference-kind</td><td>warning</td><td>interfaceの<code>network</code>参照はkind=networkのentityを指すこと</td></tr>
+          <tr><td>ip-in-cidr</td><td>warning</td><td>interfaceのIPは参照networkの<code>cidr</code>内にあること</td></tr>
+          <tr><td>network-cidr-required</td><td>warning</td><td>IPを持つmemberがいるnetworkは<code>cidr</code>を定義すること</td></tr>
+          <tr><td>gateway-in-cidr</td><td>warning</td><td>networkの<code>gateway</code>は<code>cidr</code>内にあること</td></tr>
+          <tr><td>ip-unique-in-network</td><td>warning</td><td>同一network内でIPが重複しないこと</td></tr>
+        </tbody>
+      </table>
+
+      <h3 id="network-integrity-example">例: IPを持つinterfaceはnetworkを参照する</h3>
+<pre class="language-yaml"><code>- id: mgmt-network
+  kind: network
+  name: Management Network
+  spec:
+    cidr: 10.0.0.0/24
+    gateway: 10.0.0.1
+
+- id: eno1
+  kind: interface
+  name: eno1
+  attributes:
+    owner: srv-proxmox-01
+  spec:
+    network: "@mgmt-network"
+    ip_address:
+      - 10.0.0.10</code></pre>
+
     </div>
     <footer class="footer">
       <span>&copy; 2026 IACForge. Infrastructure as knowledge.</span>
