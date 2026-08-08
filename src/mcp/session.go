@@ -1,9 +1,11 @@
 package mcp
 
 import (
+	"fmt"
 	"sync"
 
 	"IACForge/src/core"
+	"IACForge/src/extension"
 	"IACForge/src/schema"
 	"IACForge/src/validation"
 )
@@ -19,6 +21,7 @@ type SessionData struct {
 	Graph      *core.Graph
 	Schema     *schema.Schema
 	Validation *validation.Engine
+	Extensions *extension.Manager
 }
 
 // NewSessionManager creates a new session manager.
@@ -45,14 +48,16 @@ func (m *SessionManager) GetOrCreate(sessionID string) *SessionData {
 		return sd
 	}
 
-	s := schema.CoreSchema()
-	v := validation.NewEngine(s)
-	validation.RegisterCoreRules(v)
+	setup, err := extension.NewSetup(extension.DefaultExtensionDir())
+	if err != nil {
+		panic(fmt.Sprintf("failed to initialize extension setup: %v", err))
+	}
 
 	sd = &SessionData{
 		Graph:      core.NewGraph(),
-		Schema:     s,
-		Validation: v,
+		Schema:     setup.Schema,
+		Validation: setup.Validation,
+		Extensions: setup.Manager,
 	}
 	m.sessions[sessionID] = sd
 	return sd

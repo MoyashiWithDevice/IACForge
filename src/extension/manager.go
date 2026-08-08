@@ -28,6 +28,7 @@ type Manager struct {
 	extensionPoints map[ExtensionPointType]ExtensionPoint
 	loadOrder       []string
 	loaded          bool
+	applied         map[string]bool
 }
 
 // NewManager creates a new Extension Manager.
@@ -35,6 +36,7 @@ func NewManager() *Manager {
 	return &Manager{
 		extensions:      make(map[string]*Extension),
 		extensionPoints: make(map[ExtensionPointType]ExtensionPoint),
+		applied:         make(map[string]bool),
 	}
 }
 
@@ -77,6 +79,9 @@ func (m *Manager) Register(ext *Extension) error {
 }
 
 // LoadAll resolves dependencies, orders extensions, and applies them to extension points.
+// LoadAll is idempotent: extensions that have already been applied are skipped,
+// so it may be called again after registering additional extensions (e.g. via
+// LoadFromDir at runtime) without re-applying previously loaded extensions.
 func (m *Manager) LoadAll() error {
 	order, err := m.resolveLoadOrder()
 	if err != nil {
@@ -84,10 +89,14 @@ func (m *Manager) LoadAll() error {
 	}
 
 	for _, extID := range order {
+		if m.applied[extID] {
+			continue
+		}
 		ext := m.extensions[extID]
 		if err := m.applyExtension(ext); err != nil {
 			return fmt.Errorf("loading extension %s: %w", extID, err)
 		}
+		m.applied[extID] = true
 	}
 
 	m.loadOrder = order

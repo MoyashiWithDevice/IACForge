@@ -7,12 +7,12 @@ import (
 	"strings"
 
 	"IACForge/src/core"
+	"IACForge/src/extension"
 	iacmcp "IACForge/src/mcp"
 	"IACForge/src/parser"
 	"IACForge/src/query"
 	"IACForge/src/renderer"
 	"IACForge/src/schema"
-	"IACForge/src/validation"
 	"IACForge/src/view"
 )
 
@@ -64,18 +64,30 @@ Examples:
   iacforge validate
   iacforge validate models/
   iacforge validate model.yaml
+  iacforge validate --extensions ./extensions
   iacforge info
   iacforge render --format markdown
   iacforge query --kind server
   iacforge mcp --port 8080`)
 }
 
-func loadGraph(path string) (*core.Graph, error) {
+func loadGraph(path string, s *schema.Schema) (*core.Graph, error) {
 	if path == "" {
 		path = "."
 	}
-	p := parser.NewParser()
+	p := parser.NewParserWithSchema(s)
 	return p.Load(path)
+}
+
+// newSetupOrExit builds the extension setup from the default extension directory,
+// exiting with an error if initialization fails.
+func newSetupOrExit() *extension.Setup {
+	setup, err := extension.NewSetup(extension.DefaultExtensionDir())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Extension error: %v\n", err)
+		os.Exit(1)
+	}
+	return setup
 }
 
 // extractPath extracts the path argument from args (non-flag argument).
@@ -93,15 +105,25 @@ func extractPath(args []string) (string, []string) {
 func cmdValidate(args []string) {
 	path, args := extractPath(args)
 
-	g, err := loadGraph(path)
+	extDir := extension.DefaultExtensionDir()
+	for i := 0; i < len(args)-1; i++ {
+		if args[i] == "--extensions" && i+1 < len(args) {
+			extDir = args[i+1]
+			i++
+		}
+	}
+
+	setup, err := extension.NewSetup(extDir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Extension error: %v\n", err)
+		os.Exit(1)
+	}
+
+	g, err := loadGraph(path, setup.Schema)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Parse error: %v\n", err)
 		os.Exit(1)
 	}
-
-	s := schema.CoreSchema()
-	v := validation.NewEngine(s)
-	validation.RegisterCoreRules(v)
 
 	var profile *schema.Profile
 	for i := 0; i < len(args)-1; i++ {
@@ -116,7 +138,7 @@ func cmdValidate(args []string) {
 		}
 	}
 
-	result := v.Validate(g, profile)
+	result := setup.Validation.Validate(g, profile)
 
 	if result.Passed {
 		fmt.Println("Validation PASSED")
@@ -147,7 +169,9 @@ func cmdValidate(args []string) {
 func cmdInfo(args []string) {
 	path, _ := extractPath(args)
 
-	g, err := loadGraph(path)
+	setup := newSetupOrExit()
+
+	g, err := loadGraph(path, setup.Schema)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Parse error: %v\n", err)
 		os.Exit(1)
@@ -202,7 +226,9 @@ func cmdRender(args []string) {
 		}
 	}
 
-	g, err := loadGraph(path)
+	setup := newSetupOrExit()
+
+	g, err := loadGraph(path, setup.Schema)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Parse error: %v\n", err)
 		os.Exit(1)
@@ -269,7 +295,9 @@ func cmdQuery(args []string) {
 		}
 	}
 
-	g, err := loadGraph(path)
+	setup := newSetupOrExit()
+
+	g, err := loadGraph(path, setup.Schema)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Parse error: %v\n", err)
 		os.Exit(1)

@@ -20,6 +20,7 @@ func NewMCPServer(sm *SessionManager) *server.MCPServer {
 	registerSchemaMCPTools(s, sm)
 	registerQueryMCPTools(s, sm)
 	registerRenderMCPTools(s, sm)
+	registerExtensionMCPTools(s, sm)
 
 	return s
 }

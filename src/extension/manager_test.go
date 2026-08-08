@@ -736,6 +736,69 @@ func TestIntegrationGraphIntegrity(t *testing.T) {
 
 // --- LoadFromDir Tests ---
 
+func TestLoadAllIdempotent(t *testing.T) {
+	s := schema.NewSchema("1.0", "1.0")
+	m := NewManager()
+
+	ekEP := NewEntityKindsExtensionPoint(s)
+	rtEP := NewRelationTypesExtensionPoint(s)
+	m.RegisterExtensionPoint(ekEP)
+	m.RegisterExtensionPoint(rtEP)
+
+	extA := newTestExtension("ext-a", "ns-a", nil)
+	extB := newTestRelationExtension("ext-b", "ns-b")
+
+	m.Register(extA)
+	m.Register(extB)
+
+	if err := m.LoadAll(); err != nil {
+		t.Fatalf("first LoadAll failed: %v", err)
+	}
+	if !s.HasEntityKind("ext_ext-a") {
+		t.Error("ext-a entity kind not in schema after first LoadAll")
+	}
+
+	// Second LoadAll must not re-apply already-loaded extensions.
+	if err := m.LoadAll(); err != nil {
+		t.Fatalf("second LoadAll failed: %v", err)
+	}
+
+	// A newly registered extension should still be applied by a subsequent LoadAll.
+	extC := newTestExtension("ext-c", "ns-c", nil)
+	if err := m.Register(extC); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
+	if err := m.LoadAll(); err != nil {
+		t.Fatalf("LoadAll after registering new extension failed: %v", err)
+	}
+	if !s.HasEntityKind("ext_ext-c") {
+		t.Error("ext-c entity kind not in schema after LoadAll on new extension")
+	}
+}
+
+func TestLoadAllIdempotentWithLoadFromDir(t *testing.T) {
+	s := schema.NewSchema("1.0", "1.0")
+	m := NewManager()
+
+	ekEP := NewEntityKindsExtensionPoint(s)
+	m.RegisterExtensionPoint(ekEP)
+
+	builtin := newTestExtension("builtin-a", "ns-a", nil)
+	if err := m.Register(builtin); err != nil {
+		t.Fatalf("Register builtin failed: %v", err)
+	}
+
+	// LoadFromDir internally calls LoadAll; the already-registered builtin must
+	// not be re-applied (which would cause a "already defined" conflict).
+	dir := t.TempDir()
+	if err := m.LoadFromDir(dir); err != nil {
+		t.Fatalf("LoadFromDir failed: %v", err)
+	}
+	if !s.HasEntityKind("ext_builtin-a") {
+		t.Error("builtin entity kind not in schema after LoadFromDir")
+	}
+}
+
 func TestLoadFromDirEmpty(t *testing.T) {
 	dir := t.TempDir()
 	m := NewManager()

@@ -147,6 +147,7 @@ aws.organization
 
 | タスク | 内容 | 対象ファイル |
 |--------|------|-------------|
+| T0-0 | `Manager.LoadAll` を冪等化（`applied` トラッキング導入）。`LoadFromDir` / 実行時 `load_extension_dir` の再適用衝突を解消 | `src/extension/manager.go` |
 | T0-1 | `SessionData` に `Extensions *extension.Manager` を追加。`GetOrCreate` で schema/validation/マネージャ構築、4拡張ポイント登録、ビルトイン拡張 `LoadAll`、`IACFORGE_EXTENSIONS` 指定時 `LoadFromDir` | `src/mcp/session.go` |
 | T0-2 | 共通ヘルパー `newSchemaWithExtensions()` を新設し `validate`/`info`/`render`/`query` の schema/validation 構築を置換。`validate --extensions <dir>` フラグ追加 | `cmd/iacforge/main.go` |
 | T0-3 | `load_extension_dir` / `list_extensions` / `list_extension_kinds` MCPツールを実装し `NewMCPServer` に登録 | `src/mcp/tools_extension.go`（新規）、`src/mcp/server.go` |
