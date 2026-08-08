@@ -16,12 +16,12 @@ type Renderer interface {
 
 // RenderOptions configures the rendering process.
 type RenderOptions struct {
-	Width    float64          `yaml:"width,omitempty"`
-	Height   float64          `yaml:"height,omitempty"`
-	Scale    float64          `yaml:"scale,omitempty"`
-	Theme    *Theme           `yaml:"theme,omitempty"`
-	Layout   *LayoutConfig    `yaml:"layout,omitempty"`
-	Options  map[string]interface{} `yaml:"options,omitempty"`
+	Width   float64                `yaml:"width,omitempty"`
+	Height  float64                `yaml:"height,omitempty"`
+	Scale   float64                `yaml:"scale,omitempty"`
+	Theme   *Theme                 `yaml:"theme,omitempty"`
+	Layout  *LayoutConfig          `yaml:"layout,omitempty"`
+	Options map[string]interface{} `yaml:"options,omitempty"`
 }
 
 // Artifact represents a rendered output.
@@ -37,13 +37,13 @@ type Artifact struct {
 
 // Theme defines presentation characteristics.
 type Theme struct {
-	ID         string         `yaml:"id"`
-	Name       string         `yaml:"name"`
-	Colors     *ColorPalette  `yaml:"colors,omitempty"`
-	Typography *Typography    `yaml:"typography,omitempty"`
-	Spacing    *Spacing       `yaml:"spacing,omitempty"`
-	Icons      *IconSet       `yaml:"icons,omitempty"`
-	Lines      *LineStyles    `yaml:"lines,omitempty"`
+	ID         string        `yaml:"id"`
+	Name       string        `yaml:"name"`
+	Colors     *ColorPalette `yaml:"colors,omitempty"`
+	Typography *Typography   `yaml:"typography,omitempty"`
+	Spacing    *Spacing      `yaml:"spacing,omitempty"`
+	Icons      *IconSet      `yaml:"icons,omitempty"`
+	Lines      *LineStyles   `yaml:"lines,omitempty"`
 }
 
 // ColorPalette defines color definitions.
@@ -78,7 +78,7 @@ type Spacing struct {
 
 // IconSet defines icon definitions.
 type IconSet struct {
-	Site     string `yaml:"site,omitempty"`
+	Region   string `yaml:"region,omitempty"`
 	Rack     string `yaml:"rack,omitempty"`
 	Server   string `yaml:"server,omitempty"`
 	VM       string `yaml:"vm,omitempty"`
@@ -135,9 +135,9 @@ type EdgePosition struct {
 
 // LayoutResult represents the result of a layout computation.
 type LayoutResult struct {
-	Nodes []NodePosition
-	Edges []EdgePosition
-	Width float64
+	Nodes  []NodePosition
+	Edges  []EdgePosition
+	Width  float64
 	Height float64
 }
 

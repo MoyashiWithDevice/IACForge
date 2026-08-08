@@ -30,8 +30,8 @@ window.IACFORGE_SEARCH_INDEX = [
     path: "entity-kinds.html",
     title: "Entity Kinds",
     section: "YAML Reference",
-    description: "全Entity種類の定義とプロパティ。site, rack, server, vm, network, storageなど。",
-    keywords: "entity kinds site rack server interface cable power_distribution network vlan switch router firewall acl acl_rule vm container application open_port storage volume cluster availability_zone mode trunk access hybrid tagged port_count ports ip_address cidr kind 種類 定義",
+    description: "全Entity種類の定義とプロパティ。region, rack, server, vm, network, storageなど。",
+    keywords: "entity kinds region rack server interface cable power_distribution network vlan switch router firewall acl acl_rule vm container application open_port storage volume cluster availability_zone mode trunk access hybrid tagged port_count ports ip_address cidr kind 種類 定義",
   },
   {
     path: "relation-syntax.html",
@@ -65,7 +65,7 @@ window.IACFORGE_SEARCH_INDEX = [
     path: "example.html",
     title: "Complete Example",
     section: "YAML Reference",
-    description: "完全なインフラモデルの例。sites, racks, servers, VMs, ACLs, relations。",
-    keywords: "example complete full model yaml infrastructure sites racks servers vms acl relations 例 完全 サンプル",
+    description: "完全なインフラモデルの例。regions, racks, servers, VMs, ACLs, relations。",
+    keywords: "example complete full model yaml infrastructure regions racks servers vms acl relations 例 完全 サンプル",
   },
 ];

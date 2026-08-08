@@ -399,7 +399,7 @@ Simplify hierarchical structure.
 operations:
   - type: flatten
     target_selector:
-      kind: site
+      kind: region
     preserve_relations: true
 ```
 
@@ -576,7 +576,7 @@ projections:
     operations:
       - type: select
         entities:
-          - kind: site
+          - kind: region
           - kind: rack
           - kind: server
           - kind: cable

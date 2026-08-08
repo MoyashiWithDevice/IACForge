@@ -6,9 +6,9 @@
 
 ```yaml
 objects:
-  # Sites
-  - id: site-tokyo-01
-    kind: site
+  # Regions
+  - id: region-ap-northeast-1
+    kind: region
     name: Tokyo Datacenter 1
     attributes:
       status: active
@@ -20,7 +20,7 @@ objects:
     kind: rack
     name: Rack A01
     attributes:
-      owner: site-tokyo-01
+      owner: region-ap-northeast-1
       status: active
       labels:
         row: A

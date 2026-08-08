@@ -172,11 +172,11 @@ func (e *Engine) applyGrouping(rule *GroupingRule, entities []*core.Entity) ([]*
 	var result []*Group
 	for key, members := range groups {
 		group := &Group{
-			ID:       fmt.Sprintf("group-%s-%s", rule.GroupKind, key),
-			Kind:     rule.GroupKind,
-			Name:     fmt.Sprintf("Group %s", key),
-			Members:  members,
-			Owner:    rule.Owner,
+			ID:      fmt.Sprintf("group-%s-%s", rule.GroupKind, key),
+			Kind:    rule.GroupKind,
+			Name:    fmt.Sprintf("Group %s", key),
+			Members: members,
+			Owner:   rule.Owner,
 			Properties: map[string]interface{}{
 				"group_key": key,
 				"count":     len(members),

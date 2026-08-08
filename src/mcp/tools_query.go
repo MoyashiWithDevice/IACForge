@@ -95,7 +95,7 @@ func registerQueryMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 
 	s.AddTool(
 		mcp.NewTool("resolve_path",
-			mcp.WithDescription("Resolve a path reference (e.g. site/rack/srv/net/eth0) to an entity. Supports direct IDs, ownership paths, and interface references."),
+			mcp.WithDescription("Resolve a path reference (e.g. region/rack/srv/net/eth0) to an entity. Supports direct IDs, ownership paths, and interface references."),
 			mcp.WithString("ref", mcp.Required(), mcp.Description("Reference string (ID or path)")),
 		),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -161,10 +161,10 @@ func registerQueryMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 			}
 
 			result := map[string]interface{}{
-				"id":                   id,
-				"children":             children,
-				"relations":            relations,
-				"property_references":  propertyRefs,
+				"id":                  id,
+				"children":            children,
+				"relations":           relations,
+				"property_references": propertyRefs,
 			}
 
 			data, _ := json.MarshalIndent(result, "", "  ")

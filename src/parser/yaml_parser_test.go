@@ -16,8 +16,8 @@ import (
 func TestParseBasicEntity(t *testing.T) {
 	yaml := `
 objects:
-  - id: site-tokyo-01
-    kind: site
+  - id: region-ap-northeast-1
+    kind: region
     name: Tokyo Datacenter 1
 `
 
@@ -31,16 +31,16 @@ objects:
 		t.Fatalf("expected 1 entity, got %d", g.EntityCount())
 	}
 
-	e, ok := g.GetEntity("site-tokyo-01")
+	e, ok := g.GetEntity("region-ap-northeast-1")
 	if !ok {
-		t.Fatal("entity site-tokyo-01 not found")
+		t.Fatal("entity region-ap-northeast-1 not found")
 	}
 
-	if e.ID != "site-tokyo-01" {
-		t.Errorf("expected ID site-tokyo-01, got %s", e.ID)
+	if e.ID != "region-ap-northeast-1" {
+		t.Errorf("expected ID region-ap-northeast-1, got %s", e.ID)
 	}
-	if e.Kind != kinds.Site {
-		t.Errorf("expected kind site, got %s", e.Kind)
+	if e.Kind != kinds.Region {
+		t.Errorf("expected kind region, got %s", e.Kind)
 	}
 	if e.Name != "Tokyo Datacenter 1" {
 		t.Errorf("expected name 'Tokyo Datacenter 1', got %s", e.Name)
@@ -114,15 +114,15 @@ objects:
 func TestParseEntityWithOwnership(t *testing.T) {
 	yaml := `
 objects:
-  - id: site-tokyo-01
-    kind: site
+  - id: region-ap-northeast-1
+    kind: region
     name: Tokyo Datacenter 1
 
   - id: rack-a01
     kind: rack
     name: Rack A01
     attributes:
-      owner: site-tokyo-01
+      owner: region-ap-northeast-1
 
   - id: srv-proxmox-01
     kind: server
@@ -142,14 +142,14 @@ objects:
 	}
 
 	// Check ownership hierarchy
-	site, _ := g.GetEntity("site-tokyo-01")
-	if !site.IsRoot() {
-		t.Error("site should be root")
+	region, _ := g.GetEntity("region-ap-northeast-1")
+	if !region.IsRoot() {
+		t.Error("region should be root")
 	}
 
 	rack, _ := g.GetEntity("rack-a01")
-	if rack.Owner != "site-tokyo-01" {
-		t.Errorf("expected rack owner site-tokyo-01, got %s", rack.Owner)
+	if rack.Owner != "region-ap-northeast-1" {
+		t.Errorf("expected rack owner region-ap-northeast-1, got %s", rack.Owner)
 	}
 
 	server, _ := g.GetEntity("srv-proxmox-01")
@@ -158,14 +158,14 @@ objects:
 	}
 
 	// Check paths were built
-	if site.Path() != "/site-tokyo-01" {
-		t.Errorf("expected site path /site-tokyo-01, got %s", site.Path())
+	if region.Path() != "/region-ap-northeast-1" {
+		t.Errorf("expected region path /region-ap-northeast-1, got %s", region.Path())
 	}
-	if rack.Path() != "/site-tokyo-01/rack-a01" {
-		t.Errorf("expected rack path /site-tokyo-01/rack-a01, got %s", rack.Path())
+	if rack.Path() != "/region-ap-northeast-1/rack-a01" {
+		t.Errorf("expected rack path /region-ap-northeast-1/rack-a01, got %s", rack.Path())
 	}
-	if server.Path() != "/site-tokyo-01/rack-a01/srv-proxmox-01" {
-		t.Errorf("expected server path /site-tokyo-01/rack-a01/srv-proxmox-01, got %s", server.Path())
+	if server.Path() != "/region-ap-northeast-1/rack-a01/srv-proxmox-01" {
+		t.Errorf("expected server path /region-ap-northeast-1/rack-a01/srv-proxmox-01, got %s", server.Path())
 	}
 }
 
@@ -322,9 +322,9 @@ objects:
 func TestParseCompleteExample(t *testing.T) {
 	yaml := `
 objects:
-  # Sites
-  - id: site-tokyo-01
-    kind: site
+  # Regions
+  - id: region-ap-northeast-1
+    kind: region
     name: Tokyo Datacenter 1
     attributes:
       status: active
@@ -336,7 +336,7 @@ objects:
     kind: rack
     name: Rack A01
     attributes:
-      owner: site-tokyo-01
+      owner: region-ap-northeast-1
       status: active
       labels:
         row: A
@@ -694,10 +694,10 @@ objects:
     kind: rack
     name: Rack A01
     attributes:
-      owner: site-tokyo-01
+      owner: region-ap-northeast-1
 
-  - id: site-tokyo-01
-    kind: site
+  - id: region-ap-northeast-1
+    kind: region
     name: Tokyo Datacenter
 
   # Nested definition
@@ -719,7 +719,7 @@ objects:
 		t.Fatalf("failed to parse: %v", err)
 	}
 
-	// site + rack + server + vm = 4
+	// region + rack + server + vm = 4
 	if g.EntityCount() != 4 {
 		t.Fatalf("expected 4 entities, got %d", g.EntityCount())
 	}
@@ -729,8 +729,8 @@ objects:
 	if !ok {
 		t.Fatal("rack not found")
 	}
-	if rack.Owner != "site-tokyo-01" {
-		t.Errorf("expected rack owner site-tokyo-01, got %s", rack.Owner)
+	if rack.Owner != "region-ap-northeast-1" {
+		t.Errorf("expected rack owner region-ap-northeast-1, got %s", rack.Owner)
 	}
 
 	// Check nested ownership
@@ -819,10 +819,10 @@ func TestSchemaNestingDefinitions(t *testing.T) {
 		t.Fatalf("expected 6 global nesting defs, got %d", len(s.NestingDefs))
 	}
 
-	// Site: 6 global + 2 per-kind (racks, clusters) = 8
-	siteNesting := s.GetNestingDefs(kinds.Site)
-	if len(siteNesting) != 8 {
-		t.Fatalf("expected 8 nesting defs for site, got %d", len(siteNesting))
+	// Region: 6 global + 3 per-kind (racks, clusters, availability_zones) = 9
+	regionNesting := s.GetNestingDefs(kinds.Region)
+	if len(regionNesting) != 9 {
+		t.Fatalf("expected 9 nesting defs for region, got %d", len(regionNesting))
 	}
 
 	// Rack: 6 global + 0 per-kind = 6
@@ -1189,8 +1189,8 @@ objects:
 func TestRoundTripNestedEntities(t *testing.T) {
 	yaml := `
 objects:
-  - id: site-tokyo-01
-    kind: site
+  - id: region-ap-northeast-1
+    kind: region
     name: Tokyo Datacenter 1
     spec:
       racks:
@@ -1283,15 +1283,15 @@ objects:
 func TestValidationNestingParent(t *testing.T) {
 	yaml := `
 objects:
-  - id: site-01
-    kind: site
-    name: Site 01
+  - id: region-01
+    kind: region
+    name: Region 01
 
   - id: srv-01
     kind: server
     name: Server 01
     attributes:
-      owner: site-01
+      owner: region-01
 `
 
 	parser := NewParser()
@@ -1307,7 +1307,7 @@ objects:
 
 	for _, f := range result.Findings {
 		if f.RuleID == "valid-nesting-parent" {
-			t.Error("valid-nesting-parent warning should not be emitted for server owned by site (server is a valid child of site)")
+			t.Error("valid-nesting-parent warning should not be emitted for server owned by region (server is a valid child of region)")
 		}
 	}
 }
@@ -1432,6 +1432,65 @@ objects:
 	}
 	if !found {
 		t.Errorf("expected error about nonexistent reference, got %v", errs)
+	}
+}
+
+func TestParseRegionNestingAvailabilityZones(t *testing.T) {
+	yaml := `
+objects:
+  - id: region-ap-northeast-1
+    kind: region
+    name: Tokyo Region
+    availability_zones:
+      - id: az-ap-northeast-1a
+        kind: availability_zone
+        name: Tokyo Zone A
+        spec:
+          state: available
+      - id: az-ap-northeast-1b
+        kind: availability_zone
+        name: Tokyo Zone B
+        spec:
+          state: available
+`
+	parser := NewParser()
+	g, err := parser.Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+
+	// Verify nested AZs are owned by the region
+	for _, id := range []string{"az-ap-northeast-1a", "az-ap-northeast-1b"} {
+		e, ok := g.GetEntity(id)
+		if !ok {
+			t.Fatalf("entity %s not found", id)
+		}
+		if e.Kind != kinds.AvailabilityZone {
+			t.Errorf("entity %s kind should be availability_zone, got %s", id, e.Kind)
+		}
+		if e.Owner != "region-ap-northeast-1" {
+			t.Errorf("entity %s owner should be region-ap-northeast-1, got %s", id, e.Owner)
+		}
+		if v, ok := e.GetProperty("state"); !ok || v != "available" {
+			t.Errorf("entity %s state should be available, got %v", id, v)
+		}
+	}
+
+	// Verify auto-generated belongs_to relations (AZ -> region)
+	for _, azID := range []string{"az-ap-northeast-1a", "az-ap-northeast-1b"} {
+		relID := "rel-auto-belongs_to-" + azID + "-region-ap-northeast-1"
+		rel, ok := g.GetRelation(relID)
+		if !ok {
+			t.Errorf("missing auto relation %s", relID)
+			continue
+		}
+		if rel.Type != types.BelongsTo {
+			t.Errorf("relation %s: expected belongs_to, got %s", relID, rel.Type)
+		}
+		if rel.Participants.Source != azID || rel.Participants.Target != "region-ap-northeast-1" {
+			t.Errorf("relation %s: expected %s -> region-ap-northeast-1, got %s -> %s",
+				relID, azID, rel.Participants.Source, rel.Participants.Target)
+		}
 	}
 }
 
@@ -1625,10 +1684,10 @@ func TestConvertPropertyValueRecursive(t *testing.T) {
 					t.Errorf("expected hello, got %s", str)
 				}
 			}
-	})
+		})
 
-	t.Run("server nesting container generates hosts relation", func(t *testing.T) {
-		yaml := `
+		t.Run("server nesting container generates hosts relation", func(t *testing.T) {
+			yaml := `
 objects:
   - id: srv-01
     kind: server
@@ -1640,36 +1699,36 @@ objects:
           spec:
             image: nginx:latest
 `
-		parser := NewParser()
-		g, err := parser.Parse([]byte(yaml))
-		if err != nil {
-			t.Fatalf("failed to parse: %v", err)
-		}
+			parser := NewParser()
+			g, err := parser.Parse([]byte(yaml))
+			if err != nil {
+				t.Fatalf("failed to parse: %v", err)
+			}
 
-		srv, ok := g.GetEntity("srv-01")
-		if !ok {
-			t.Fatal("server not found")
-		}
-		if srv.Owner != "" {
-			t.Errorf("expected server to be root, got owner %s", srv.Owner)
-		}
+			srv, ok := g.GetEntity("srv-01")
+			if !ok {
+				t.Fatal("server not found")
+			}
+			if srv.Owner != "" {
+				t.Errorf("expected server to be root, got owner %s", srv.Owner)
+			}
 
-		ctr, ok := g.GetEntity("ctr-01")
-		if !ok {
-			t.Fatal("container not found")
-		}
-		if ctr.Owner != "srv-01" {
-			t.Errorf("expected container owner to be srv-01, got %s", ctr.Owner)
-		}
+			ctr, ok := g.GetEntity("ctr-01")
+			if !ok {
+				t.Fatal("container not found")
+			}
+			if ctr.Owner != "srv-01" {
+				t.Errorf("expected container owner to be srv-01, got %s", ctr.Owner)
+			}
 
-		rel, ok := g.GetRelation("rel-auto-hosts-srv-01-ctr-01")
-		if !ok || rel.Type != types.Hosts {
-			t.Error("missing hosts relation from container to server")
-		}
-	})
+			rel, ok := g.GetRelation("rel-auto-hosts-srv-01-ctr-01")
+			if !ok || rel.Type != types.Hosts {
+				t.Error("missing hosts relation from container to server")
+			}
+		})
 
-	t.Run("vm nesting container generates hosts relation", func(t *testing.T) {
-		yaml := `
+		t.Run("vm nesting container generates hosts relation", func(t *testing.T) {
+			yaml := `
 objects:
   - id: srv-01
     kind: server
@@ -1683,28 +1742,28 @@ objects:
               - id: ctr-01
                 name: Container 01
 `
-		parser := NewParser()
-		g, err := parser.Parse([]byte(yaml))
-		if err != nil {
-			t.Fatalf("failed to parse: %v", err)
-		}
+			parser := NewParser()
+			g, err := parser.Parse([]byte(yaml))
+			if err != nil {
+				t.Fatalf("failed to parse: %v", err)
+			}
 
-		ctr, ok := g.GetEntity("ctr-01")
-		if !ok {
-			t.Fatal("container not found")
-		}
-		if ctr.Owner != "vm-01" {
-			t.Errorf("expected container owner to be vm-01, got %s", ctr.Owner)
-		}
+			ctr, ok := g.GetEntity("ctr-01")
+			if !ok {
+				t.Fatal("container not found")
+			}
+			if ctr.Owner != "vm-01" {
+				t.Errorf("expected container owner to be vm-01, got %s", ctr.Owner)
+			}
 
-		rel, ok := g.GetRelation("rel-auto-hosts-vm-01-ctr-01")
-		if !ok || rel.Type != types.Hosts {
-			t.Error("missing hosts relation from container to vm")
-		}
-	})
+			rel, ok := g.GetRelation("rel-auto-hosts-vm-01-ctr-01")
+			if !ok || rel.Type != types.Hosts {
+				t.Error("missing hosts relation from container to vm")
+			}
+		})
 
-	t.Run("application nesting container generates hosts relation", func(t *testing.T) {
-		yaml := `
+		t.Run("application nesting container generates hosts relation", func(t *testing.T) {
+			yaml := `
 objects:
   - id: app-01
     kind: application
@@ -1716,28 +1775,28 @@ objects:
           spec:
             image: nginx:latest
 `
-		parser := NewParser()
-		g, err := parser.Parse([]byte(yaml))
-		if err != nil {
-			t.Fatalf("failed to parse: %v", err)
-		}
+			parser := NewParser()
+			g, err := parser.Parse([]byte(yaml))
+			if err != nil {
+				t.Fatalf("failed to parse: %v", err)
+			}
 
-		ctr, ok := g.GetEntity("ctr-01")
-		if !ok {
-			t.Fatal("container not found")
-		}
-		if ctr.Owner != "app-01" {
-			t.Errorf("expected container owner to be app-01, got %s", ctr.Owner)
-		}
+			ctr, ok := g.GetEntity("ctr-01")
+			if !ok {
+				t.Fatal("container not found")
+			}
+			if ctr.Owner != "app-01" {
+				t.Errorf("expected container owner to be app-01, got %s", ctr.Owner)
+			}
 
-		rel, ok := g.GetRelation("rel-auto-hosts-app-01-ctr-01")
-		if !ok || rel.Type != types.Hosts {
-			t.Error("missing hosts relation from container to application")
-		}
-	})
+			rel, ok := g.GetRelation("rel-auto-hosts-app-01-ctr-01")
+			if !ok || rel.Type != types.Hosts {
+				t.Error("missing hosts relation from container to application")
+			}
+		})
 
-	t.Run("container nesting application generates hosts relation", func(t *testing.T) {
-		yaml := `
+		t.Run("container nesting application generates hosts relation", func(t *testing.T) {
+			yaml := `
 objects:
   - id: ctr-01
     kind: container
@@ -1748,28 +1807,28 @@ objects:
         - id: app-01
           name: App 01
 `
-		parser := NewParser()
-		g, err := parser.Parse([]byte(yaml))
-		if err != nil {
-			t.Fatalf("failed to parse: %v", err)
-		}
+			parser := NewParser()
+			g, err := parser.Parse([]byte(yaml))
+			if err != nil {
+				t.Fatalf("failed to parse: %v", err)
+			}
 
-		app, ok := g.GetEntity("app-01")
-		if !ok {
-			t.Fatal("application not found")
-		}
-		if app.Owner != "ctr-01" {
-			t.Errorf("expected application owner to be ctr-01, got %s", app.Owner)
-		}
+			app, ok := g.GetEntity("app-01")
+			if !ok {
+				t.Fatal("application not found")
+			}
+			if app.Owner != "ctr-01" {
+				t.Errorf("expected application owner to be ctr-01, got %s", app.Owner)
+			}
 
-		rel, ok := g.GetRelation("rel-auto-hosts-ctr-01-app-01")
-		if !ok || rel.Type != types.Hosts {
-			t.Error("missing hosts relation from application to container")
-		}
-	})
+			rel, ok := g.GetRelation("rel-auto-hosts-ctr-01-app-01")
+			if !ok || rel.Type != types.Hosts {
+				t.Error("missing hosts relation from application to container")
+			}
+		})
 
-	t.Run("kubernetes multi-node scenario", func(t *testing.T) {
-		yaml := `
+		t.Run("kubernetes multi-node scenario", func(t *testing.T) {
+			yaml := `
 objects:
   - id: cluster-prod-k8s
     kind: cluster
@@ -1806,49 +1865,49 @@ objects:
       source: srv-k8s-02
       target: app-web
 `
-		parser := NewParser()
-		g, err := parser.Parse([]byte(yaml))
-		if err != nil {
-			t.Fatalf("failed to parse: %v", err)
-		}
+			parser := NewParser()
+			g, err := parser.Parse([]byte(yaml))
+			if err != nil {
+				t.Fatalf("failed to parse: %v", err)
+			}
 
-		// Verify entities
-		srv1, ok := g.GetEntity("srv-k8s-01")
-		if !ok || srv1.Owner != "cluster-prod-k8s" {
-			t.Error("server 01 owner mismatch")
-		}
-		srv2, ok := g.GetEntity("srv-k8s-02")
-		if !ok || srv2.Owner != "cluster-prod-k8s" {
-			t.Error("server 02 owner mismatch")
-		}
-		app, ok := g.GetEntity("app-web")
-		if !ok || app.Owner != "cluster-prod-k8s" {
-			t.Error("application owner mismatch")
-		}
-		ctr, ok := g.GetEntity("ctr-nginx-01")
-		if !ok || ctr.Owner != "app-web" {
-			t.Error("container owner mismatch")
-		}
+			// Verify entities
+			srv1, ok := g.GetEntity("srv-k8s-01")
+			if !ok || srv1.Owner != "cluster-prod-k8s" {
+				t.Error("server 01 owner mismatch")
+			}
+			srv2, ok := g.GetEntity("srv-k8s-02")
+			if !ok || srv2.Owner != "cluster-prod-k8s" {
+				t.Error("server 02 owner mismatch")
+			}
+			app, ok := g.GetEntity("app-web")
+			if !ok || app.Owner != "cluster-prod-k8s" {
+				t.Error("application owner mismatch")
+			}
+			ctr, ok := g.GetEntity("ctr-nginx-01")
+			if !ok || ctr.Owner != "app-web" {
+				t.Error("container owner mismatch")
+			}
 
-		// Verify explicit hosts relations (multi-node)
-		rel1, ok := g.GetRelation("rel-hosts-01")
-		if !ok || rel1.Type != types.Hosts {
-			t.Error("missing explicit hosts relation 01")
-		}
-		rel2, ok := g.GetRelation("rel-hosts-02")
-		if !ok || rel2.Type != types.Hosts {
-			t.Error("missing explicit hosts relation 02")
-		}
+			// Verify explicit hosts relations (multi-node)
+			rel1, ok := g.GetRelation("rel-hosts-01")
+			if !ok || rel1.Type != types.Hosts {
+				t.Error("missing explicit hosts relation 01")
+			}
+			rel2, ok := g.GetRelation("rel-hosts-02")
+			if !ok || rel2.Type != types.Hosts {
+				t.Error("missing explicit hosts relation 02")
+			}
 
-		// Verify auto-relation from nesting
-		autoRel, ok := g.GetRelation("rel-auto-hosts-app-web-ctr-nginx-01")
-		if !ok || autoRel.Type != types.Hosts {
-			t.Error("missing auto hosts relation from container to application")
-		}
-	})
+			// Verify auto-relation from nesting
+			autoRel, ok := g.GetRelation("rel-auto-hosts-app-web-ctr-nginx-01")
+			if !ok || autoRel.Type != types.Hosts {
+				t.Error("missing auto hosts relation from container to application")
+			}
+		})
 
-	t.Run("cluster nesting vms and servers generates belongs_to relations", func(t *testing.T) {
-		yaml := `
+		t.Run("cluster nesting vms and servers generates belongs_to relations", func(t *testing.T) {
+			yaml := `
 objects:
   - id: k8s-prod
     kind: cluster
@@ -1873,47 +1932,47 @@ objects:
         - id: srv-k8s-node-01
           name: K8s Bare-metal Node 01
 `
-		parser := NewParser()
-		g, err := parser.Parse([]byte(yaml))
-		if err != nil {
-			t.Fatalf("failed to parse: %v", err)
-		}
+			parser := NewParser()
+			g, err := parser.Parse([]byte(yaml))
+			if err != nil {
+				t.Fatalf("failed to parse: %v", err)
+			}
 
-		// Verify nested entities are owned by the cluster
-		for _, id := range []string{"vm-k8s-node-01", "vm-k8s-node-02", "srv-k8s-node-01"} {
-			e, ok := g.GetEntity(id)
-			if !ok {
-				t.Fatalf("entity %s not found", id)
+			// Verify nested entities are owned by the cluster
+			for _, id := range []string{"vm-k8s-node-01", "vm-k8s-node-02", "srv-k8s-node-01"} {
+				e, ok := g.GetEntity(id)
+				if !ok {
+					t.Fatalf("entity %s not found", id)
+				}
+				if e.Owner != "k8s-prod" {
+					t.Errorf("entity %s owner should be k8s-prod, got %s", id, e.Owner)
+				}
 			}
-			if e.Owner != "k8s-prod" {
-				t.Errorf("entity %s owner should be k8s-prod, got %s", id, e.Owner)
-			}
-		}
 
-		// Verify auto-generated belongs_to relations (member -> cluster)
-		rels := map[string]string{
-			"rel-auto-belongs_to-vm-k8s-node-01-k8s-prod": "vm-k8s-node-01",
-			"rel-auto-belongs_to-vm-k8s-node-02-k8s-prod": "vm-k8s-node-02",
-			"rel-auto-belongs_to-srv-k8s-node-01-k8s-prod": "srv-k8s-node-01",
-		}
-		for relID, memberID := range rels {
-			rel, ok := g.GetRelation(relID)
-			if !ok {
-				t.Errorf("missing auto relation %s", relID)
-				continue
+			// Verify auto-generated belongs_to relations (member -> cluster)
+			rels := map[string]string{
+				"rel-auto-belongs_to-vm-k8s-node-01-k8s-prod":  "vm-k8s-node-01",
+				"rel-auto-belongs_to-vm-k8s-node-02-k8s-prod":  "vm-k8s-node-02",
+				"rel-auto-belongs_to-srv-k8s-node-01-k8s-prod": "srv-k8s-node-01",
 			}
-			if rel.Type != types.BelongsTo {
-				t.Errorf("relation %s: expected belongs_to, got %s", relID, rel.Type)
+			for relID, memberID := range rels {
+				rel, ok := g.GetRelation(relID)
+				if !ok {
+					t.Errorf("missing auto relation %s", relID)
+					continue
+				}
+				if rel.Type != types.BelongsTo {
+					t.Errorf("relation %s: expected belongs_to, got %s", relID, rel.Type)
+				}
+				if rel.Participants.Source != memberID || rel.Participants.Target != "k8s-prod" {
+					t.Errorf("relation %s: expected source %s -> target k8s-prod, got %s -> %s",
+						relID, memberID, rel.Participants.Source, rel.Participants.Target)
+				}
 			}
-			if rel.Participants.Source != memberID || rel.Participants.Target != "k8s-prod" {
-				t.Errorf("relation %s: expected source %s -> target k8s-prod, got %s -> %s",
-					relID, memberID, rel.Participants.Source, rel.Participants.Target)
-			}
-		}
-	})
+		})
 
-	t.Run("container on multiple servers via hosts relations", func(t *testing.T) {
-		yaml := `
+		t.Run("container on multiple servers via hosts relations", func(t *testing.T) {
+			yaml := `
 objects:
   - id: srv-01
     kind: server
@@ -1941,42 +2000,42 @@ objects:
       source: srv-02
       target: ctr-nginx-01
 `
-		parser := NewParser()
-		g, err := parser.Parse([]byte(yaml))
-		if err != nil {
-			t.Fatalf("failed to parse: %v", err)
-		}
+			parser := NewParser()
+			g, err := parser.Parse([]byte(yaml))
+			if err != nil {
+				t.Fatalf("failed to parse: %v", err)
+			}
 
-		ctr, ok := g.GetEntity("ctr-nginx-01")
-		if !ok {
-			t.Fatal("container not found")
-		}
-		if ctr.Owner != "app-web" {
-			t.Errorf("expected container owner to be app-web, got %s", ctr.Owner)
-		}
+			ctr, ok := g.GetEntity("ctr-nginx-01")
+			if !ok {
+				t.Fatal("container not found")
+			}
+			if ctr.Owner != "app-web" {
+				t.Errorf("expected container owner to be app-web, got %s", ctr.Owner)
+			}
 
-		rel1, ok := g.GetRelation("rel-hosts-01")
-		if !ok || rel1.Type != types.Hosts {
-			t.Error("missing hosts relation from srv-01 to container")
-		}
-		if rel1.Participants.Source != "srv-01" || rel1.Participants.Target != "ctr-nginx-01" {
-			t.Errorf("wrong participants: %s -> %s", rel1.Participants.Source, rel1.Participants.Target)
-		}
+			rel1, ok := g.GetRelation("rel-hosts-01")
+			if !ok || rel1.Type != types.Hosts {
+				t.Error("missing hosts relation from srv-01 to container")
+			}
+			if rel1.Participants.Source != "srv-01" || rel1.Participants.Target != "ctr-nginx-01" {
+				t.Errorf("wrong participants: %s -> %s", rel1.Participants.Source, rel1.Participants.Target)
+			}
 
-		rel2, ok := g.GetRelation("rel-hosts-02")
-		if !ok || rel2.Type != types.Hosts {
-			t.Error("missing hosts relation from srv-02 to container")
-		}
-		if rel2.Participants.Source != "srv-02" || rel2.Participants.Target != "ctr-nginx-01" {
-			t.Errorf("wrong participants: %s -> %s", rel2.Participants.Source, rel2.Participants.Target)
-		}
+			rel2, ok := g.GetRelation("rel-hosts-02")
+			if !ok || rel2.Type != types.Hosts {
+				t.Error("missing hosts relation from srv-02 to container")
+			}
+			if rel2.Participants.Source != "srv-02" || rel2.Participants.Target != "ctr-nginx-01" {
+				t.Errorf("wrong participants: %s -> %s", rel2.Participants.Source, rel2.Participants.Target)
+			}
 
-		autoRel, ok := g.GetRelation("rel-auto-hosts-app-web-ctr-nginx-01")
-		if !ok || autoRel.Type != types.Hosts {
-			t.Error("missing auto hosts relation from application to container")
-		}
-	})
-}
+			autoRel, ok := g.GetRelation("rel-auto-hosts-app-web-ctr-nginx-01")
+			if !ok || autoRel.Type != types.Hosts {
+				t.Error("missing auto hosts relation from application to container")
+			}
+		})
+	}
 }
 
 func TestAutoRelationGeneration(t *testing.T) {
@@ -2215,9 +2274,9 @@ func TestAutoRelationIntegration(t *testing.T) {
 	t.Run("nesting to flat round-trip preserves auto-relations", func(t *testing.T) {
 		nestedYAML := `
 objects:
-  - id: site-01
-    kind: site
-    name: Site 01
+  - id: region-01
+    kind: region
+    name: Region 01
     spec:
       racks:
         - id: rack-01
@@ -2245,9 +2304,9 @@ objects:
 		}
 
 		// Verify specific relations
-		rel1, ok := g1.GetRelation("rel-auto-belongs_to-rack-01-site-01")
+		rel1, ok := g1.GetRelation("rel-auto-belongs_to-rack-01-region-01")
 		if !ok || rel1.Type != types.BelongsTo {
-			t.Error("missing belongs_to rack->site")
+			t.Error("missing belongs_to rack->region")
 		}
 
 		rel2, ok := g1.GetRelation("rel-auto-belongs_to-srv-01-rack-01")
@@ -2281,8 +2340,8 @@ objects:
 
 		// Verify ownership preserved
 		rack, _ := g2.GetEntity("rack-01")
-		if rack.Owner != "site-01" {
-			t.Errorf("rack owner should be site-01, got %s", rack.Owner)
+		if rack.Owner != "region-01" {
+			t.Errorf("rack owner should be region-01, got %s", rack.Owner)
 		}
 		srv, _ := g2.GetEntity("srv-01")
 		if srv.Owner != "rack-01" {
@@ -2297,9 +2356,9 @@ objects:
 	t.Run("all nesting types generate correct relations", func(t *testing.T) {
 		yaml := `
 objects:
-  - id: site-01
-    kind: site
-    name: Site 01
+  - id: region-01
+    kind: region
+    name: Region 01
     spec:
       clusters:
         - id: cluster-01
@@ -2324,19 +2383,19 @@ objects:
 			t.Fatalf("failed to parse: %v", err)
 		}
 
-		// site -> cluster (belongs_to, child source)
-		r1, ok := g.GetRelation("rel-auto-belongs_to-cluster-01-site-01")
+		// region -> cluster (belongs_to, child source)
+		r1, ok := g.GetRelation("rel-auto-belongs_to-cluster-01-region-01")
 		if !ok || r1.Type != types.BelongsTo {
-			t.Error("missing belongs_to cluster->site")
+			t.Error("missing belongs_to cluster->region")
 		}
-		if r1.Participants.Source != "cluster-01" || r1.Participants.Target != "site-01" {
+		if r1.Participants.Source != "cluster-01" || r1.Participants.Target != "region-01" {
 			t.Errorf("wrong participants: %s -> %s", r1.Participants.Source, r1.Participants.Target)
 		}
 
-		// site -> firewall (belongs_to, child source)
-		r2, ok := g.GetRelation("rel-auto-belongs_to-fw-01-site-01")
+		// region -> firewall (belongs_to, child source)
+		r2, ok := g.GetRelation("rel-auto-belongs_to-fw-01-region-01")
 		if !ok || r2.Type != types.BelongsTo {
-			t.Error("missing belongs_to firewall->site")
+			t.Error("missing belongs_to firewall->region")
 		}
 
 		// firewall -> acl (belongs_to, child source)
@@ -2627,15 +2686,15 @@ func TestParseDirCrossFileReferences(t *testing.T) {
 	// fileA defines entities that are referenced from the other files.
 	writeTestFile("fileA.yaml", `
 objects:
-  - id: site-tokyo-01
-    kind: site
+  - id: region-ap-northeast-1
+    kind: region
     name: Tokyo Datacenter 1
 
   - id: srv-proxmox-01
     kind: server
     name: Proxmox Node 01
     attributes:
-      owner: site-tokyo-01
+      owner: region-ap-northeast-1
     spec:
       networks:
         - id: net-mgmt
@@ -2659,7 +2718,7 @@ objects:
     kind: rack
     name: Rack A01
     attributes:
-      owner: site-tokyo-01
+      owner: region-ap-northeast-1
     spec:
       height_units: 42
 
@@ -2667,7 +2726,7 @@ objects:
     kind: vlan
     name: VLAN 100
     attributes:
-      owner: site-tokyo-01
+      owner: region-ap-northeast-1
     spec:
       vlan_id: 100
       associated_network: "@net-storage"
@@ -2692,7 +2751,7 @@ objects:
     kind: switch
     name: Core Switch 01
     attributes:
-      owner: site-tokyo-01
+      owner: region-ap-northeast-1
     spec:
       interfaces:
         - id: port1
@@ -2706,7 +2765,7 @@ objects:
 	}
 
 	// All entities from all files are merged into a single graph.
-	expectedEntities := []string{"site-tokyo-01", "srv-proxmox-01", "net-mgmt", "eth0", "net-storage", "rack-a01", "vlan-100", "sw-core-01", "port1"}
+	expectedEntities := []string{"region-ap-northeast-1", "srv-proxmox-01", "net-mgmt", "eth0", "net-storage", "rack-a01", "vlan-100", "sw-core-01", "port1"}
 	for _, id := range expectedEntities {
 		if _, ok := g.GetEntity(id); !ok {
 			t.Errorf("expected merged entity %s, not found", id)
@@ -2727,8 +2786,8 @@ objects:
 	if !ok {
 		t.Fatal("expected entity rack-a01")
 	}
-	if rack.Owner != "site-tokyo-01" {
-		t.Errorf("expected rack-a01 owner site-tokyo-01 (defined in fileA), got %s", rack.Owner)
+	if rack.Owner != "region-ap-northeast-1" {
+		t.Errorf("expected rack-a01 owner region-ap-northeast-1 (defined in fileA), got %s", rack.Owner)
 	}
 
 	// Cross-file @-prefixed property reference resolves.

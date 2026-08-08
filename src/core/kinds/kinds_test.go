@@ -17,7 +17,7 @@ func TestIsValidKind(t *testing.T) {
 		kind  core.EntityKind
 		valid bool
 	}{
-		{Site, true},
+		{Region, true},
 		{Rack, true},
 		{Server, true},
 		{Interface, true},
@@ -77,7 +77,7 @@ func TestIsValidStatus(t *testing.T) {
 
 func TestKindValues(t *testing.T) {
 	expected := map[core.EntityKind]string{
-		Site:              "site",
+		Region:            "region",
 		Rack:              "rack",
 		Server:            "server",
 		Interface:         "interface",

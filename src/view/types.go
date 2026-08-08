@@ -43,11 +43,11 @@ const (
 
 // GroupingRule organizes objects into logical groups.
 type GroupingRule struct {
-	TargetKind string          `yaml:"target_kind"`
-	GroupKind  string          `yaml:"group_kind"`
-	GroupBy    []string        `yaml:"group_by"`
-	Owner      string          `yaml:"owner,omitempty"`
-	Where      *WhereClause    `yaml:"where,omitempty"`
+	TargetKind string       `yaml:"target_kind"`
+	GroupKind  string       `yaml:"group_kind"`
+	GroupBy    []string     `yaml:"group_by"`
+	Owner      string       `yaml:"owner,omitempty"`
+	Where      *WhereClause `yaml:"where,omitempty"`
 }
 
 // AnnotationRule attaches computed metadata to objects.
@@ -58,10 +58,10 @@ type AnnotationRule struct {
 
 // LayoutHint provides spatial arrangement hints.
 type LayoutHint struct {
-	Type     string  `yaml:"type,omitempty"`
-	Direction string `yaml:"direction,omitempty"`
-	Spacing  float64 `yaml:"spacing,omitempty"`
-	Padding  float64 `yaml:"padding,omitempty"`
+	Type      string  `yaml:"type,omitempty"`
+	Direction string  `yaml:"direction,omitempty"`
+	Spacing   float64 `yaml:"spacing,omitempty"`
+	Padding   float64 `yaml:"padding,omitempty"`
 }
 
 // EntitySelector defines entity selection criteria.
@@ -92,22 +92,22 @@ type Annotation struct {
 
 // ViewResult represents the result of applying a View to a Graph.
 type ViewResult struct {
-	ViewID        string
-	Title         string
-	Description   string
+	ViewID           string
+	Title            string
+	Description      string
 	VisibleEntities  []*core.Entity
 	VisibleRelations []*core.Relation
-	Groups        []*Group
-	Annotations   map[string]map[string]interface{}
+	Groups           []*Group
+	Annotations      map[string]map[string]interface{}
 }
 
 // Group represents a collection of objects.
 type Group struct {
-	ID       string
-	Kind     string
-	Name     string
-	Members  []string
-	Owner    string
+	ID         string
+	Kind       string
+	Name       string
+	Members    []string
+	Owner      string
 	Properties map[string]interface{}
 }
 

@@ -14,9 +14,9 @@ import (
 
 // Engine is the validation engine that evaluates rules against a graph.
 type Engine struct {
-	schema    *schema.Schema
-	rules     map[string]RuleFunc
-	ruleDefs  map[string]*Rule
+	schema   *schema.Schema
+	rules    map[string]RuleFunc
+	ruleDefs map[string]*Rule
 }
 
 // NewEngine creates a new validation engine with the given schema.

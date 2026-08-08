@@ -38,7 +38,7 @@ Every object that exists in infrastructure is represented as an Entity.
 
 Examples include:
 
-- Site
+- Region
 - Rack
 - Server
 - Interface

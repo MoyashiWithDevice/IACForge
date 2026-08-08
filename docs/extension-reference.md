@@ -150,7 +150,7 @@ EntityKinds: []extension.EntityKindContribution{
 ```
 
 **Core entity kinds that CANNOT be redefined:**
-`site`, `rack`, `server`, `interface`, `cable`, `power_distribution`, `network`, `vlan`, `switch`, `router`, `firewall`, `acl`, `acl_rule`, `vm`, `container`, `application`, `open_port`, `storage`, `volume`, `cluster`, `availability_zone`
+`region`, `rack`, `server`, `interface`, `cable`, `power_distribution`, `network`, `vlan`, `switch`, `router`, `firewall`, `acl`, `acl_rule`, `vm`, `container`, `application`, `open_port`, `storage`, `volume`, `cluster`, `availability_zone`
 
 ### relation_types
 

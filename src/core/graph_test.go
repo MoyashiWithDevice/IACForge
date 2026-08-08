@@ -308,16 +308,16 @@ func TestGraphResolvePathReference(t *testing.T) {
 
 func TestGraphOwnershipPaths(t *testing.T) {
 	g := NewGraph()
-	site := NewEntity("site-01", "site", "Site 01")
+	region := NewEntity("region-01", "region", "Region 01")
 	rack := NewEntity("rack-01", "rack", "Rack 01")
 	server := NewEntity("srv-01", "server", "Server 01")
 	intf := NewEntity("eno1", "interface", "eno1")
 
-	rack.SetOwner("site-01")
+	rack.SetOwner("region-01")
 	server.SetOwner("rack-01")
 	intf.SetOwner("srv-01")
 
-	g.AddEntity(site)
+	g.AddEntity(region)
 	g.AddEntity(rack)
 	g.AddEntity(server)
 	g.AddEntity(intf)
@@ -326,17 +326,17 @@ func TestGraphOwnershipPaths(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if site.Path() != "/site-01" {
-		t.Errorf("expected path /site-01, got %s", site.Path())
+	if region.Path() != "/region-01" {
+		t.Errorf("expected path /region-01, got %s", region.Path())
 	}
-	if rack.Path() != "/site-01/rack-01" {
-		t.Errorf("expected path /site-01/rack-01, got %s", rack.Path())
+	if rack.Path() != "/region-01/rack-01" {
+		t.Errorf("expected path /region-01/rack-01, got %s", rack.Path())
 	}
-	if server.Path() != "/site-01/rack-01/srv-01" {
-		t.Errorf("expected path /site-01/rack-01/srv-01, got %s", server.Path())
+	if server.Path() != "/region-01/rack-01/srv-01" {
+		t.Errorf("expected path /region-01/rack-01/srv-01, got %s", server.Path())
 	}
-	if intf.Path() != "/site-01/rack-01/srv-01/eno1" {
-		t.Errorf("expected path /site-01/rack-01/srv-01/eno1, got %s", intf.Path())
+	if intf.Path() != "/region-01/rack-01/srv-01/eno1" {
+		t.Errorf("expected path /region-01/rack-01/srv-01/eno1, got %s", intf.Path())
 	}
 }
 
@@ -370,17 +370,17 @@ func TestGraphOwnershipMissingOwner(t *testing.T) {
 
 func TestGraphChildren(t *testing.T) {
 	g := NewGraph()
-	site := NewEntity("site-01", "site", "Site 01")
+	region := NewEntity("region-01", "region", "Region 01")
 	rack1 := NewEntity("rack-01", "rack", "Rack 01")
 	rack2 := NewEntity("rack-02", "rack", "Rack 02")
-	rack1.SetOwner("site-01")
-	rack2.SetOwner("site-01")
+	rack1.SetOwner("region-01")
+	rack2.SetOwner("region-01")
 
-	g.AddEntity(site)
+	g.AddEntity(region)
 	g.AddEntity(rack1)
 	g.AddEntity(rack2)
 
-	children := g.Children("site-01")
+	children := g.Children("region-01")
 	if len(children) != 2 {
 		t.Errorf("expected 2 children, got %d", len(children))
 	}
@@ -388,22 +388,22 @@ func TestGraphChildren(t *testing.T) {
 
 func TestGraphParent(t *testing.T) {
 	g := NewGraph()
-	site := NewEntity("site-01", "site", "Site 01")
+	region := NewEntity("region-01", "region", "Region 01")
 	rack := NewEntity("rack-01", "rack", "Rack 01")
-	rack.SetOwner("site-01")
+	rack.SetOwner("region-01")
 
-	g.AddEntity(site)
+	g.AddEntity(region)
 	g.AddEntity(rack)
 
 	parent, ok := g.Parent("rack-01")
 	if !ok || parent == nil {
 		t.Error("expected to find parent")
 	}
-	if parent.ID != "site-01" {
-		t.Errorf("expected parent ID site-01, got %s", parent.ID)
+	if parent.ID != "region-01" {
+		t.Errorf("expected parent ID region-01, got %s", parent.ID)
 	}
 
-	_, ok = g.Parent("site-01")
+	_, ok = g.Parent("region-01")
 	if ok {
 		t.Error("expected root entity to have no parent")
 	}
@@ -411,13 +411,13 @@ func TestGraphParent(t *testing.T) {
 
 func TestGraphAncestors(t *testing.T) {
 	g := NewGraph()
-	site := NewEntity("site-01", "site", "Site 01")
+	region := NewEntity("region-01", "region", "Region 01")
 	rack := NewEntity("rack-01", "rack", "Rack 01")
 	server := NewEntity("srv-01", "server", "Server 01")
-	rack.SetOwner("site-01")
+	rack.SetOwner("region-01")
 	server.SetOwner("rack-01")
 
-	g.AddEntity(site)
+	g.AddEntity(region)
 	g.AddEntity(rack)
 	g.AddEntity(server)
 
@@ -428,24 +428,24 @@ func TestGraphAncestors(t *testing.T) {
 	if ancestors[0].ID != "rack-01" {
 		t.Errorf("expected first ancestor rack-01, got %s", ancestors[0].ID)
 	}
-	if ancestors[1].ID != "site-01" {
-		t.Errorf("expected second ancestor site-01, got %s", ancestors[1].ID)
+	if ancestors[1].ID != "region-01" {
+		t.Errorf("expected second ancestor region-01, got %s", ancestors[1].ID)
 	}
 }
 
 func TestGraphDescendants(t *testing.T) {
 	g := NewGraph()
-	site := NewEntity("site-01", "site", "Site 01")
+	region := NewEntity("region-01", "region", "Region 01")
 	rack := NewEntity("rack-01", "rack", "Rack 01")
 	server := NewEntity("srv-01", "server", "Server 01")
-	rack.SetOwner("site-01")
+	rack.SetOwner("region-01")
 	server.SetOwner("rack-01")
 
-	g.AddEntity(site)
+	g.AddEntity(region)
 	g.AddEntity(rack)
 	g.AddEntity(server)
 
-	descendants := g.Descendants("site-01")
+	descendants := g.Descendants("region-01")
 	if len(descendants) != 2 {
 		t.Errorf("expected 2 descendants, got %d", len(descendants))
 	}
@@ -453,16 +453,16 @@ func TestGraphDescendants(t *testing.T) {
 
 func TestGraphValidateIntegrity(t *testing.T) {
 	g := NewGraph()
-	site := NewEntity("site-01", "site", "Site 01")
+	region := NewEntity("region-01", "region", "Region 01")
 	rack := NewEntity("rack-01", "rack", "Rack 01")
 	server := NewEntity("srv-01", "server", "Server 01")
 	vm := NewEntity("vm-01", "vm", "VM 01")
 
-	rack.SetOwner("site-01")
+	rack.SetOwner("region-01")
 	server.SetOwner("rack-01")
 	vm.SetOwner("srv-01")
 
-	g.AddEntity(site)
+	g.AddEntity(region)
 	g.AddEntity(rack)
 	g.AddEntity(server)
 	g.AddEntity(vm)
@@ -488,13 +488,13 @@ func TestGraphValidateIntegrity(t *testing.T) {
 
 func TestGraphValidateIntegrityValid(t *testing.T) {
 	g := NewGraph()
-	site := NewEntity("site-01", "site", "Site 01")
+	region := NewEntity("region-01", "region", "Region 01")
 	server := NewEntity("srv-01", "server", "Server 01")
 	vm := NewEntity("vm-01", "vm", "VM 01")
-	server.SetOwner("site-01")
+	server.SetOwner("region-01")
 	vm.SetOwner("srv-01")
 
-	g.AddEntity(site)
+	g.AddEntity(region)
 	g.AddEntity(server)
 	g.AddEntity(vm)
 
@@ -511,11 +511,11 @@ func TestGraphValidateIntegrityValid(t *testing.T) {
 
 func TestGraphOwnershipTreeBroken(t *testing.T) {
 	g := NewGraph()
-	site1 := NewEntity("site-01", "site", "Site 01")
-	site2 := NewEntity("site-02", "site", "Site 02")
+	region1 := NewEntity("region-01", "region", "Region 01")
+	region2 := NewEntity("region-02", "region", "Region 02")
 
-	g.AddEntity(site1)
-	g.AddEntity(site2)
+	g.AddEntity(region1)
+	g.AddEntity(region2)
 
 	errs := g.ValidateIntegrity()
 	foundBrokenTree := false

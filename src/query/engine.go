@@ -10,10 +10,10 @@ import (
 
 // Result represents the result of a query execution.
 type Result struct {
-	QueryID   string        `yaml:"query_id"`
-	Results   []*ResultItem `yaml:"results"`
-	Count     int           `yaml:"count"`
-	Truncated bool          `yaml:"truncated"`
+	QueryID   string                 `yaml:"query_id"`
+	Results   []*ResultItem          `yaml:"results"`
+	Count     int                    `yaml:"count"`
+	Truncated bool                   `yaml:"truncated"`
 	Metadata  map[string]interface{} `yaml:"metadata,omitempty"`
 }
 

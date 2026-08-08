@@ -28,8 +28,8 @@ func registerGraphMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 			}
 
 			type validationResult struct {
-				Passed   bool       `json:"passed"`
-				Summary  struct {
+				Passed  bool `json:"passed"`
+				Summary struct {
 					TotalRules    int `json:"total_rules"`
 					TotalFindings int `json:"total_findings"`
 					Errors        int `json:"errors"`
@@ -83,10 +83,10 @@ func registerGraphMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 			}
 
 			type summary struct {
-				TotalEntities  int                      `json:"total_entities"`
-				TotalRelations int                      `json:"total_relations"`
-				EntityKinds    map[string]int           `json:"entity_kinds"`
-				RelationTypes  map[string]int           `json:"relation_types"`
+				TotalEntities  int            `json:"total_entities"`
+				TotalRelations int            `json:"total_relations"`
+				EntityKinds    map[string]int `json:"entity_kinds"`
+				RelationTypes  map[string]int `json:"relation_types"`
 			}
 
 			ek := make(map[string]int)

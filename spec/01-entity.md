@@ -24,7 +24,7 @@ The fully-qualified path uniquely identifies an Entity within a model.
 
 Example:
 
-/site01/rack01/pve01/eno1
+/region01/rack01/pve01/eno1
 
 Identifiers SHOULD remain stable throughout the lifetime of an Entity.
 

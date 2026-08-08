@@ -9,10 +9,10 @@ import (
 
 // OperationContext holds the state for operation execution.
 type OperationContext struct {
-	Graph    *core.Graph
-	Source   *core.Graph
-	Derived  *DerivedObjectManager
-	ProjID   string
+	Graph   *core.Graph
+	Source  *core.Graph
+	Derived *DerivedObjectManager
+	ProjID  string
 }
 
 // NewOperationContext creates a new OperationContext.

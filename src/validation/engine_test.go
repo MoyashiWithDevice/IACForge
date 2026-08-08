@@ -11,10 +11,10 @@ import (
 
 func newTestGraph() *core.Graph {
 	g := core.NewGraph()
-	site := core.NewEntity("site-01", kinds.Site, "Site 01")
-	g.AddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "Region 01")
+	g.AddEntity(region)
 	rack := core.NewEntity("rack-01", kinds.Rack, "Rack 01")
-	rack.SetOwner("site-01")
+	rack.SetOwner("region-01")
 	g.AddEntity(rack)
 	server := core.NewEntity("srv-01", kinds.Server, "Server 01")
 	server.SetOwner("rack-01")
@@ -70,8 +70,8 @@ func TestValidateDuplicateEntityID(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("dup-01", kinds.Site, "Site 1")
-	graph.AddEntity(site)
+	region := core.NewEntity("dup-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
 
 	result := e.Validate(graph, nil)
 	for _, f := range result.Findings {
@@ -85,13 +85,13 @@ func TestValidateDuplicateRelationID(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", kinds.Site, "Site 1")
-	graph.AddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
-	server.SetOwner("site-01")
+	server.SetOwner("region-01")
 	graph.AddEntity(server)
 
-	r1 := core.NewDirectedRelation("rel-01", types.Hosts, "srv-01", "site-01")
+	r1 := core.NewDirectedRelation("rel-01", types.Hosts, "srv-01", "region-01")
 	graph.AddRelation(r1)
 
 	result := e.Validate(graph, nil)
@@ -106,8 +106,8 @@ func TestValidateMissingKind(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", "", "Site 1")
-	graph.ForceAddEntity(site)
+	region := core.NewEntity("region-01", "", "Region 1")
+	graph.ForceAddEntity(region)
 
 	result := e.Validate(graph, nil)
 	found := false
@@ -126,8 +126,8 @@ func TestValidateMissingName(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", kinds.Site, "")
-	graph.ForceAddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "")
+	graph.ForceAddEntity(region)
 
 	result := e.Validate(graph, nil)
 	found := false
@@ -146,8 +146,8 @@ func TestValidateInvalidKind(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", "nonexistent_kind", "Site 1")
-	graph.ForceAddEntity(site)
+	region := core.NewEntity("region-01", "nonexistent_kind", "Region 1")
+	graph.ForceAddEntity(region)
 
 	result := e.Validate(graph, nil)
 	found := false
@@ -166,9 +166,9 @@ func TestValidateInvalidStatus(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", kinds.Site, "Site 1")
-	site.SetStatus("invalid_status")
-	graph.AddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	region.SetStatus("invalid_status")
+	graph.AddEntity(region)
 
 	result := e.Validate(graph, nil)
 	found := false
@@ -187,10 +187,10 @@ func TestValidateInvalidPortRange(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", kinds.Site, "Site 1")
-	graph.AddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
-	server.SetOwner("site-01")
+	server.SetOwner("region-01")
 	graph.AddEntity(server)
 
 	port := core.NewEntity("port-01", kinds.OpenPort, "Port 1")
@@ -215,10 +215,10 @@ func TestValidateValidPortRange(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", kinds.Site, "Site 1")
-	graph.AddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
-	server.SetOwner("site-01")
+	server.SetOwner("region-01")
 	graph.AddEntity(server)
 
 	port := core.NewEntity("port-01", kinds.OpenPort, "Port 1")
@@ -238,10 +238,10 @@ func TestValidateACLRULEParent(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", kinds.Site, "Site 1")
-	graph.AddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
 	acl := core.NewEntity("acl-01", kinds.ACL, "ACL 1")
-	acl.SetOwner("site-01")
+	acl.SetOwner("region-01")
 	graph.AddEntity(acl)
 
 	rule := core.NewEntity("rule-01", kinds.ACLRule, "Rule 1")
@@ -261,10 +261,10 @@ func TestValidateACLRULEWrongParent(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", kinds.Site, "Site 1")
-	graph.AddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
-	server.SetOwner("site-01")
+	server.SetOwner("region-01")
 	graph.AddEntity(server)
 
 	rule := core.NewEntity("rule-01", kinds.ACLRule, "Rule 1")
@@ -289,15 +289,15 @@ func TestValidateMissingRelationType(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", kinds.Site, "Site 1")
-	graph.AddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
-	server.SetOwner("site-01")
+	server.SetOwner("region-01")
 	graph.AddEntity(server)
 
 	r := core.NewRelation("rel-01", "", core.DirectionDirected)
 	r.Participants.Source = "srv-01"
-	r.Participants.Target = "site-01"
+	r.Participants.Target = "region-01"
 	graph.ForceAddRelation(r)
 
 	result := e.Validate(graph, nil)
@@ -317,13 +317,13 @@ func TestValidateInvalidRelationType(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", kinds.Site, "Site 1")
-	graph.AddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
-	server.SetOwner("site-01")
+	server.SetOwner("region-01")
 	graph.AddEntity(server)
 
-	r := core.NewDirectedRelation("rel-01", "nonexistent_type", "srv-01", "site-01")
+	r := core.NewDirectedRelation("rel-01", "nonexistent_type", "srv-01", "region-01")
 	graph.AddRelation(r)
 
 	result := e.Validate(graph, nil)
@@ -343,10 +343,10 @@ func TestValidateDirectedRelationMissingTarget(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", kinds.Site, "Site 1")
-	graph.AddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
-	server.SetOwner("site-01")
+	server.SetOwner("region-01")
 	graph.AddEntity(server)
 
 	r := core.NewRelation("rel-01", types.Hosts, core.DirectionDirected)
@@ -370,14 +370,14 @@ func TestValidateParticipantKindWarning(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", kinds.Site, "Site 1")
-	graph.AddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
-	server.SetOwner("site-01")
+	server.SetOwner("region-01")
 	graph.AddEntity(server)
 
 	// connects should have interface participants, not server
-	r := core.NewDirectedRelation("rel-01", types.Connects, "srv-01", "site-01")
+	r := core.NewDirectedRelation("rel-01", types.Connects, "srv-01", "region-01")
 	graph.AddRelation(r)
 
 	result := e.Validate(graph, nil)
@@ -421,9 +421,9 @@ func TestValidateMultipleRoots(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	root1 := core.NewEntity("root-1", kinds.Site, "Root 1")
+	root1 := core.NewEntity("root-1", kinds.Region, "Root 1")
 	graph.AddEntity(root1)
-	root2 := core.NewEntity("root-2", kinds.Site, "Root 2")
+	root2 := core.NewEntity("root-2", kinds.Region, "Root 2")
 	graph.AddEntity(root2)
 
 	result := e.Validate(graph, nil)
@@ -467,13 +467,13 @@ func TestValidatePathReferenceParticipant(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", kinds.Site, "Site 1")
-	graph.AddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
-	server.SetOwner("site-01")
+	server.SetOwner("region-01")
 	graph.AddEntity(server)
 	network := core.NewEntity("net-01", kinds.Network, "Network 1")
-	network.SetOwner("site-01")
+	network.SetOwner("region-01")
 	graph.AddEntity(network)
 	intf := core.NewEntity("eth0", kinds.Interface, "eth0")
 	intf.SetOwner("srv-01")
@@ -517,13 +517,13 @@ func TestValidateValidRelationParticipants(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", kinds.Site, "Site 1")
-	graph.AddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
-	server.SetOwner("site-01")
+	server.SetOwner("region-01")
 	graph.AddEntity(server)
 
-	r := core.NewDirectedRelation("rel-01", types.Hosts, "srv-01", "site-01")
+	r := core.NewDirectedRelation("rel-01", types.Hosts, "srv-01", "region-01")
 	graph.AddRelation(r)
 
 	result := e.Validate(graph, nil)
@@ -579,8 +579,8 @@ func TestValidateProfileRequiredKinds(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", kinds.Site, "Site 1")
-	graph.AddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
 
 	profile := schema.NewProfile("with-kinds")
 	profile.AddRequiredKind("server")
@@ -623,7 +623,7 @@ func TestValidateProfileRequiredRelations(t *testing.T) {
 func TestValidateResultPassed(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
-	graph.AddEntity(core.NewEntity("site-01", kinds.Site, "Site 1"))
+	graph.AddEntity(core.NewEntity("region-01", kinds.Region, "Region 1"))
 
 	result := e.Validate(graph, nil)
 
@@ -646,20 +646,20 @@ func TestDanglingPropertyReference(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", kinds.Site, "Site 01")
-	graph.AddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "Region 01")
+	graph.AddEntity(region)
 
 	net := core.NewEntity("net-mgmt", kinds.Network, "Management Network")
-	net.SetOwner("site-01")
+	net.SetOwner("region-01")
 	graph.AddEntity(net)
 
 	vlan := core.NewEntity("vlan-100", kinds.VLAN, "VLAN 100")
-	vlan.SetOwner("site-01")
+	vlan.SetOwner("region-01")
 	vlan.SetProperty("associated_network", core.NewReferenceValue("@net-mgmt"))
 	graph.AddEntity(vlan)
 
 	vlan2 := core.NewEntity("vlan-200", kinds.VLAN, "VLAN 200")
-	vlan2.SetOwner("site-01")
+	vlan2.SetOwner("region-01")
 	vlan2.SetProperty("associated_network", core.NewReferenceValue("@nonexistent"))
 	graph.AddEntity(vlan2)
 
@@ -688,15 +688,15 @@ func TestValidPropertyReference(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", kinds.Site, "Site 01")
-	graph.AddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "Region 01")
+	graph.AddEntity(region)
 
 	net := core.NewEntity("net-mgmt", kinds.Network, "Management Network")
-	net.SetOwner("site-01")
+	net.SetOwner("region-01")
 	graph.AddEntity(net)
 
 	vlan := core.NewEntity("vlan-100", kinds.VLAN, "VLAN 100")
-	vlan.SetOwner("site-01")
+	vlan.SetOwner("region-01")
 	vlan.SetProperty("associated_network", core.NewReferenceValue("@net-mgmt"))
 	graph.AddEntity(vlan)
 
@@ -713,13 +713,13 @@ func TestInvalidPathNonExistentEntity(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", kinds.Site, "Site 01")
-	site.SetPath("/site-01")
-	graph.AddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "Region 01")
+	region.SetPath("/region-01")
+	graph.AddEntity(region)
 
 	server := core.NewEntity("srv-01", kinds.Server, "Server 01")
-	server.SetOwner("site-01")
-	server.SetPath("/site-01/nonexistent/srv-01")
+	server.SetOwner("region-01")
+	server.SetPath("/region-01/nonexistent/srv-01")
 	graph.AddEntity(server)
 
 	result := e.Validate(graph, nil)
@@ -739,22 +739,22 @@ func TestInvalidPathWrongOwnership(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", kinds.Site, "Site 01")
-	site.SetPath("/site-01")
-	graph.AddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "Region 01")
+	region.SetPath("/region-01")
+	graph.AddEntity(region)
 
 	rack := core.NewEntity("rack-01", kinds.Rack, "Rack 01")
-	rack.SetOwner("site-01")
-	rack.SetPath("/site-01/rack-01")
+	rack.SetOwner("region-01")
+	rack.SetPath("/region-01/rack-01")
 	graph.AddEntity(rack)
 
 	server := core.NewEntity("srv-01", kinds.Server, "Server 01")
 	server.SetOwner("rack-01")
-	server.SetPath("/site-01/rack-01/srv-01")
+	server.SetPath("/region-01/rack-01/srv-01")
 	graph.AddEntity(server)
 
 	// Manually set wrong path (not matching ownership)
-	server.SetPath("/site-01/srv-01")
+	server.SetPath("/region-01/srv-01")
 	result := e.Validate(graph, nil)
 	found := false
 	for _, f := range result.Findings {
@@ -772,18 +772,18 @@ func TestValidPath(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 
-	site := core.NewEntity("site-01", kinds.Site, "Site 01")
-	site.SetPath("/site-01")
-	graph.AddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "Region 01")
+	region.SetPath("/region-01")
+	graph.AddEntity(region)
 
 	rack := core.NewEntity("rack-01", kinds.Rack, "Rack 01")
-	rack.SetOwner("site-01")
-	rack.SetPath("/site-01/rack-01")
+	rack.SetOwner("region-01")
+	rack.SetPath("/region-01/rack-01")
 	graph.AddEntity(rack)
 
 	server := core.NewEntity("srv-01", kinds.Server, "Server 01")
 	server.SetOwner("rack-01")
-	server.SetPath("/site-01/rack-01/srv-01")
+	server.SetPath("/region-01/rack-01/srv-01")
 	graph.AddEntity(server)
 
 	result := e.Validate(graph, nil)
@@ -798,13 +798,13 @@ func TestValidPath(t *testing.T) {
 
 func newNetworkGraph() *core.Graph {
 	g := core.NewGraph()
-	site := core.NewEntity("site-01", kinds.Site, "Site 01")
-	g.AddEntity(site)
+	region := core.NewEntity("region-01", kinds.Region, "Region 01")
+	g.AddEntity(region)
 	server := core.NewEntity("srv-01", kinds.Server, "Server 01")
-	server.SetOwner("site-01")
+	server.SetOwner("region-01")
 	g.AddEntity(server)
 	net := core.NewEntity("net-01", kinds.Network, "Network 01")
-	net.SetOwner("site-01")
+	net.SetOwner("region-01")
 	net.SetProperty("cidr", "10.0.1.0/24")
 	g.AddEntity(net)
 	return g
@@ -829,15 +829,15 @@ func hasFindingByRule(result *Result, ruleID string) bool {
 func TestRuleValidIPFormat(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
-	graph.AddEntity(core.NewEntity("site-01", kinds.Site, "Site 01"))
+	graph.AddEntity(core.NewEntity("region-01", kinds.Region, "Region 01"))
 
 	valid := core.NewEntity("eth0", kinds.Interface, "eth0")
-	valid.SetOwner("site-01")
+	valid.SetOwner("region-01")
 	valid.SetProperty("ip_address", "10.0.1.10")
 	graph.AddEntity(valid)
 
 	invalid := core.NewEntity("eth1", kinds.Interface, "eth1")
-	invalid.SetOwner("site-01")
+	invalid.SetOwner("region-01")
 	invalid.SetProperty("ip_address", []interface{}{"10.0.1.10", "not-an-ip"})
 	graph.AddEntity(invalid)
 
@@ -950,7 +950,7 @@ func TestRuleNetworkCIDRRequired(t *testing.T) {
 	graph := newNetworkGraph()
 
 	net2 := core.NewEntity("net-02", kinds.Network, "Network 02")
-	net2.SetOwner("site-01")
+	net2.SetOwner("region-01")
 	graph.AddEntity(net2)
 
 	withNetwork := newServerInterface(graph, "eth0")
@@ -977,19 +977,19 @@ func TestRuleGatewayInCIDR(t *testing.T) {
 	graph := newNetworkGraph()
 
 	good := core.NewEntity("net-good", kinds.Network, "Good Network")
-	good.SetOwner("site-01")
+	good.SetOwner("region-01")
 	good.SetProperty("cidr", "10.0.1.0/24")
 	good.SetProperty("gateway", "10.0.1.1")
 	graph.AddEntity(good)
 
 	bad := core.NewEntity("net-bad", kinds.Network, "Bad Network")
-	bad.SetOwner("site-01")
+	bad.SetOwner("region-01")
 	bad.SetProperty("cidr", "10.0.1.0/24")
 	bad.SetProperty("gateway", "192.168.0.1")
 	graph.AddEntity(bad)
 
 	invalid := core.NewEntity("net-invalid", kinds.Network, "Invalid Gateway Network")
-	invalid.SetOwner("site-01")
+	invalid.SetOwner("region-01")
 	invalid.SetProperty("cidr", "10.0.1.0/24")
 	invalid.SetProperty("gateway", "not-an-ip")
 	graph.AddEntity(invalid)

@@ -61,9 +61,9 @@
 
       <h2 id="example">インフラモデル例</h2>
 <pre class="language-yaml"><code>objects:
-  # Sites
-  - id: site-tokyo-01
-    kind: site
+  # Regions
+  - id: region-ap-northeast-1
+    kind: region
     name: Tokyo Datacenter 1
     attributes:
       status: active
@@ -75,7 +75,7 @@
     kind: rack
     name: Rack A01
     attributes:
-      owner: site-tokyo-01
+      owner: region-ap-northeast-1
       status: active
       labels:
         row: A

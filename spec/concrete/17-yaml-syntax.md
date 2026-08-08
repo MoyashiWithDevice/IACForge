@@ -56,8 +56,8 @@ The `spec` sub-key contains kind-specific properties (platform, cpu, memory, etc
 
 ```yaml
 objects:
-  - id: site-tokyo-01
-    kind: site
+  - id: region-ap-northeast-1
+    kind: region
     name: Tokyo Datacenter 1
 ```
 
@@ -123,8 +123,9 @@ A nesting rule with `any` as the parent kind means the child can be nested under
 | any | routers | router |
 | any | firewalls | firewall |
 | any | networks | network |
-| site | racks | rack |
-| site | clusters | cluster |
+| region | racks | rack |
+| region | clusters | cluster |
+| region | availability_zones | availability_zone |
 | server | vms | vm |
 | switch | ports | interface |
 | router | ports | interface |
@@ -271,7 +272,7 @@ objects:
     kind: rack
     name: Rack A01
     attributes:
-      owner: site-tokyo-01
+      owner: region-ap-northeast-1
 
   # Nested definition
   - id: srv-proxmox-01
@@ -317,7 +318,7 @@ For directed relations like `hosts`, `depends_on`:
 
 ```yaml
 participants:
-  source: site-tokyo-01
+  source: region-ap-northeast-1
   target: rack-a01
 ```
 
@@ -376,7 +377,7 @@ target: vm-web-01
 For unambiguous references:
 
 ```yaml
-source: /site-tokyo-01/rack-a01/srv-proxmox-01
+source: /region-ap-northeast-1/rack-a01/srv-proxmox-01
 target: vm-web-01
 ```
 
@@ -406,7 +407,7 @@ When serializing back to YAML, the `@` prefix is automatically restored.
 
 Reference properties are validated to ensure the referenced Entity exists in the graph.
 A property value of `"@net-mgmt"` references the Entity with ID `net-mgmt`.
-Path notation is also supported: `"@/site01/rack01/server01"`.
+Path notation is also supported: `"@/region01/rack01/server01"`.
 
 ---
 
@@ -416,9 +417,9 @@ Path notation is also supported: `"@/site01/rack01/server01"`.
 
 ```yaml
 objects:
-  # Sites
-  - id: site-tokyo-01
-    kind: site
+  # Regions
+  - id: region-ap-northeast-1
+    kind: region
     name: Tokyo Datacenter 1
     attributes:
       status: active
@@ -430,7 +431,7 @@ objects:
     kind: rack
     name: Rack A01
     attributes:
-      owner: site-tokyo-01
+      owner: region-ap-northeast-1
       status: active
       labels:
         row: A
@@ -754,10 +755,10 @@ objects:
 Comments are preserved during round-trip conversion.
 
 ```yaml
-# Site information
+# Region information
 objects:
-  - id: site-tokyo-01
-    kind: site
+  - id: region-ap-northeast-1
+    kind: region
     name: Tokyo Datacenter 1
     # Primary location
     attributes:

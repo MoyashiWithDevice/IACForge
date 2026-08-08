@@ -29,12 +29,12 @@ func TestEntitySetOwner(t *testing.T) {
 	if !e.IsRoot() {
 		t.Error("expected entity to be root initially")
 	}
-	e.SetOwner("site-01")
+	e.SetOwner("region-01")
 	if e.IsRoot() {
 		t.Error("expected entity not to be root after setting owner")
 	}
-	if e.Owner != "site-01" {
-		t.Errorf("expected owner site-01, got %s", e.Owner)
+	if e.Owner != "region-01" {
+		t.Errorf("expected owner region-01, got %s", e.Owner)
 	}
 }
 
@@ -148,9 +148,9 @@ func TestEntityPath(t *testing.T) {
 	if e.Path() != "" {
 		t.Errorf("expected empty path, got %s", e.Path())
 	}
-	e.SetPath("/site01/rack01/pve01/eno1")
-	if e.Path() != "/site01/rack01/pve01/eno1" {
-		t.Errorf("expected path /site01/rack01/pve01/eno1, got %s", e.Path())
+	e.SetPath("/region01/rack01/pve01/eno1")
+	if e.Path() != "/region01/rack01/pve01/eno1" {
+		t.Errorf("expected path /region01/rack01/pve01/eno1, got %s", e.Path())
 	}
 }
 
@@ -159,9 +159,9 @@ func TestEntityFullPath(t *testing.T) {
 	if e.FullPath() != "/eno1" {
 		t.Errorf("expected full path /eno1, got %s", e.FullPath())
 	}
-	e.SetPath("/site01/rack01/pve01/eno1")
-	if e.FullPath() != "/site01/rack01/pve01/eno1" {
-		t.Errorf("expected full path /site01/rack01/pve01/eno1, got %s", e.FullPath())
+	e.SetPath("/region01/rack01/pve01/eno1")
+	if e.FullPath() != "/region01/rack01/pve01/eno1" {
+		t.Errorf("expected full path /region01/rack01/pve01/eno1, got %s", e.FullPath())
 	}
 }
 
@@ -208,9 +208,9 @@ func TestReferenceValue(t *testing.T) {
 		},
 		{
 			name:       "path reference",
-			raw:        "@/site01/rack01/server01",
-			wantTarget: "/site01/rack01/server01",
-			wantString: "@/site01/rack01/server01",
+			raw:        "@/region01/rack01/server01",
+			wantTarget: "/region01/rack01/server01",
+			wantString: "@/region01/rack01/server01",
 		},
 	}
 
@@ -288,47 +288,47 @@ func TestResolvePropertyPath(t *testing.T) {
 		isNil    bool
 	}{
 		{
-			name:  "simple property",
-			path:  "platform",
+			name:     "simple property",
+			path:     "platform",
 			expected: "proxmox",
 		},
 		{
-			name:     "nonexistent property",
-			path:     "nonexistent",
-			isNil:    true,
+			name:  "nonexistent property",
+			path:  "nonexistent",
+			isNil: true,
 		},
 		{
-			name:  "list property returns full list",
-			path:  "memory",
+			name: "list property returns full list",
+			path: "memory",
 			expected: []interface{}{
 				map[string]interface{}{"size_gb": float64(64), "speed": float64(3200), "type": "ddr4"},
 				map[string]interface{}{"size_gb": float64(64), "speed": float64(3200), "type": "ddr4"},
 			},
 		},
 		{
-			name:  "dot-notation extracts sub-property from list items",
-			path:  "memory.size_gb",
+			name:     "dot-notation extracts sub-property from list items",
+			path:     "memory.size_gb",
 			expected: []interface{}{float64(64), float64(64)},
 		},
 		{
-			name:  "dot-notation extracts speed from list items",
-			path:  "memory.speed",
+			name:     "dot-notation extracts speed from list items",
+			path:     "memory.speed",
 			expected: []interface{}{float64(3200), float64(3200)},
 		},
 		{
-			name:  "dot-notation extracts cpu cores",
-			path:  "cpu.cores",
+			name:     "dot-notation extracts cpu cores",
+			path:     "cpu.cores",
 			expected: []interface{}{float64(32)},
 		},
 		{
-			name:     "dot-notation on nonexistent top-level",
-			path:     "nonexistent.size_gb",
-			isNil:    true,
+			name:  "dot-notation on nonexistent top-level",
+			path:  "nonexistent.size_gb",
+			isNil: true,
 		},
 		{
-			name:     "dot-notation on nonexistent sub-property",
-			path:     "memory.nonexistent",
-			isNil:    true,
+			name:  "dot-notation on nonexistent sub-property",
+			path:  "memory.nonexistent",
+			isNil: true,
 		},
 	}
 

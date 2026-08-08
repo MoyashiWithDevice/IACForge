@@ -11,14 +11,14 @@ import (
 func createTestGraph() *core.Graph {
 	g := core.NewGraph()
 
-	// Site
-	site := core.NewEntity("site-01", "site", "Data Center 01")
-	site.SetStatus(core.StatusActive)
-	g.AddEntity(site)
+	// Region
+	region := core.NewEntity("region-01", "region", "Data Center 01")
+	region.SetStatus(core.StatusActive)
+	g.AddEntity(region)
 
 	// Rack
 	rack := core.NewEntity("rack-01", "rack", "Rack A01")
-	rack.SetOwner("site-01")
+	rack.SetOwner("region-01")
 	rack.SetStatus(core.StatusActive)
 	rack.SetLabel("zone", "A")
 	g.AddEntity(rack)
@@ -76,7 +76,7 @@ func createTestGraph() *core.Graph {
 
 	// Network
 	net := core.NewEntity("net-01", "network", "Production Network")
-	net.SetOwner("site-01")
+	net.SetOwner("region-01")
 	net.SetStatus(core.StatusActive)
 	g.AddEntity(net)
 
@@ -1205,4 +1205,5 @@ func TestCastProperty(t *testing.T) {
 }
 
 func boolPtr(b bool) *bool {
-	return &b}
+	return &b
+}

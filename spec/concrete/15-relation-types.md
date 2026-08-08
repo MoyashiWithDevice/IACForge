@@ -476,7 +476,7 @@ Each Relation Type MAY define which Entity Kinds may participate.
 | connects | interface | interface |
 | hosts | server, vm, container | vm, container, application |
 | depends_on | vm, container, application | vm, container, application, storage, network |
-| belongs_to | vm, container, interface, server, switch, router, firewall, storage, acl, acl_rule, open_port | cluster, network, site, firewall, interface, server, vm, container, application |
+| belongs_to | vm, container, interface, server, switch, router, firewall, storage, acl, acl_rule, open_port, availability_zone | cluster, network, region, firewall, interface, server, vm, container, application |
 | applies_to | acl | interface, firewall, server, vm, container |
 | listens_on | open_port | interface, server, vm, container |
 

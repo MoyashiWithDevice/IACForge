@@ -15,11 +15,11 @@ import (
 func newTestExtension(id, namespace string, deps []string) *Extension {
 	return &Extension{
 		Manifest: &Manifest{
-			ID:            id,
-			Name:          id + " Name",
-			Version:       "1.0.0",
-			Namespace:     namespace,
-			Dependencies:  deps,
+			ID:              id,
+			Name:            id + " Name",
+			Version:         "1.0.0",
+			Namespace:       namespace,
+			Dependencies:    deps,
 			ExtensionPoints: []string{string(ExtensionPointEntityKinds)},
 		},
 		EntityKinds: []EntityKindContribution{
@@ -36,17 +36,17 @@ func newTestExtension(id, namespace string, deps []string) *Extension {
 func newTestRelationExtension(id, namespace string) *Extension {
 	return &Extension{
 		Manifest: &Manifest{
-			ID:            id,
-			Name:          id + " Name",
-			Version:       "1.0.0",
-			Namespace:     namespace,
+			ID:              id,
+			Name:            id + " Name",
+			Version:         "1.0.0",
+			Namespace:       namespace,
 			ExtensionPoints: []string{string(ExtensionPointRelationTypes)},
 		},
 		RelationTypes: []RelationTypeContribution{
 			{
 				Type: core.RelationType("ext_" + id),
 				Definition: &schema.RelationTypeDefinition{
-					Direction: schema.DirectionDirected,
+					Direction:   schema.DirectionDirected,
 					Description: "Test relation type from " + id,
 				},
 			},

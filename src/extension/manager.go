@@ -294,7 +294,7 @@ func (m *Manager) applyExtension(ext *Extension) error {
 
 // coreEntityKinds lists all entity kinds defined by the core specification.
 var coreEntityKinds = map[string]bool{
-	"site": true, "rack": true, "server": true, "interface": true,
+	"region": true, "rack": true, "server": true, "interface": true,
 	"cable": true, "power_distribution": true, "network": true, "vlan": true,
 	"switch": true, "router": true, "firewall": true, "acl": true,
 	"acl_rule": true, "vm": true, "container": true, "application": true,

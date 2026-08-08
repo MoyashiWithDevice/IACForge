@@ -26,9 +26,9 @@ func (e *ParseError) Error() string {
 
 // Parser parses YAML syntax into a Graph.
 type Parser struct {
-	graph           *core.Graph
-	schema          *schema.Schema
-	autoRelConfig   *AutoRelationConfig
+	graph         *core.Graph
+	schema        *schema.Schema
+	autoRelConfig *AutoRelationConfig
 }
 
 // AutoRelationConfig holds configuration for auto-relation generation.
@@ -350,9 +350,9 @@ func (p *Parser) buildAutoRelation(nd *schema.NestingDefinition, parent, child *
 	relID := generateAutoRelationID(relType, source, target)
 
 	rel := &core.Relation{
-		ID:          relID,
-		Type:        relType,
-		Direction:   core.Direction(relTypeDef.Direction),
+		ID:        relID,
+		Type:      relType,
+		Direction: core.Direction(relTypeDef.Direction),
 		Participants: core.Participants{
 			Source: source,
 			Target: target,
@@ -512,9 +512,9 @@ func (p *Parser) parseEntity(obj map[string]interface{}, parentID string) (*core
 					return nil, nil, fmt.Errorf("nested key %q in spec: %w", k, err)
 				}
 				nestedEntities = append(nestedEntities, children...)
-		} else {
-			entity.SetProperty(k, convertPropertyValue(v))
-		}
+			} else {
+				entity.SetProperty(k, convertPropertyValue(v))
+			}
 		}
 	}
 
@@ -607,11 +607,11 @@ func (p *Parser) parseRelation(obj map[string]interface{}, entities map[string]*
 	}
 
 	relation := &core.Relation{
-		ID:          id,
-		Type:        relType,
-		Direction:   direction,
+		ID:           id,
+		Type:         relType,
+		Direction:    direction,
 		Participants: *participants,
-		Properties:  make(map[string]interface{}),
+		Properties:   make(map[string]interface{}),
 	}
 
 	// Parse attributes sub-key

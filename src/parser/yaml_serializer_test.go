@@ -11,7 +11,7 @@ import (
 
 func TestSerializeBasicEntity(t *testing.T) {
 	g := core.NewGraph()
-	e := core.NewEntity("site-tokyo-01", kinds.Site, "Tokyo Datacenter 1")
+	e := core.NewEntity("region-ap-northeast-1", kinds.Region, "Tokyo Datacenter 1")
 	if err := g.AddEntity(e); err != nil {
 		t.Fatalf("failed to add entity: %v", err)
 	}
@@ -29,9 +29,9 @@ func TestSerializeBasicEntity(t *testing.T) {
 		t.Fatalf("failed to parse serialized data: %v", err)
 	}
 
-	e2, ok := g2.GetEntity("site-tokyo-01")
+	e2, ok := g2.GetEntity("region-ap-northeast-1")
 	if !ok {
-		t.Fatal("entity site-tokyo-01 not found in parsed data")
+		t.Fatal("entity region-ap-northeast-1 not found in parsed data")
 	}
 
 	if e2.ID != e.ID {
@@ -213,8 +213,8 @@ func TestSerializeSymmetricRelation(t *testing.T) {
 func TestRoundTrip(t *testing.T) {
 	yaml := `
 objects:
-  - id: site-tokyo-01
-    kind: site
+  - id: region-ap-northeast-1
+    kind: region
     name: Tokyo Datacenter 1
     attributes:
       status: active
@@ -225,7 +225,7 @@ objects:
     kind: rack
     name: Rack A01
     attributes:
-      owner: site-tokyo-01
+      owner: region-ap-northeast-1
       status: active
     spec:
       height_units: 42
@@ -352,14 +352,14 @@ objects:
 func TestRoundTripClusterNestedNodes(t *testing.T) {
 	yaml := `
 objects:
-  - id: site-tokyo-01
-    kind: site
+  - id: region-ap-northeast-1
+    kind: region
     name: Tokyo Datacenter 1
   - id: k8s-prod
     kind: cluster
     name: Production K8s Cluster
     attributes:
-      owner: site-tokyo-01
+      owner: region-ap-northeast-1
     spec:
       cluster_type: compute
       ha_enabled: true

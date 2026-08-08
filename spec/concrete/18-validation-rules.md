@@ -61,7 +61,7 @@ Validation produces Findings.
   "message": "Duplicate identifier: srv-01",
   "object_id": "srv-01",
   "object_type": "entity",
-  "path": "/site-01/rack-01/srv-01"
+  "path": "/region-01/rack-01/srv-01"
 }
 ```
 
@@ -474,7 +474,7 @@ The Core Schema does not define specific profiles.
     - valid-port-range
     - valid-acl-rule-parent
   required_kinds:
-    - site
+    - region
     - rack
     - server
 ```

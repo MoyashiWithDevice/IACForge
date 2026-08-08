@@ -102,8 +102,8 @@
       </table>
 
       <h2 id="basic-entity">基本的なEntity</h2>
-<pre class="language-yaml"><code>- id: site-tokyo-01
-  kind: site
+<pre class="language-yaml"><code>- id: region-ap-northeast-1
+  kind: region
   name: Tokyo Datacenter 1</code></pre>
 
       <h2 id="full-entity">全プロパティを指定したEntity</h2>
@@ -157,8 +157,9 @@
           <tr><td>any</td><td>routers</td><td>router</td></tr>
           <tr><td>any</td><td>firewalls</td><td>firewall</td></tr>
           <tr><td>any</td><td>networks</td><td>network</td></tr>
-          <tr><td>site</td><td>racks</td><td>rack</td></tr>
-          <tr><td>site</td><td>clusters</td><td>cluster</td></tr>
+          <tr><td>region</td><td>racks</td><td>rack</td></tr>
+          <tr><td>region</td><td>clusters</td><td>cluster</td></tr>
+          <tr><td>region</td><td>availability_zones</td><td>availability_zone</td></tr>
           <tr><td>cluster</td><td>vms</td><td>vm</td></tr>
           <tr><td>cluster</td><td>servers</td><td>server</td></tr>
           <tr><td>server</td><td>vms</td><td>vm</td></tr>
@@ -233,7 +234,7 @@
     kind: rack
     name: Rack A01
     attributes:
-      owner: site-tokyo-01
+      owner: region-ap-northeast-1
 
   # ネスト定義
   - id: srv-proxmox-01

@@ -10,7 +10,7 @@ import (
 
 // SessionManager manages per-session Graph instances.
 type SessionManager struct {
-	mu      sync.RWMutex
+	mu       sync.RWMutex
 	sessions map[string]*SessionData
 }
 

@@ -9,15 +9,15 @@ import (
 
 // Manifest holds machine-readable metadata for an extension.
 type Manifest struct {
-	ID             string   `yaml:"id"`
-	Name           string   `yaml:"name"`
-	Version        string   `yaml:"version"`
-	Author         string   `yaml:"author,omitempty"`
-	Description    string   `yaml:"description,omitempty"`
-	SpecVersion    string   `yaml:"spec_version,omitempty"`
-	SchemaVersion  string   `yaml:"schema_version,omitempty"`
-	Namespace      string   `yaml:"namespace"`
-	Dependencies   []string `yaml:"dependencies,omitempty"`
+	ID              string   `yaml:"id"`
+	Name            string   `yaml:"name"`
+	Version         string   `yaml:"version"`
+	Author          string   `yaml:"author,omitempty"`
+	Description     string   `yaml:"description,omitempty"`
+	SpecVersion     string   `yaml:"spec_version,omitempty"`
+	SchemaVersion   string   `yaml:"schema_version,omitempty"`
+	Namespace       string   `yaml:"namespace"`
+	Dependencies    []string `yaml:"dependencies,omitempty"`
 	ExtensionPoints []string `yaml:"extension_points"`
 }
 
@@ -25,10 +25,10 @@ type Manifest struct {
 type ExtensionPointType string
 
 const (
-	ExtensionPointEntityKinds    ExtensionPointType = "entity_kinds"
-	ExtensionPointRelationTypes  ExtensionPointType = "relation_types"
+	ExtensionPointEntityKinds     ExtensionPointType = "entity_kinds"
+	ExtensionPointRelationTypes   ExtensionPointType = "relation_types"
 	ExtensionPointValidationRules ExtensionPointType = "validation_rules"
-	ExtensionPointRenderers      ExtensionPointType = "renderers"
+	ExtensionPointRenderers       ExtensionPointType = "renderers"
 )
 
 // ExtensionPoint defines the interface that all extension points must implement.
@@ -39,8 +39,8 @@ type ExtensionPoint interface {
 
 // EntityKindContribution represents a single entity kind contributed by an extension.
 type EntityKindContribution struct {
-	Kind        core.EntityKind
-	Definition  *schema.EntityKindDefinition
+	Kind       core.EntityKind
+	Definition *schema.EntityKindDefinition
 }
 
 // RelationTypeContribution represents a single relation type contributed by an extension.

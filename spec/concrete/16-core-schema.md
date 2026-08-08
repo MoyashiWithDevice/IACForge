@@ -79,7 +79,7 @@ The Core Schema defines the following property types.
 |------|-------------|----------|
 | list[Type] | Ordered collection | ["web", "db"], [1, 2, 3] |
 | map[Type] | Key-value pairs | {env: "prod", tier: "1"} |
-| reference | Reference to another Object | "srv-01", "/site01/rack01/server01" |
+| reference | Reference to another Object | "srv-01", "/region01/rack01/server01" |
 
 ### Enumerated Types
 
@@ -147,7 +147,7 @@ A definition includes:
 
 | Kind | Description |
 |------|-------------|
-| site | Physical location |
+| region | Physical location |
 | rack | Physical rack enclosure |
 | server | Physical or virtual compute host |
 | interface | Network interface |
@@ -288,11 +288,11 @@ The Core Schema does not define specific profiles.
 - name: my-profile
   description: Custom validation profile
   required_kinds:
-    - site
+    - region
     - rack
     - server
   required_properties:
-    site: ["name"]
+    region: ["name"]
     rack: ["name"]
     server: ["name", "platform"]
 ```

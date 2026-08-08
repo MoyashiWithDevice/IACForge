@@ -36,9 +36,9 @@ Individual Entity Kinds MAY define additional properties.
 
 ## Physical Infrastructure
 
-### site
+### region
 
-A physical location where infrastructure is deployed.
+A geographic region where infrastructure is deployed.
 
 #### Properties
 
@@ -59,6 +59,7 @@ A physical location where infrastructure is deployed.
 |----------|------------|
 | racks | rack |
 | clusters | cluster |
+| availability_zones | availability_zone |
 
 #### Typical Relations
 
@@ -67,8 +68,8 @@ A physical location where infrastructure is deployed.
 #### Example
 
 ```yaml
-- id: site-tokyo-01
-  kind: site
+- id: region-ap-northeast-1
+  kind: region
   name: Tokyo Datacenter 1
   status: active
   tags:
@@ -83,7 +84,7 @@ A physical location where infrastructure is deployed.
 
 ### rack
 
-A physical rack enclosure within a site.
+A physical rack enclosure within a region.
 
 #### Properties
 
@@ -95,7 +96,7 @@ A physical rack enclosure within a site.
 
 #### Typical Ownership
 
-- owned by: site
+- owned by: region
 
 #### Nestable Children
 
@@ -108,7 +109,7 @@ A physical rack enclosure within a site.
 
 #### Typical Relations
 
-- belongs_to → site
+- belongs_to → region
 
 #### Example
 
@@ -165,7 +166,7 @@ A physical or virtual compute host.
 
 #### Typical Ownership
 
-- owned by: rack, site
+- owned by: rack, region
 
 #### Nestable Children
 
@@ -177,7 +178,7 @@ A physical or virtual compute host.
 #### Typical Relations
 
 - belongs_to → rack
-- belongs_to → site
+- belongs_to → region
 - hosts → vm
 - hosts → container
 
@@ -461,7 +462,7 @@ A logical network or broadcast domain.
 
 #### Typical Relations
 
-- belongs_to → site
+- belongs_to → region
 - belongs_to → cluster
 
 #### Nestable Children
@@ -525,7 +526,7 @@ A virtual LAN configuration.
 #### Typical Relations
 
 - belongs_to → network
-- belongs_to → site
+- belongs_to → region
 
 ---
 
@@ -1035,7 +1036,7 @@ A logical grouping of compute resources.
 
 #### Typical Ownership
 
-- owned by: site
+- owned by: region
 
 #### Nestable Children
 
@@ -1048,7 +1049,7 @@ Nested nodes receive the cluster as their `owner` and an auto-generated `belongs
 
 #### Typical Relations
 
-- belongs_to → site
+- belongs_to → region
 - belongs_to → network
 - belongs_to ← server (nodes)
 - belongs_to ← vm (nodes)
@@ -1071,7 +1072,7 @@ Kubernetes cluster with nested node machines:
   kind: cluster
   name: Production Kubernetes Cluster
   attributes:
-    owner: site-tokyo-01
+    owner: region-ap-northeast-1
   spec:
     cluster_type: compute
     ha_enabled: true
@@ -1099,21 +1100,21 @@ Kubernetes cluster with nested node machines:
 
 ### availability_zone
 
-A logical availability zone within a site.
+A logical availability zone within a region.
 
 #### Properties
 
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
-| redundancy | string | no | - | Redundancy level (n+1, 2n, etc.) |
+| state | string | no | available | Availability zone state (available, impaired, unavailable) |
 
 #### Typical Ownership
 
-- owned by: site
+- owned by: region
 
 #### Typical Relations
 
-- belongs_to → site
+- belongs_to → region
 
 ---
 

@@ -198,10 +198,10 @@ func TestJSONRendererRender(t *testing.T) {
 
 func TestLayoutEngineHierarchical(t *testing.T) {
 	g := core.NewGraph()
-	e1 := core.NewEntity("site-1", "site", "Site 1")
+	e1 := core.NewEntity("region-1", "region", "Region 1")
 	g.AddEntity(e1)
 	e2 := core.NewEntity("rack-1", "rack", "Rack 1")
-	e2.SetOwner("site-1")
+	e2.SetOwner("region-1")
 	g.AddEntity(e2)
 
 	v := view.NewView("test-view", "Test View")

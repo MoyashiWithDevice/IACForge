@@ -233,8 +233,8 @@ func (le *LayoutEngine) computeForceDirectedLayout(result *view.ViewResult) *Lay
 // applyForces applies repulsive and attractive forces.
 func (le *LayoutEngine) applyForces(nodes []NodePosition, result *view.ViewResult) {
 	repulsion := 1000.0
- attraction := 0.01
- damping := 0.9
+	attraction := 0.01
+	damping := 0.9
 
 	velocities := make([]Position, len(nodes))
 

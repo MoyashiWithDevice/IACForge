@@ -154,14 +154,14 @@ The Traverse clause defines how to navigate the Graph.
 ### Traversal Examples
 
 ```yaml
-# Get all children of a site
+# Get all children of a region
 traverse:
-  from: site-tokyo-01
+  from: region-ap-northeast-1
   operation: children
 
-# Get all descendants of a site
+# Get all descendants of a region
 traverse:
-  from: site-tokyo-01
+  from: region-ap-northeast-1
   operation: descendants
 
 # Get all VMs hosted by a server
@@ -186,7 +186,7 @@ traverse:
 
 ```yaml
 traverse:
-  from: site-tokyo-01
+  from: region-ap-northeast-1
   operation: descendants
   depth: 3
 ```
@@ -363,7 +363,7 @@ queries:
     {
       "id": "srv-proxmox-01",
       "type": "entity",
-      "path": "/site-tokyo-01/rack-a01/srv-proxmox-01",
+      "path": "/region-ap-northeast-1/rack-a01/srv-proxmox-01",
       "object": {
         "id": "srv-proxmox-01",
         "kind": "server",
@@ -439,7 +439,7 @@ where:
       - kind: vm
       - status: active
 traverse:
-  from: site-tokyo-01
+  from: region-ap-northeast-1
   operation: descendants
   depth: 4
 project:

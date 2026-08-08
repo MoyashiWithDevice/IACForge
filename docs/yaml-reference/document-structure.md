@@ -18,10 +18,10 @@ objects:
 Commentsはround-trip変換時に保持されます。
 
 ```yaml
-# Site情報
+# Region情報
 objects:
-  - id: site-tokyo-01
-    kind: site
+  - id: region-ap-northeast-1
+    kind: region
     name: Tokyo Datacenter 1
     attributes:
       # プライマリロケーション

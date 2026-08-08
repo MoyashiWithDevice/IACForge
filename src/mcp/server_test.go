@@ -84,15 +84,15 @@ func TestLoadDirToolCrossFileReferences(t *testing.T) {
 	files := map[string]string{
 		"fileA.yaml": `
 objects:
-  - id: site-tokyo-01
-    kind: site
+  - id: region-ap-northeast-1
+    kind: region
     name: Tokyo Datacenter 1
 
   - id: srv-proxmox-01
     kind: server
     name: Proxmox Node 01
     attributes:
-      owner: site-tokyo-01
+      owner: region-ap-northeast-1
     spec:
       networks:
         - id: net-mgmt
@@ -113,7 +113,7 @@ objects:
     kind: vlan
     name: VLAN 100
     attributes:
-      owner: site-tokyo-01
+      owner: region-ap-northeast-1
     spec:
       vlan_id: 100
       associated_network: "@net-storage"
@@ -130,7 +130,7 @@ objects:
     kind: switch
     name: Core Switch 01
     attributes:
-      owner: site-tokyo-01
+      owner: region-ap-northeast-1
     spec:
       interfaces:
         - id: port1

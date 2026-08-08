@@ -11,13 +11,13 @@ func createTestGraph() *core.Graph {
 	g := core.NewGraph()
 
 	// Create entities
-	site := core.NewEntity("site-tokyo-01", "site", "Tokyo Site")
-	site.SetStatus(core.StatusActive)
-	site.SetLabel("region", "ap-northeast-1")
-	g.AddEntity(site)
+	region := core.NewEntity("region-ap-northeast-1", "region", "Tokyo Region")
+	region.SetStatus(core.StatusActive)
+	region.SetLabel("region", "ap-northeast-1")
+	g.AddEntity(region)
 
 	rack := core.NewEntity("rack-a01", "rack", "Rack A01")
-	rack.SetOwner("site-tokyo-01")
+	rack.SetOwner("region-ap-northeast-1")
 	rack.SetStatus(core.StatusActive)
 	g.AddEntity(rack)
 
@@ -508,7 +508,7 @@ func TestTraverseAncestors(t *testing.T) {
 		t.Fatalf("Execute failed: %v", err)
 	}
 
-	// Should find vm-web-01, srv-proxmox-01, rack-a01, site-tokyo-01
+	// Should find vm-web-01, srv-proxmox-01, rack-a01, region-ap-northeast-1
 	if result.Count != 4 {
 		t.Errorf("Expected 4 ancestors, got %d", result.Count)
 	}

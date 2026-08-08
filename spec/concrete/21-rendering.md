@@ -277,7 +277,7 @@ Themes define presentation characteristics.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| site | string | Site icon |
+| region | string | Region icon |
 | rack | string | Rack icon |
 | server | string | Server icon |
 | vm | string | VM icon |

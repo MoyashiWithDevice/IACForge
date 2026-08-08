@@ -64,7 +64,7 @@
           <tr><th>Kind</th><th>Category</th><th>Description</th></tr>
         </thead>
         <tbody>
-          <tr><td><a href="#site">site</a></td><td>Physical</td><td>Physical location</td></tr>
+          <tr><td><a href="#region">region</a></td><td>Physical</td><td>Physical location</td></tr>
           <tr><td><a href="#rack">rack</a></td><td>Physical</td><td>Physical rack enclosure</td></tr>
           <tr><td><a href="#server">server</a></td><td>Physical</td><td>Physical or virtual compute host</td></tr>
           <tr><td><a href="#interface">interface</a></td><td>Network</td><td>Network interface</td></tr>
@@ -154,8 +154,8 @@
 
       <h2 id="physical-infrastructure">Physical Infrastructure</h2>
 
-      <h3 id="site">site</h3>
-      <p>A physical location where infrastructure is deployed.</p>
+      <h3 id="region">region</h3>
+      <p>A geographic region where infrastructure is deployed.</p>
       <table class="ref-table">
         <thead>
           <tr><th>Property</th><th>Type</th><th>Required</th><th>Default</th><th>Description</th></tr>
@@ -168,8 +168,8 @@
         </tbody>
       </table>
       <p><strong>Ownership:</strong> Root (no owner specified)</p>
-<pre class="language-yaml"><code>- id: site-tokyo-01
-  kind: site
+<pre class="language-yaml"><code>- id: region-ap-northeast-1
+  kind: region
   name: Tokyo Datacenter 1
   attributes:
     status: active
@@ -180,7 +180,7 @@
       tier: primary</code></pre>
 
       <h3 id="rack">rack</h3>
-      <p>A physical rack enclosure within a site.</p>
+      <p>A physical rack enclosure within a region.</p>
       <table class="ref-table">
         <thead>
           <tr><th>Property</th><th>Type</th><th>Required</th><th>Default</th><th>Description</th></tr>
@@ -191,12 +191,12 @@
           <tr><td>max_load_kg</td><td><span class="type-badge">number</span></td><td><span class="req-no">no</span></td><td>-</td><td>Maximum weight capacity in kg</td></tr>
         </tbody>
       </table>
-      <p><strong>Ownership:</strong> site</p>
+      <p><strong>Ownership:</strong> region</p>
 <pre class="language-yaml"><code>- id: rack-a01
   kind: rack
   name: Rack A01
   attributes:
-    owner: site-tokyo-01
+    owner: region-ap-northeast-1
     status: active
     labels:
       row: A
@@ -494,7 +494,7 @@
           <tr><td>network_type</td><td><span class="type-badge">string</span></td><td><span class="req-no">no</span></td><td>-</td><td>Network type (management, storage, vm, public)</td></tr>
         </tbody>
       </table>
-      <p><strong>Ownership:</strong> Optional (typically site or cluster)</p>
+      <p><strong>Ownership:</strong> Optional (typically region or cluster)</p>
 <pre class="language-yaml"><code>- id: mgmt-network-01
   kind: network
   name: Management Network
@@ -518,7 +518,7 @@
           <tr><td>associated_network</td><td><span class="type-badge">string</span></td><td><span class="req-no">no</span></td><td>-</td><td>Reference to parent network</td></tr>
         </tbody>
       </table>
-      <p><strong>Ownership:</strong> network, site</p>
+      <p><strong>Ownership:</strong> network, region</p>
 <pre class="language-yaml"><code>- id: vlan-100
   kind: vlan
   name: Production VLAN
@@ -900,7 +900,7 @@
           <tr><td>drs_enabled</td><td><span class="type-badge">boolean</span></td><td><span class="req-no">no</span></td><td>false</td><td>Whether DRS is enabled</td></tr>
         </tbody>
       </table>
-      <p><strong>Ownership:</strong> site</p>
+      <p><strong>Ownership:</strong> region</p>
       <p><strong>Nestable children:</strong> <code>vms</code> (vm), <code>servers</code> (server)</p>
       <p>Nested nodes receive the cluster as their <code>owner</code> and an auto-generated <code>belongs_to</code> relation (member → cluster) is created.</p>
 <pre class="language-yaml"><code>- id: cluster-prod-01
@@ -932,23 +932,23 @@
         name: K8s Bare-metal Node 01</code></pre>
 
       <h3 id="availability_zone">availability_zone</h3>
-      <p>A logical availability zone within a site.</p>
+      <p>A logical availability zone within a region.</p>
       <table class="ref-table">
         <thead>
           <tr><th>Property</th><th>Type</th><th>Required</th><th>Default</th><th>Description</th></tr>
         </thead>
         <tbody>
-          <tr><td>redundancy</td><td><span class="type-badge">string</span></td><td><span class="req-no">no</span></td><td>-</td><td>Redundancy level (n+1, 2n, etc.)</td></tr>
+          <tr><td>state</td><td><span class="type-badge">string</span></td><td><span class="req-no">no</span></td><td>available</td><td>Availability zone state (available, impaired, unavailable)</td></tr>
         </tbody>
       </table>
-      <p><strong>Ownership:</strong> site</p>
+      <p><strong>Ownership:</strong> region</p>
 <pre class="language-yaml"><code>- id: az-tokyo-a
   kind: availability_zone
   name: Tokyo Zone A
   attributes:
-    owner: site-tokyo-01
+    owner: region-ap-northeast-1
   spec:
-    redundancy: 2n</code></pre>
+    state: available</code></pre>
 
     </div>
     <footer class="footer">

@@ -50,12 +50,12 @@ func ExtractReferenceValue(v interface{}) (string, bool) {
 type Status string
 
 const (
-	StatusPlanned    Status = "planned"
-	StatusActive     Status = "active"
+	StatusPlanned     Status = "planned"
+	StatusActive      Status = "active"
 	StatusMaintenance Status = "maintenance"
-	StatusDeprecated Status = "deprecated"
-	StatusOffline    Status = "offline"
-	StatusStandby    Status = "standby"
+	StatusDeprecated  Status = "deprecated"
+	StatusOffline     Status = "offline"
+	StatusStandby     Status = "standby"
 )
 
 type EntityKind string

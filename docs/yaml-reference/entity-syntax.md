@@ -39,8 +39,8 @@
 ## 基本的なEntity
 
 ```yaml
-- id: site-tokyo-01
-  kind: site
+- id: region-ap-northeast-1
+  kind: region
   name: Tokyo Datacenter 1
 ```
 
@@ -99,8 +99,9 @@
 | any | routers | router |
 | any | firewalls | firewall |
 | any | networks | network |
-| site | racks | rack |
-| site | clusters | cluster |
+| region | racks | rack |
+| region | clusters | cluster |
+| region | availability_zones | availability_zone |
 | cluster | vms | vm |
 | cluster | servers | server |
 | server | vms | vm |
@@ -186,7 +187,7 @@ objects:
     kind: rack
     name: Rack A01
     attributes:
-      owner: site-tokyo-01
+      owner: region-ap-northeast-1
 
   # ネスト定義
   - id: srv-proxmox-01

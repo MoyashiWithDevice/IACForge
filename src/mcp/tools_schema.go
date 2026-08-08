@@ -109,10 +109,10 @@ func registerSchemaMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 			}
 
 			result := map[string]interface{}{
-				"kind":          kind,
-				"description":   def.Description,
-				"properties":    properties,
-				"nesting_defs":  nestings,
+				"kind":         kind,
+				"description":  def.Description,
+				"properties":   properties,
+				"nesting_defs": nestings,
 			}
 
 			data, _ := json.MarshalIndent(result, "", "  ")

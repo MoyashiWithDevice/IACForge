@@ -195,11 +195,11 @@ func registerRelationMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 			}
 
 			type relationSummary struct {
-				ID        string             `json:"id"`
-				Type      core.RelationType  `json:"type"`
-				Source    string             `json:"source,omitempty"`
-				Target    string             `json:"target,omitempty"`
-				Direction core.Direction     `json:"direction"`
+				ID        string            `json:"id"`
+				Type      core.RelationType `json:"type"`
+				Source    string            `json:"source,omitempty"`
+				Target    string            `json:"target,omitempty"`
+				Direction core.Direction    `json:"direction"`
 			}
 
 			summaries := make([]relationSummary, len(relations))

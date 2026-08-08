@@ -31,7 +31,7 @@ func TestCoreSchemaEntityKinds(t *testing.T) {
 	s := CoreSchema()
 
 	expectedKinds := []core.EntityKind{
-		kinds.Site, kinds.Rack, kinds.Server, kinds.Interface, kinds.Cable,
+		kinds.Region, kinds.Rack, kinds.Server, kinds.Interface, kinds.Cable,
 		kinds.PowerDistribution, kinds.Network, kinds.VLAN, kinds.Switch,
 		kinds.Router, kinds.Firewall, kinds.ACL, kinds.ACLRule,
 		kinds.VM, kinds.Container, kinds.Application, kinds.OpenPort,
@@ -235,6 +235,10 @@ func TestCoreSchemaNestingDefinitions(t *testing.T) {
 		// Cluster can nest VMs and Servers as nodes (belongs_to membership)
 		{kinds.Cluster, "vms", kinds.VM, types.BelongsTo},
 		{kinds.Cluster, "servers", kinds.Server, types.BelongsTo},
+		// Region can nest racks, clusters, and availability zones
+		{kinds.Region, "racks", kinds.Rack, types.BelongsTo},
+		{kinds.Region, "clusters", kinds.Cluster, types.BelongsTo},
+		{kinds.Region, "availability_zones", kinds.AvailabilityZone, types.BelongsTo},
 		// Switch and Router can nest Ports as interface entities (belongs_to)
 		{kinds.Switch, "ports", kinds.Interface, types.BelongsTo},
 		{kinds.Router, "ports", kinds.Interface, types.BelongsTo},

@@ -151,9 +151,9 @@ func TestRelationProperties(t *testing.T) {
 
 func TestRelationValidate(t *testing.T) {
 	tests := []struct {
-		name    string
+		name     string
 		relation *Relation
-		wantErr error
+		wantErr  error
 	}{
 		{
 			name:     "valid directed relation",

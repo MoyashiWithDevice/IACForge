@@ -233,10 +233,10 @@ func registerEntityMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 			}
 
 			type entitySummary struct {
-				ID    string           `json:"id"`
-				Kind  core.EntityKind  `json:"kind"`
-				Name  string           `json:"name"`
-				Owner string           `json:"owner,omitempty"`
+				ID    string          `json:"id"`
+				Kind  core.EntityKind `json:"kind"`
+				Name  string          `json:"name"`
+				Owner string          `json:"owner,omitempty"`
 			}
 
 			summaries := make([]entitySummary, len(entities))

@@ -17,7 +17,7 @@ type Query struct {
 
 // SelectClause defines what Objects to select.
 type SelectClause struct {
-	Entities  []*EntitySelection  `yaml:"entities,omitempty"`
+	Entities  []*EntitySelection   `yaml:"entities,omitempty"`
 	Relations []*RelationSelection `yaml:"relations,omitempty"`
 }
 
@@ -50,25 +50,25 @@ type Condition struct {
 type Operator string
 
 const (
-	OperatorEq          Operator = "eq"
-	OperatorNe          Operator = "ne"
-	OperatorIn          Operator = "in"
-	OperatorNin         Operator = "nin"
-	OperatorGt          Operator = "gt"
-	OperatorGe          Operator = "ge"
-	OperatorLt          Operator = "lt"
-	OperatorLe          Operator = "le"
-	OperatorContains    Operator = "contains"
-	OperatorStartsWith  Operator = "starts_with"
-	OperatorEndsWith    Operator = "ends_with"
-	OperatorMatches     Operator = "matches"
-	OperatorDefined     Operator = "defined"
-	OperatorUndefined   Operator = "undefined"
+	OperatorEq         Operator = "eq"
+	OperatorNe         Operator = "ne"
+	OperatorIn         Operator = "in"
+	OperatorNin        Operator = "nin"
+	OperatorGt         Operator = "gt"
+	OperatorGe         Operator = "ge"
+	OperatorLt         Operator = "lt"
+	OperatorLe         Operator = "le"
+	OperatorContains   Operator = "contains"
+	OperatorStartsWith Operator = "starts_with"
+	OperatorEndsWith   Operator = "ends_with"
+	OperatorMatches    Operator = "matches"
+	OperatorDefined    Operator = "defined"
+	OperatorUndefined  Operator = "undefined"
 )
 
 // LogicalOp represents a logical operation (and, or, not).
 type LogicalOp struct {
-	Type  LogicalOpType `yaml:"type"`
+	Type  LogicalOpType  `yaml:"type"`
 	Rules []*WhereClause `yaml:"rules"`
 }
 
@@ -83,11 +83,11 @@ const (
 
 // TraverseClause defines how to navigate the Graph.
 type TraverseClause struct {
-	From          string          `yaml:"from"`
-	Operation     TraverseOp      `yaml:"operation"`
-	RelationType  core.RelationType `yaml:"relation_type,omitempty"`
-	Depth         int             `yaml:"depth,omitempty"`
-	MaxDepth      int             `yaml:"max_depth,omitempty"`
+	From         string            `yaml:"from"`
+	Operation    TraverseOp        `yaml:"operation"`
+	RelationType core.RelationType `yaml:"relation_type,omitempty"`
+	Depth        int               `yaml:"depth,omitempty"`
+	MaxDepth     int               `yaml:"max_depth,omitempty"`
 }
 
 // TraverseOp represents a traversal operation.
@@ -108,21 +108,21 @@ const (
 
 // ProjectClause defines how results are presented.
 type ProjectClause struct {
-	Type       ProjectionType     `yaml:"type"`
-	Properties []PropertyProjection `yaml:"properties,omitempty"`
-	Aggregation *Aggregation      `yaml:"aggregation,omitempty"`
-	GroupBy    string             `yaml:"group_by,omitempty"`
+	Type        ProjectionType       `yaml:"type"`
+	Properties  []PropertyProjection `yaml:"properties,omitempty"`
+	Aggregation *Aggregation         `yaml:"aggregation,omitempty"`
+	GroupBy     string               `yaml:"group_by,omitempty"`
 }
 
 // ProjectionType represents the type of projection.
 type ProjectionType string
 
 const (
-	ProjectionTypeObjects   ProjectionType = "objects"
+	ProjectionTypeObjects    ProjectionType = "objects"
 	ProjectionTypeProperties ProjectionType = "properties"
-	ProjectionTypePaths     ProjectionType = "paths"
-	ProjectionTypeIDs       ProjectionType = "ids"
-	ProjectionTypeSummary   ProjectionType = "summary"
+	ProjectionTypePaths      ProjectionType = "paths"
+	ProjectionTypeIDs        ProjectionType = "ids"
+	ProjectionTypeSummary    ProjectionType = "summary"
 )
 
 // PropertyProjection defines a property to project.

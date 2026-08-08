@@ -39,9 +39,9 @@ type Finding struct {
 
 // Rule defines a validation rule.
 type Rule struct {
-	ID          string `yaml:"id"`
-	Name        string `yaml:"name"`
-	Description string `yaml:"description,omitempty"`
+	ID          string   `yaml:"id"`
+	Name        string   `yaml:"name"`
+	Description string   `yaml:"description,omitempty"`
 	Severity    Severity `yaml:"severity"`
 	Scope       Scope    `yaml:"scope"`
 }

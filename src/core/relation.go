@@ -59,16 +59,16 @@ func (p *Participants) Count() int {
 }
 
 type Relation struct {
-	ID          string                 `yaml:"id"`
-	Type        RelationType           `yaml:"type"`
+	ID           string                 `yaml:"id"`
+	Type         RelationType           `yaml:"type"`
 	Participants Participants           `yaml:"participants"`
-	Direction   Direction              `yaml:"direction,omitempty"`
-	Description string                 `yaml:"description,omitempty"`
-	Status      Status                 `yaml:"status,omitempty"`
-	Tags        []string               `yaml:"tags,omitempty"`
-	Labels      map[string]string      `yaml:"labels,omitempty"`
-	Extensions  map[string]interface{} `yaml:"extensions,omitempty"`
-	Properties  map[string]interface{} `yaml:"properties,omitempty"`
+	Direction    Direction              `yaml:"direction,omitempty"`
+	Description  string                 `yaml:"description,omitempty"`
+	Status       Status                 `yaml:"status,omitempty"`
+	Tags         []string               `yaml:"tags,omitempty"`
+	Labels       map[string]string      `yaml:"labels,omitempty"`
+	Extensions   map[string]interface{} `yaml:"extensions,omitempty"`
+	Properties   map[string]interface{} `yaml:"properties,omitempty"`
 }
 
 func NewRelation(id string, relType RelationType, direction Direction) *Relation {

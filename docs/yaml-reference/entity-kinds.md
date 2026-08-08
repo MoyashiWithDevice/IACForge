@@ -8,7 +8,7 @@
 
 | Kind | Category | Description |
 |------|----------|-------------|
-| site | Physical | Physical location |
+| region | Physical | Physical location |
 | rack | Physical | Physical rack enclosure |
 | server | Physical | Physical or virtual compute host |
 | interface | Network | Network interface |
@@ -101,9 +101,9 @@ storage:
 
 ## Physical Infrastructure
 
-### site
+### region
 
-A physical location where infrastructure is deployed.
+A geographic region where infrastructure is deployed.
 
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
@@ -115,8 +115,8 @@ A physical location where infrastructure is deployed.
 **Ownership:** Root (no owner specified)
 
 ```yaml
-- id: site-tokyo-01
-  kind: site
+- id: region-ap-northeast-1
+  kind: region
   name: Tokyo Datacenter 1
   attributes:
     status: active
@@ -131,7 +131,7 @@ A physical location where infrastructure is deployed.
 
 ### rack
 
-A physical rack enclosure within a site.
+A physical rack enclosure within a region.
 
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
@@ -139,14 +139,14 @@ A physical rack enclosure within a site.
 | power_capacity_watts | integer | no | - | Total power capacity in watts |
 | max_load_kg | number | no | - | Maximum weight capacity in kg |
 
-**Ownership:** site
+**Ownership:** region
 
 ```yaml
 - id: rack-a01
   kind: rack
   name: Rack A01
   attributes:
-    owner: site-tokyo-01
+    owner: region-ap-northeast-1
     status: active
     labels:
       row: A
@@ -464,7 +464,7 @@ A logical network or broadcast domain.
 | vlan_id | integer | no | - | Associated VLAN ID |
 | network_type | string | no | - | Network type (management, storage, vm, public) |
 
-**Ownership:** Optional (typically site or cluster)
+**Ownership:** Optional (typically region or cluster)
 
 ```yaml
 - id: mgmt-network-01
@@ -491,7 +491,7 @@ A virtual LAN configuration.
 | tagged | boolean | no | false | Whether this VLAN carries tagged traffic on a trunk port |
 | associated_network | string | no | - | Reference to parent network |
 
-**Ownership:** network, site
+**Ownership:** network, region
 
 ```yaml
 - id: vlan-100
@@ -910,7 +910,7 @@ A logical grouping of compute resources.
 | ha_enabled | boolean | no | false | Whether HA is enabled |
 | drs_enabled | boolean | no | false | Whether DRS is enabled |
 
-**Ownership:** site
+**Ownership:** region
 
 **ネスト可能な子:** `vms` (vm), `servers` (server)
 
@@ -950,20 +950,20 @@ A logical grouping of compute resources.
 
 ### availability_zone
 
-A logical availability zone within a site.
+A logical availability zone within a region.
 
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
-| redundancy | string | no | - | Redundancy level (n+1, 2n, etc.) |
+| state | string | no | available | Availability zone state (available, impaired, unavailable) |
 
-**Ownership:** site
+**Ownership:** region
 
 ```yaml
 - id: az-tokyo-a
   kind: availability_zone
   name: Tokyo Zone A
   attributes:
-    owner: site-tokyo-01
+    owner: region-ap-northeast-1
   spec:
-    redundancy: 2n
+    state: available
 ```

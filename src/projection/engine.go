@@ -8,9 +8,9 @@ import (
 
 // Engine executes projections against a Graph.
 type Engine struct {
-	source       *core.Graph
-	projections  map[string]*Projection
-	chains       map[string][]string
+	source      *core.Graph
+	projections map[string]*Projection
+	chains      map[string][]string
 }
 
 // NewEngine creates a new projection engine.

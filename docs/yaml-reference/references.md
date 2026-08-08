@@ -14,7 +14,7 @@ target: vm-web-01
 ## 修飾参照（フルパス）
 
 ```yaml
-source: /site-tokyo-01/rack-a01/srv-proxmox-01
+source: /region-ap-northeast-1/rack-a01/srv-proxmox-01
 target: vm-web-01
 ```
 

@@ -33,8 +33,8 @@ func registerEntityKinds(s *Schema) {
 		{NestKey: "networks", ChildKind: kinds.Network, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 	}
 
-	s.AddEntityKind(kinds.Site, &EntityKindDefinition{
-		Description: "Physical location where infrastructure is deployed",
+	s.AddEntityKind(kinds.Region, &EntityKindDefinition{
+		Description: "Geographic region where infrastructure is deployed",
 		Properties: []PropertyDefinition{
 			{Name: "address", Type: PropertyTypeString, Required: false, Description: "Physical address"},
 			{Name: "latitude", Type: PropertyTypeNumber, Required: false, Description: "Geographic latitude"},
@@ -44,11 +44,12 @@ func registerEntityKinds(s *Schema) {
 		NestingDefs: []NestingDefinition{
 			{NestKey: "racks", ChildKind: kinds.Rack, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 			{NestKey: "clusters", ChildKind: kinds.Cluster, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
+			{NestKey: "availability_zones", ChildKind: kinds.AvailabilityZone, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
 		},
 	})
 
 	s.AddEntityKind(kinds.Rack, &EntityKindDefinition{
-		Description: "Physical rack enclosure within a site",
+		Description: "Physical rack enclosure within a region",
 		Properties: []PropertyDefinition{
 			{Name: "height_units", Type: PropertyTypeInteger, Required: false, Default: 42, Description: "Rack height in rack units (U)"},
 			{Name: "power_capacity_watts", Type: PropertyTypeInteger, Required: false, Description: "Total power capacity in watts"},
@@ -307,16 +308,16 @@ func registerEntityKinds(s *Schema) {
 	})
 
 	s.AddEntityKind(kinds.AvailabilityZone, &EntityKindDefinition{
-		Description: "Logical availability zone within a site",
+		Description: "Logical availability zone within a region",
 		Properties: []PropertyDefinition{
-			{Name: "redundancy", Type: PropertyTypeString, Required: false, Description: "Redundancy level (n+1, 2n, etc.)"},
+			{Name: "state", Type: PropertyTypeString, Required: false, Default: "available", Constraints: &Constraint{Enum: []string{"available", "impaired", "unavailable"}}, Description: "Availability zone state (available, impaired, unavailable)"},
 		},
 	})
 }
 
 func registerRelationTypes(s *Schema) {
 	s.AddRelationType(types.Connects, &RelationTypeDefinition{
-		Direction:  DirectionSymmetric,
+		Direction:   DirectionSymmetric,
 		Description: "Physical or logical connection between entities",
 		Participants: &ParticipantConstraints{
 			SourceKinds:     []core.EntityKind{kinds.Interface},
@@ -331,22 +332,22 @@ func registerRelationTypes(s *Schema) {
 	})
 
 	s.AddRelationType(types.Hosts, &RelationTypeDefinition{
-		Direction:  DirectionDirected,
+		Direction:   DirectionDirected,
 		Description: "Execution hosting relationship",
 		Participants: &ParticipantConstraints{
-			SourceKinds: []core.EntityKind{kinds.Server, kinds.VM, kinds.Container, kinds.Application},
-			TargetKinds: []core.EntityKind{kinds.VM, kinds.Container, kinds.Application},
+			SourceKinds:     []core.EntityKind{kinds.Server, kinds.VM, kinds.Container, kinds.Application},
+			TargetKinds:     []core.EntityKind{kinds.VM, kinds.Container, kinds.Application},
 			MinParticipants: 2,
 			MaxParticipants: 2,
 		},
 	})
 
 	s.AddRelationType(types.DependsOn, &RelationTypeDefinition{
-		Direction:  DirectionDirected,
+		Direction:   DirectionDirected,
 		Description: "Directional dependency between entities",
 		Participants: &ParticipantConstraints{
-			SourceKinds: []core.EntityKind{kinds.VM, kinds.Container, kinds.Application},
-			TargetKinds: []core.EntityKind{kinds.VM, kinds.Container, kinds.Application, kinds.Storage, kinds.Network},
+			SourceKinds:     []core.EntityKind{kinds.VM, kinds.Container, kinds.Application},
+			TargetKinds:     []core.EntityKind{kinds.VM, kinds.Container, kinds.Application, kinds.Storage, kinds.Network},
 			MinParticipants: 2,
 			MaxParticipants: 2,
 		},
@@ -357,15 +358,15 @@ func registerRelationTypes(s *Schema) {
 	})
 
 	s.AddRelationType(types.BelongsTo, &RelationTypeDefinition{
-		Direction:  DirectionDirected,
+		Direction:   DirectionDirected,
 		Description: "Logical membership or association",
 		Participants: &ParticipantConstraints{
 			SourceKinds: []core.EntityKind{
 				kinds.VM, kinds.Container, kinds.Interface, kinds.Server, kinds.Switch,
-				kinds.Router, kinds.Firewall, kinds.Storage, kinds.ACL, kinds.ACLRule, kinds.OpenPort,
+				kinds.Router, kinds.Firewall, kinds.Storage, kinds.ACL, kinds.ACLRule, kinds.OpenPort, kinds.AvailabilityZone,
 			},
 			TargetKinds: []core.EntityKind{
-				kinds.Cluster, kinds.Network, kinds.Site, kinds.Firewall, kinds.Interface,
+				kinds.Cluster, kinds.Network, kinds.Region, kinds.Firewall, kinds.Interface,
 				kinds.Server, kinds.VM, kinds.Container, kinds.Application,
 			},
 			MinParticipants: 2,
@@ -374,11 +375,11 @@ func registerRelationTypes(s *Schema) {
 	})
 
 	s.AddRelationType(types.ReplicatesTo, &RelationTypeDefinition{
-		Direction:  DirectionDirected,
+		Direction:   DirectionDirected,
 		Description: "Data replication between entities",
 		Participants: &ParticipantConstraints{
-			SourceKinds: []core.EntityKind{kinds.VM, kinds.Container, kinds.Application, kinds.Storage},
-			TargetKinds: []core.EntityKind{kinds.VM, kinds.Container, kinds.Application, kinds.Storage},
+			SourceKinds:     []core.EntityKind{kinds.VM, kinds.Container, kinds.Application, kinds.Storage},
+			TargetKinds:     []core.EntityKind{kinds.VM, kinds.Container, kinds.Application, kinds.Storage},
 			MinParticipants: 2,
 			MaxParticipants: 2,
 		},
@@ -389,11 +390,11 @@ func registerRelationTypes(s *Schema) {
 	})
 
 	s.AddRelationType(types.BacksUp, &RelationTypeDefinition{
-		Direction:  DirectionDirected,
+		Direction:   DirectionDirected,
 		Description: "Backup relationship",
 		Participants: &ParticipantConstraints{
-			SourceKinds: []core.EntityKind{kinds.VM, kinds.Container, kinds.Application, kinds.Storage, kinds.Volume},
-			TargetKinds: []core.EntityKind{kinds.Volume, kinds.Storage},
+			SourceKinds:     []core.EntityKind{kinds.VM, kinds.Container, kinds.Application, kinds.Storage, kinds.Volume},
+			TargetKinds:     []core.EntityKind{kinds.Volume, kinds.Storage},
 			MinParticipants: 2,
 			MaxParticipants: 2,
 		},
@@ -405,11 +406,11 @@ func registerRelationTypes(s *Schema) {
 	})
 
 	s.AddRelationType(types.Monitors, &RelationTypeDefinition{
-		Direction:  DirectionDirected,
+		Direction:   DirectionDirected,
 		Description: "Monitoring relationship",
 		Participants: &ParticipantConstraints{
-			SourceKinds: []core.EntityKind{kinds.Server, kinds.VM, kinds.Container, kinds.Application},
-			TargetKinds: []core.EntityKind{kinds.Server, kinds.VM, kinds.Container, kinds.Application, kinds.Storage},
+			SourceKinds:     []core.EntityKind{kinds.Server, kinds.VM, kinds.Container, kinds.Application},
+			TargetKinds:     []core.EntityKind{kinds.Server, kinds.VM, kinds.Container, kinds.Application, kinds.Storage},
 			MinParticipants: 2,
 			MaxParticipants: 2,
 		},
@@ -420,7 +421,7 @@ func registerRelationTypes(s *Schema) {
 	})
 
 	s.AddRelationType(types.ManagedBy, &RelationTypeDefinition{
-		Direction:  DirectionDirected,
+		Direction:   DirectionDirected,
 		Description: "Management relationship",
 		Participants: &ParticipantConstraints{
 			SourceKinds: []core.EntityKind{
@@ -439,11 +440,11 @@ func registerRelationTypes(s *Schema) {
 	})
 
 	s.AddRelationType(types.MountedOn, &RelationTypeDefinition{
-		Direction:  DirectionDirected,
+		Direction:   DirectionDirected,
 		Description: "Storage mounting relationship",
 		Participants: &ParticipantConstraints{
-			SourceKinds: []core.EntityKind{kinds.Volume},
-			TargetKinds: []core.EntityKind{kinds.Server, kinds.VM, kinds.Container, kinds.Storage},
+			SourceKinds:     []core.EntityKind{kinds.Volume},
+			TargetKinds:     []core.EntityKind{kinds.Server, kinds.VM, kinds.Container, kinds.Storage},
 			MinParticipants: 2,
 			MaxParticipants: 2,
 		},
@@ -455,22 +456,22 @@ func registerRelationTypes(s *Schema) {
 	})
 
 	s.AddRelationType(types.AppliesTo, &RelationTypeDefinition{
-		Direction:  DirectionDirected,
+		Direction:   DirectionDirected,
 		Description: "ACL applied to a network target",
 		Participants: &ParticipantConstraints{
-			SourceKinds: []core.EntityKind{kinds.ACL},
-			TargetKinds: []core.EntityKind{kinds.Interface, kinds.Firewall, kinds.Server, kinds.VM, kinds.Container},
+			SourceKinds:     []core.EntityKind{kinds.ACL},
+			TargetKinds:     []core.EntityKind{kinds.Interface, kinds.Firewall, kinds.Server, kinds.VM, kinds.Container},
 			MinParticipants: 2,
 			MaxParticipants: 2,
 		},
 	})
 
 	s.AddRelationType(types.ListensOn, &RelationTypeDefinition{
-		Direction:  DirectionDirected,
+		Direction:   DirectionDirected,
 		Description: "Open port listening on a network interface or host",
 		Participants: &ParticipantConstraints{
-			SourceKinds: []core.EntityKind{kinds.OpenPort},
-			TargetKinds: []core.EntityKind{kinds.Interface, kinds.Server, kinds.VM, kinds.Container},
+			SourceKinds:     []core.EntityKind{kinds.OpenPort},
+			TargetKinds:     []core.EntityKind{kinds.Interface, kinds.Server, kinds.VM, kinds.Container},
 			MinParticipants: 2,
 			MaxParticipants: 2,
 		},

@@ -6,19 +6,19 @@ import (
 
 // Projection represents a complete graph transformation definition.
 type Projection struct {
-	ID          string         `yaml:"id"`
-	Name        string         `yaml:"name"`
-	Description string         `yaml:"description,omitempty"`
-	Input       *InputClause   `yaml:"input"`
-	Operations  []*Operation   `yaml:"operations"`
-	Output      *OutputClause  `yaml:"output,omitempty"`
+	ID          string        `yaml:"id"`
+	Name        string        `yaml:"name"`
+	Description string        `yaml:"description,omitempty"`
+	Input       *InputClause  `yaml:"input"`
+	Operations  []*Operation  `yaml:"operations"`
+	Output      *OutputClause `yaml:"output,omitempty"`
 }
 
 // InputClause defines what enters the Projection.
 type InputClause struct {
-	Type          InputType `yaml:"type"`
-	QueryID       string    `yaml:"query_id,omitempty"`
-	ProjectionID  string    `yaml:"projection_id,omitempty"`
+	Type         InputType `yaml:"type"`
+	QueryID      string    `yaml:"query_id,omitempty"`
+	ProjectionID string    `yaml:"projection_id,omitempty"`
 }
 
 // InputType represents the type of input source.
@@ -32,9 +32,9 @@ const (
 
 // OutputClause configures Projection output.
 type OutputClause struct {
-	Format           OutputFormat `yaml:"format,omitempty"`
-	IncludeProvenance *bool       `yaml:"include_provenance,omitempty"`
-	IncludeDerived   *bool       `yaml:"include_derived,omitempty"`
+	Format            OutputFormat `yaml:"format,omitempty"`
+	IncludeProvenance *bool        `yaml:"include_provenance,omitempty"`
+	IncludeDerived    *bool        `yaml:"include_derived,omitempty"`
 }
 
 // OutputFormat represents the output format.
@@ -48,28 +48,28 @@ const (
 
 // Operation represents a transformation operation.
 type Operation struct {
-	Type             OperationType      `yaml:"type"`
-	Entities         []*EntitySelector  `yaml:"entities,omitempty"`
-	Relations        []*RelationSelector `yaml:"relations,omitempty"`
-	Action           FilterAction       `yaml:"action,omitempty"`
-	Target           FilterTarget       `yaml:"target,omitempty"`
-	Where            *WhereClause       `yaml:"where,omitempty"`
-	Direction        TraverseDirection  `yaml:"direction,omitempty"`
-	RelationType     core.RelationType  `yaml:"relation_type,omitempty"`
-	Owner            *bool             `yaml:"owner,omitempty"`
-	Depth            int               `yaml:"depth,omitempty"`
-	IncludeOrigin    *bool             `yaml:"include_origin,omitempty"`
-	SourceSelector   *Selector         `yaml:"source_selector,omitempty"`
-	TargetSelector   *Selector         `yaml:"target_selector,omitempty"`
-	TargetKind       string            `yaml:"target_kind,omitempty"`
-	GroupBy          []string          `yaml:"group_by,omitempty"`
-	Aggregations     []*Aggregation    `yaml:"aggregations,omitempty"`
-	Expansion        *ExpansionConfig  `yaml:"expansion,omitempty"`
-	Annotations      []*Annotation     `yaml:"annotations,omitempty"`
-	GroupKind        string            `yaml:"group_kind,omitempty"`
-	PreserveRelations *bool            `yaml:"preserve_relations,omitempty"`
-	Properties       []*ComputedProperty `yaml:"properties,omitempty"`
-	Transformations  []*Transformation `yaml:"transformations,omitempty"`
+	Type              OperationType       `yaml:"type"`
+	Entities          []*EntitySelector   `yaml:"entities,omitempty"`
+	Relations         []*RelationSelector `yaml:"relations,omitempty"`
+	Action            FilterAction        `yaml:"action,omitempty"`
+	Target            FilterTarget        `yaml:"target,omitempty"`
+	Where             *WhereClause        `yaml:"where,omitempty"`
+	Direction         TraverseDirection   `yaml:"direction,omitempty"`
+	RelationType      core.RelationType   `yaml:"relation_type,omitempty"`
+	Owner             *bool               `yaml:"owner,omitempty"`
+	Depth             int                 `yaml:"depth,omitempty"`
+	IncludeOrigin     *bool               `yaml:"include_origin,omitempty"`
+	SourceSelector    *Selector           `yaml:"source_selector,omitempty"`
+	TargetSelector    *Selector           `yaml:"target_selector,omitempty"`
+	TargetKind        string              `yaml:"target_kind,omitempty"`
+	GroupBy           []string            `yaml:"group_by,omitempty"`
+	Aggregations      []*Aggregation      `yaml:"aggregations,omitempty"`
+	Expansion         *ExpansionConfig    `yaml:"expansion,omitempty"`
+	Annotations       []*Annotation       `yaml:"annotations,omitempty"`
+	GroupKind         string              `yaml:"group_kind,omitempty"`
+	PreserveRelations *bool               `yaml:"preserve_relations,omitempty"`
+	Properties        []*ComputedProperty `yaml:"properties,omitempty"`
+	Transformations   []*Transformation   `yaml:"transformations,omitempty"`
 }
 
 // OperationType represents the type of operation.
@@ -127,7 +127,7 @@ const (
 
 // Selector defines a source selection.
 type Selector struct {
-	Kind         core.EntityKind `yaml:"kind,omitempty"`
+	Kind         core.EntityKind   `yaml:"kind,omitempty"`
 	RelationType core.RelationType `yaml:"relation_type,omitempty"`
 }
 
@@ -147,21 +147,21 @@ type Condition struct {
 type Operator string
 
 const (
-	OperatorEq    Operator = "eq"
-	OperatorNe    Operator = "ne"
-	OperatorIn    Operator = "in"
-	OperatorGt    Operator = "gt"
-	OperatorLt    Operator = "lt"
-	OperatorGe    Operator = "ge"
-	OperatorLe    Operator = "le"
+	OperatorEq       Operator = "eq"
+	OperatorNe       Operator = "ne"
+	OperatorIn       Operator = "in"
+	OperatorGt       Operator = "gt"
+	OperatorLt       Operator = "lt"
+	OperatorGe       Operator = "ge"
+	OperatorLe       Operator = "le"
 	OperatorContains Operator = "contains"
 )
 
 // Aggregation defines an aggregation function.
 type Aggregation struct {
-	Property       string           `yaml:"property"`
-	Function       AggFunction      `yaml:"function"`
-	TargetProperty string           `yaml:"target_property"`
+	Property       string      `yaml:"property"`
+	Function       AggFunction `yaml:"function"`
+	TargetProperty string      `yaml:"target_property"`
 }
 
 // AggFunction represents an aggregation function.
@@ -180,17 +180,17 @@ const (
 
 // ExpansionConfig defines expansion configuration.
 type ExpansionConfig struct {
-	TargetKind     string            `yaml:"target_kind"`
+	TargetKind      string            `yaml:"target_kind"`
 	PropertyMapping map[string]string `yaml:"property_mapping,omitempty"`
-	Owner          string            `yaml:"owner,omitempty"`
+	Owner           string            `yaml:"owner,omitempty"`
 }
 
 // Annotation defines an annotation to attach.
 type Annotation struct {
-	Property       string `yaml:"property"`
+	Property       string      `yaml:"property"`
 	Value          interface{} `yaml:"value,omitempty"`
-	Expression     string `yaml:"expression,omitempty"`
-	SourceProperty string `yaml:"source_property,omitempty"`
+	Expression     string      `yaml:"expression,omitempty"`
+	SourceProperty string      `yaml:"source_property,omitempty"`
 }
 
 // ComputedProperty defines a property to add.
@@ -211,10 +211,10 @@ type Transformation struct {
 type TransfOp string
 
 const (
-	TransfRename TransfOp = "rename"
-	TransfCast   TransfOp = "cast"
-	TransfSet    TransfOp = "set"
-	TransfRemove TransfOp = "remove"
+	TransfRename  TransfOp = "rename"
+	TransfCast    TransfOp = "cast"
+	TransfSet     TransfOp = "set"
+	TransfRemove  TransfOp = "remove"
 	TransfDefault TransfOp = "default"
 )
 
@@ -228,9 +228,9 @@ type Provenance struct {
 
 // ProjectionResult represents the result of a projection execution.
 type ProjectionResult struct {
-	ProjectionID string         `yaml:"projection_id"`
-	Graph        *core.Graph    `yaml:"graph"`
-	DerivedCount int            `yaml:"derived_count"`
+	ProjectionID string      `yaml:"projection_id"`
+	Graph        *core.Graph `yaml:"graph"`
+	DerivedCount int         `yaml:"derived_count"`
 }
 
 // NewProjection creates a new Projection.

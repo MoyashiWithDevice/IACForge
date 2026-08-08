@@ -22,24 +22,24 @@ const (
 
 // Constraint represents a validation constraint on a property.
 type Constraint struct {
-	Min         *float64  `yaml:"min,omitempty"`
-	Max         *float64  `yaml:"max,omitempty"`
-	MinLength   *int      `yaml:"min_length,omitempty"`
-	MaxLength   *int      `yaml:"max_length,omitempty"`
-	Pattern     *string   `yaml:"pattern,omitempty"`
-	Enum        []string  `yaml:"enum,omitempty"`
-	UniqueItems *bool     `yaml:"unique_items,omitempty"`
+	Min         *float64 `yaml:"min,omitempty"`
+	Max         *float64 `yaml:"max,omitempty"`
+	MinLength   *int     `yaml:"min_length,omitempty"`
+	MaxLength   *int     `yaml:"max_length,omitempty"`
+	Pattern     *string  `yaml:"pattern,omitempty"`
+	Enum        []string `yaml:"enum,omitempty"`
+	UniqueItems *bool    `yaml:"unique_items,omitempty"`
 }
 
 // PropertyDefinition defines a property within an entity kind or relation type.
 type PropertyDefinition struct {
-	Name         string              `yaml:"name"`
-	Type         PropertyType        `yaml:"type"`
-	Required     bool                `yaml:"required"`
-	Default      interface{}         `yaml:"default,omitempty"`
-	Description  string              `yaml:"description,omitempty"`
-	Constraints  *Constraint         `yaml:"constraints,omitempty"`
-	Properties   []PropertyDefinition `yaml:"properties,omitempty"`
+	Name        string               `yaml:"name"`
+	Type        PropertyType         `yaml:"type"`
+	Required    bool                 `yaml:"required"`
+	Default     interface{}          `yaml:"default,omitempty"`
+	Description string               `yaml:"description,omitempty"`
+	Constraints *Constraint          `yaml:"constraints,omitempty"`
+	Properties  []PropertyDefinition `yaml:"properties,omitempty"`
 }
 
 // DirectionType represents the directionality of a relation type.
@@ -53,34 +53,34 @@ const (
 
 // ParticipantConstraints defines which entity kinds can participate in a relation.
 type ParticipantConstraints struct {
-	SourceKinds    []core.EntityKind `yaml:"source_kinds,omitempty"`
-	TargetKinds    []core.EntityKind `yaml:"target_kinds,omitempty"`
-	MinParticipants int              `yaml:"min_participants,omitempty"`
-	MaxParticipants int              `yaml:"max_participants,omitempty"`
+	SourceKinds     []core.EntityKind `yaml:"source_kinds,omitempty"`
+	TargetKinds     []core.EntityKind `yaml:"target_kinds,omitempty"`
+	MinParticipants int               `yaml:"min_participants,omitempty"`
+	MaxParticipants int               `yaml:"max_participants,omitempty"`
 }
 
 // NestingDefinition defines a nestable child relationship for an entity kind.
 type NestingDefinition struct {
-	NestKey            string              `yaml:"nest_key"`
-	ChildKind          core.EntityKind     `yaml:"child_kind"`
+	NestKey            string                     `yaml:"nest_key"`
+	ChildKind          core.EntityKind            `yaml:"child_kind"`
 	ChildKeys          map[string]core.EntityKind `yaml:"child_keys,omitempty"`
-	AutoRelationType   core.RelationType   `yaml:"auto_relation_type,omitempty"`
-	AutoRelationSource string              `yaml:"auto_relation_source,omitempty"` // "parent" or "child"
+	AutoRelationType   core.RelationType          `yaml:"auto_relation_type,omitempty"`
+	AutoRelationSource string                     `yaml:"auto_relation_source,omitempty"` // "parent" or "child"
 }
 
 // EntityKindDefinition defines an entity kind in the schema.
 type EntityKindDefinition struct {
-	Description string              `yaml:"description,omitempty"`
+	Description string               `yaml:"description,omitempty"`
 	Properties  []PropertyDefinition `yaml:"properties,omitempty"`
-	NestingDefs []NestingDefinition `yaml:"nesting_defs,omitempty"`
+	NestingDefs []NestingDefinition  `yaml:"nesting_defs,omitempty"`
 }
 
 // RelationTypeDefinition defines a relation type in the schema.
 type RelationTypeDefinition struct {
-	Direction     DirectionType            `yaml:"direction"`
-	Description   string                   `yaml:"description,omitempty"`
-	Participants  *ParticipantConstraints  `yaml:"participants,omitempty"`
-	Properties    []PropertyDefinition     `yaml:"properties,omitempty"`
+	Direction    DirectionType           `yaml:"direction"`
+	Description  string                  `yaml:"description,omitempty"`
+	Participants *ParticipantConstraints `yaml:"participants,omitempty"`
+	Properties   []PropertyDefinition    `yaml:"properties,omitempty"`
 }
 
 // SchemaVersion holds version information for a schema.
@@ -92,11 +92,11 @@ type SchemaVersion struct {
 
 // Schema defines the complete structure of an infrastructure model.
 type Schema struct {
-	Version       SchemaVersion                                `yaml:"schema"`
-	EntityKinds   map[core.EntityKind]*EntityKindDefinition    `yaml:"entity_kinds"`
+	Version       SchemaVersion                                 `yaml:"schema"`
+	EntityKinds   map[core.EntityKind]*EntityKindDefinition     `yaml:"entity_kinds"`
 	RelationTypes map[core.RelationType]*RelationTypeDefinition `yaml:"relation_types"`
-	NestingDefs   []NestingDefinition                          `yaml:"nesting_defs,omitempty"`
-	Profiles      []*Profile                                   `yaml:"profiles,omitempty"`
+	NestingDefs   []NestingDefinition                           `yaml:"nesting_defs,omitempty"`
+	Profiles      []*Profile                                    `yaml:"profiles,omitempty"`
 }
 
 // NewSchema creates a new empty Schema with initialized maps.
