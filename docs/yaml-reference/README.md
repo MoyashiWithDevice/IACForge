@@ -14,6 +14,8 @@ IACForgeのYAMLファイル作成のための完全版リファレンスです�
 | [References](references.md) | 参照構文（シンプル、修飾、インターフェース） |
 | [Validation](validation.md) | 検証ルール、命名規則、Graph制約 |
 | [Example](example.md) | 完全なインフラモデルの例 |
+| [AWS Entity Kinds](aws-entity-kinds.md) | AWS拡張のEntity種類（47種）とプロパティ |
+| [AWS Relation Types](aws-relation-types.md) | AWS拡張のRelation種類とAugmented Core Relations |
 
 ## 共通ルール
 

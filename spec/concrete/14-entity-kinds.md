@@ -1135,6 +1135,14 @@ Examples:
 - `aws.vpc` - AWS Virtual Private Cloud
 - `network.switch` - Extended switch properties
 
+### Built-in AWS Extension
+
+The AWS extension (`iacforge.aws`) defines vendor kinds under the `aws` namespace (e.g. `aws.vpc`, `aws.ec2`, `aws.s3_bucket`).
+
+The extension also defines new relation types (e.g. `aws.subscribes`, `aws.grants`) and augments core relation participant constraints.
+
+See [AWS Extension](22-aws-extension.md) for the full kind definitions, ownership tree, and relation types.
+
 ---
 
 ## Status Values

@@ -67,5 +67,18 @@ window.IACFORGE_SEARCH_INDEX = [
     section: "YAML Reference",
     description: "完全なインフラモデルの例。regions, racks, servers, VMs, ACLs, relations。",
     keywords: "example complete full model yaml infrastructure regions racks servers vms acl relations 例 完全 サンプル",
+  },  {
+    path: "aws-entity-kinds.html",
+    title: "AWS Entity Kinds",
+    section: "YAML Reference",
+    description: "AWS拡張（iacforge.aws）が定義する全47種類のEntity Kind定義とプロパティ。",
+    keywords: "aws entity kinds organization account iam region availability_zone vpc subnet route_table route internet_gateway nat_gateway security_group security_group_rule elastic_ip network_acl vpc_peering_connection transit_gateway ec2 ami key_pair launch_template auto_scaling_group ebs_volume ebs_snapshot lambda_function s3_bucket efs rds dynamodb_table elasticache load_balancer target_group listener sqs_queue sns_topic api_gateway cloudfront_distribution eventbridge_rule cloudwatch_alarm cloudwatch_log_group cloudwatch_dashboard route53_zone route53_record AWS 種類 定義",
+  },
+  {
+    path: "aws-relation-types.html",
+    title: "AWS Relation Types",
+    section: "YAML Reference",
+    description: "AWS拡張（iacforge.aws）が定義するRelation TypeとAugmented Core Relations。",
+    keywords: "aws relation types associates attaches launches routes serves forwards triggers subscribes invokes grants assumes belongs_to depends_on hosts monitors backs_up mounted_on AWS リレーション",
   },
 ];

@@ -20,6 +20,8 @@
 | applies_to | directed | N:N | ACL application |
 | listens_on | directed | N:1 | Port listening |
 
+> **AWS拡張:** AWSのRelation Type（`aws.subscribes`, `aws.grants` 等）とコアタイプへのAWS参加者追加は [AWS Relation Types](aws-relation-types.md) を参照してください。
+
 ---
 
 ## Core Relation Types

@@ -312,3 +312,116 @@ objects:
       source: port-5432-postgres
       target: vm-web-01/eth0
 ```
+
+---
+
+## AWSモデル例
+
+AWS拡張（`aws.*` Kind）を使用したモデル例です。Kindの全定義は [AWS Entity Kinds](aws-entity-kinds.md) を参照してください。
+
+```yaml
+objects:
+  # Organization / Account
+  - id: org-01
+    kind: aws.organization
+    name: Example Org
+    attributes:
+      status: active
+
+  - id: acct-01
+    kind: aws.account
+    name: Example Account
+    attributes:
+      owner: org-01
+      status: active
+    spec:
+      account_id: "123456789012"
+      alias: example-acct
+
+  # Region / AZ / VPC
+  - id: region-us-east-1
+    kind: aws.region
+    name: us-east-1
+    attributes:
+      owner: acct-01
+    spec:
+      region_code: us-east-1
+
+  - id: az-us-east-1a
+    kind: aws.availability_zone
+    name: us-east-1a
+    attributes:
+      owner: region-us-east-1
+    spec:
+      zone_name: us-east-1a
+
+  - id: vpc-01
+    kind: aws.vpc
+    name: Main VPC
+    attributes:
+      owner: region-us-east-1
+    spec:
+      cidr_block: 10.0.0.0/16
+
+  - id: subnet-01
+    kind: aws.subnet
+    name: Public Subnet
+    attributes:
+      owner: vpc-01
+    spec:
+      cidr_block: 10.0.1.0/24
+
+  # Compute / Storage
+  - id: ec2-web-01
+    kind: aws.ec2
+    name: Web Server
+    attributes:
+      owner: subnet-01
+      status: active
+    spec:
+      instance_type: t3.micro
+      subnet: "@subnet-01"
+
+  - id: s3-assets
+    kind: aws.s3_bucket
+    name: Assets Bucket
+    attributes:
+      owner: az-us-east-1a
+    spec:
+      versioning: true
+
+  - id: lambda-processor
+    kind: aws.lambda_function
+    name: Processor
+    attributes:
+      owner: acct-01
+    spec:
+      runtime: python3.12
+
+  - id: sns-events
+    kind: aws.sns_topic
+    name: Events Topic
+    attributes:
+      owner: acct-01
+      status: active
+
+  - id: sqs-jobs
+    kind: aws.sqs_queue
+    name: Job Queue
+    attributes:
+      owner: acct-01
+      status: active
+
+  # Relations
+  - id: rel-ec2-subnet
+    type: belongs_to
+    participants:
+      source: ec2-web-01
+      target: subnet-01
+
+  - id: rel-subscribe-sqs
+    type: aws.subscribes
+    participants:
+      source: sns-events
+      target: sqs-jobs
+```

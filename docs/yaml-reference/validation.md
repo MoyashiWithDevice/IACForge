@@ -42,6 +42,8 @@
 | no_cycles | Ownershipはサイクルを含まない |
 | owner_exists | Owner識別子は既存のEntityを参照する |
 
+> **拡張ルート権限:** 拡張によってルート権限を持つKindが許可されます。AWS拡張では `aws.organization` がルート権限を持つため、複数アカウントを単一組織ツリーとして表現できます（オンプレの `region` がルートの場合と共存可能）。
+
 ### Reference制約
 
 | Constraint | Description |

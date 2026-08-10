@@ -41,8 +41,10 @@
           <a href="document-structure.html"><span class="link-icon"></span>Document Structure</a>
           <a href="entity-syntax.html"><span class="link-icon"></span>Entity Syntax</a>
           <a href="entity-kinds.html"><span class="link-icon"></span>Entity Kinds</a>
+          <a href="aws-entity-kinds.html"><span class="link-icon"></span>AWS Entity Kinds</a>
           <a href="relation-syntax.html"><span class="link-icon"></span>Relation Syntax</a>
           <a href="relation-types.html"><span class="link-icon"></span>Relation Types</a>
+          <a href="aws-relation-types.html"><span class="link-icon"></span>AWS Relation Types</a>
           <a href="references.html"><span class="link-icon"></span>References</a>
           <a href="validation.html" class="active" aria-current="page"><span class="link-icon"></span>Validation</a>
           <a href="example.html"><span class="link-icon"></span>Complete Example</a>
@@ -104,6 +106,7 @@
           <tr><td>owner_exists</td><td>Owner識別子は既存のEntityを参照する</td></tr>
         </tbody>
       </table>
+      <blockquote><strong>拡張ルート権限:</strong> 拡張によってルート権限を持つKindが許可されます。AWS拡張では <code>aws.organization</code> がルート権限を持つため、複数アカウントを単一組織ツリーとして表現できます（オンプレの <code>region</code> がルートの場合と共存可能）。</blockquote>
 
       <h3 id="reference-constraints">Reference制約</h3>
       <table class="ref-table">

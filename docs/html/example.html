@@ -41,8 +41,10 @@
           <a href="document-structure.html"><span class="link-icon"></span>Document Structure</a>
           <a href="entity-syntax.html"><span class="link-icon"></span>Entity Syntax</a>
           <a href="entity-kinds.html"><span class="link-icon"></span>Entity Kinds</a>
+          <a href="aws-entity-kinds.html"><span class="link-icon"></span>AWS Entity Kinds</a>
           <a href="relation-syntax.html"><span class="link-icon"></span>Relation Syntax</a>
           <a href="relation-types.html"><span class="link-icon"></span>Relation Types</a>
+          <a href="aws-relation-types.html"><span class="link-icon"></span>AWS Relation Types</a>
           <a href="references.html"><span class="link-icon"></span>References</a>
           <a href="validation.html"><span class="link-icon"></span>Validation</a>
           <a href="example.html" class="active" aria-current="page"><span class="link-icon"></span>Complete Example</a>
@@ -374,6 +376,118 @@
           <p>コードブロック右上の<strong>Copy</strong>ボタンでYAML全体をコピーできます。このファイルは<code>iacforge validate</code>で検証できます。</p>
         </div>
       </div>
+
+    </div>
+
+    <div class="content-wrap">
+      <div class="breadcrumb"><a href="index.html">Home</a><span class="sep">/</span><span>Complete Example</span></div>
+
+      <h2 id="aws-model-example">AWSモデル例</h2>
+      <p>AWS拡張（<code>aws.*</code> Kind）を使用したモデル例です。Kindの全定義は <a href="aws-entity-kinds.html">AWS Entity Kinds</a> を参照してください。</p>
+<pre class="language-yaml"><code>objects:
+  # Organization / Account
+  - id: org-01
+    kind: aws.organization
+    name: Example Org
+    attributes:
+      status: active
+
+  - id: acct-01
+    kind: aws.account
+    name: Example Account
+    attributes:
+      owner: org-01
+      status: active
+    spec:
+      account_id: "123456789012"
+      alias: example-acct
+
+  # Region / AZ / VPC
+  - id: region-us-east-1
+    kind: aws.region
+    name: us-east-1
+    attributes:
+      owner: acct-01
+    spec:
+      region_code: us-east-1
+
+  - id: az-us-east-1a
+    kind: aws.availability_zone
+    name: us-east-1a
+    attributes:
+      owner: region-us-east-1
+    spec:
+      zone_name: us-east-1a
+
+  - id: vpc-01
+    kind: aws.vpc
+    name: Main VPC
+    attributes:
+      owner: region-us-east-1
+    spec:
+      cidr_block: 10.0.0.0/16
+
+  - id: subnet-01
+    kind: aws.subnet
+    name: Public Subnet
+    attributes:
+      owner: vpc-01
+    spec:
+      cidr_block: 10.0.1.0/24
+
+  # Compute / Storage
+  - id: ec2-web-01
+    kind: aws.ec2
+    name: Web Server
+    attributes:
+      owner: subnet-01
+      status: active
+    spec:
+      instance_type: t3.micro
+      subnet: "@subnet-01"
+
+  - id: s3-assets
+    kind: aws.s3_bucket
+    name: Assets Bucket
+    attributes:
+      owner: az-us-east-1a
+    spec:
+      versioning: true
+
+  - id: lambda-processor
+    kind: aws.lambda_function
+    name: Processor
+    attributes:
+      owner: acct-01
+    spec:
+      runtime: python3.12
+
+  - id: sns-events
+    kind: aws.sns_topic
+    name: Events Topic
+    attributes:
+      owner: acct-01
+      status: active
+
+  - id: sqs-jobs
+    kind: aws.sqs_queue
+    name: Job Queue
+    attributes:
+      owner: acct-01
+      status: active
+
+  # Relations
+  - id: rel-ec2-subnet
+    type: belongs_to
+    participants:
+      source: ec2-web-01
+      target: subnet-01
+
+  - id: rel-subscribe-sqs
+    type: aws.subscribes
+    participants:
+      source: sns-events
+      target: sqs-jobs</code></pre>
 
     </div>
     <footer class="footer">

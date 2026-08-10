@@ -30,6 +30,8 @@
 | cluster | Logical | Logical compute grouping |
 | availability_zone | Logical | Logical availability zone |
 
+> **AWS拡張:** AWSのEntity Kind（`aws.vpc`, `aws.ec2`, `aws.s3_bucket` 等、47種）は [AWS Entity Kinds](aws-entity-kinds.md) を参照してください。
+
 ---
 
 ## Shared Property Types

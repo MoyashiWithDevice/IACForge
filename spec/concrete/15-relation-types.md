@@ -480,6 +480,41 @@ Each Relation Type MAY define which Entity Kinds may participate.
 | applies_to | acl | interface, firewall, server, vm, container |
 | listens_on | open_port | interface, server, vm, container |
 
+#### AWS Extension Augmentations
+
+The AWS extension augments core relation types by adding AWS participant kinds. Only participant kinds are merged; direction and semantics are unchanged.
+
+| Relation Type | Added Source Kinds | Added Target Kinds |
+|---------------|--------------------|--------------------|
+| belongs_to | All `aws.*` kinds | All `aws.*` kinds |
+| depends_on | aws.ec2, aws.lambda_function, aws.rds, aws.load_balancer, aws.api_gateway, aws.auto_scaling_group, aws.sqs_queue | aws.ec2, aws.rds, aws.dynamodb_table, aws.s3_bucket, aws.sqs_queue, aws.lambda_function, aws.elasticache, aws.efs, aws.api_gateway, aws.cloudwatch_log_group |
+| hosts | aws.ec2, aws.lambda_function | aws.ec2, aws.lambda_function |
+| monitors | aws.cloudwatch_alarm | aws.ec2, aws.rds, aws.load_balancer, aws.lambda_function, aws.dynamodb_table, aws.s3_bucket, aws.elasticache, aws.efs, aws.sqs_queue, aws.api_gateway |
+| backs_up | aws.rds, aws.ebs_volume, aws.dynamodb_table, aws.efs, aws.s3_bucket | aws.ebs_snapshot, aws.s3_bucket, aws.efs |
+| mounted_on | aws.ebs_volume, aws.efs | aws.ec2 |
+
+### Extension Relation Types
+
+Extensions MAY define additional relation types using the `namespace.type` convention.
+
+The AWS extension (`iacforge.aws`) defines the following new relation types, all directed:
+
+| Type | Source Kinds | Target Kinds |
+|------|--------------|--------------|
+| aws.associates | aws.security_group, aws.route_table, aws.network_acl, aws.elastic_ip | aws.vpc, aws.subnet |
+| aws.attaches | aws.ebs_volume, aws.internet_gateway, aws.elastic_ip, aws.efs, aws.vpc_peering_connection | aws.ec2, aws.vpc, aws.transit_gateway |
+| aws.launches | aws.auto_scaling_group, aws.launch_template | aws.ec2 |
+| aws.routes | aws.route_table | aws.route |
+| aws.serves | aws.load_balancer | aws.target_group |
+| aws.forwards | aws.listener | aws.target_group |
+| aws.triggers | aws.eventbridge_rule, aws.cloudwatch_alarm | aws.lambda_function, aws.sns_topic, aws.sqs_queue |
+| aws.subscribes | aws.sns_topic | aws.sqs_queue, aws.lambda_function, aws.sns_topic |
+| aws.invokes | aws.api_gateway | aws.lambda_function |
+| aws.grants | aws.iam_policy | aws.iam_user, aws.iam_group, aws.iam_role |
+| aws.assumes | aws.iam_role, aws.iam_user | aws.iam_role |
+
+See [AWS Extension](22-aws-extension.md) for the full definitions.
+
 ### Cardinality
 
 Cardinality defines how many instances of a relation may exist between participants.
