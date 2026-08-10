@@ -911,6 +911,36 @@ func ruleValidParticipantKind(ctx *Context) []Finding {
 			continue
 		}
 
+		// Directed relations with explicit source and target participants are
+		// checked positionally: the source must be a source kind and the target
+		// a target kind. Symmetric relations, undirected relations, and
+		// list-form participants fall back to the union of source and target
+		// kinds (direction mismatches of that shape are handled by
+		// valid-direction).
+		directional := typeDef.Direction == schema.DirectionDirected && r.Source() != "" && r.Target() != ""
+		if directional {
+			positional := func(participantID string, allowedKinds []core.EntityKind) {
+				entity, found := g.GetEntity(participantID)
+				if !found {
+					return
+				}
+				for _, allowedKind := range allowedKinds {
+					if entity.Kind == allowedKind {
+						return
+					}
+				}
+				findings = append(findings, Finding{
+					Severity:   SeverityWarning,
+					Message:    fmt.Sprintf("relation %q has participant %q of kind %q which is not a valid %s for type %q", r.ID, participantID, entity.Kind, participantRole(r, participantID), r.Type),
+					ObjectID:   r.ID,
+					ObjectType: ObjectTypeRelation,
+				})
+			}
+			positional(r.Source(), typeDef.Participants.SourceKinds)
+			positional(r.Target(), typeDef.Participants.TargetKinds)
+			continue
+		}
+
 		for _, participantID := range r.ParticipantIDs() {
 			entity, found := g.GetEntity(participantID)
 			if !found {
@@ -945,6 +975,15 @@ func ruleValidParticipantKind(ctx *Context) []Finding {
 	}
 
 	return findings
+}
+
+// participantRole returns the role ("source" or "target") a participant plays
+// in a directed relation.
+func participantRole(r *core.Relation, participantID string) string {
+	if r.Source() == participantID {
+		return "source"
+	}
+	return "target"
 }
 
 func (e *Engine) ruleOwnershipTree(ctx *Context) []Finding {

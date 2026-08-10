@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"IACForge/src/core"
+	"IACForge/src/core/kinds"
 	"IACForge/src/core/types"
 	"IACForge/src/extension"
 	"IACForge/src/schema"
@@ -118,6 +119,9 @@ func TestNestingReferencesDefinedKinds(t *testing.T) {
 	for _, k := range AllKinds() {
 		valid[k] = true
 	}
+	for _, k := range kinds.AllKinds {
+		valid[k] = true
+	}
 	for _, c := range KindDefinitions() {
 		for _, nd := range c.Definition.NestingDefs {
 			if !valid[nd.ChildKind] {
@@ -164,6 +168,63 @@ func TestAccountNestingCoverage(t *testing.T) {
 		if !found {
 			t.Errorf("account nesting is missing child kind %q", required)
 		}
+	}
+}
+
+func TestRegionNestingIncludesRegionalResources(t *testing.T) {
+	def := kindDef(t, Region)
+	nestKeys := make(map[string]bool)
+	for _, nd := range def.NestingDefs {
+		if nestKeys[nd.NestKey] {
+			t.Errorf("region has duplicate nest key %q", nd.NestKey)
+		}
+		nestKeys[nd.NestKey] = true
+	}
+	for _, required := range []struct {
+		key  string
+		kind core.EntityKind
+	}{
+		{"s3_buckets", S3Bucket},
+		{"elasticache_clusters", ElastiCache},
+		{"efs_filesystems", EFS},
+	} {
+		if !nestKeys[required.key] {
+			t.Errorf("region nesting is missing nest key %q", required.key)
+		}
+		found := false
+		for _, nd := range def.NestingDefs {
+			if nd.ChildKind == required.kind {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("region nesting is missing child kind %q", required.kind)
+		}
+	}
+}
+
+func TestRouteGatewayPropertiesAreReferences(t *testing.T) {
+	def := kindDef(t, Route)
+	for _, name := range []string{"gateway_id", "nat_gateway_id", "transit_gateway_id", "vpc_peering_connection_id"} {
+		p := propDef(t, def, name)
+		if p.Type != schema.PropertyTypeReference {
+			t.Errorf("route property %q must be a reference type, got %q", name, p.Type)
+		}
+	}
+}
+
+func TestEC2NestsApplications(t *testing.T) {
+	def := kindDef(t, EC2)
+	found := false
+	for _, nd := range def.NestingDefs {
+		if nd.ChildKind == kinds.Application {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("ec2 nesting is missing applications child kind")
 	}
 }
 
@@ -282,6 +343,37 @@ func TestRelationParticipantKindsDefined(t *testing.T) {
 				t.Errorf("relation %q references undefined target kind %q", c.Type, k)
 			}
 		}
+	}
+}
+
+func TestRegistersRelationDefinition(t *testing.T) {
+	s, _, _ := newTestSetup(t)
+	def, ok := s.GetRelationTypeDef(Registers)
+	if !ok {
+		t.Fatal("aws.registers not registered in schema")
+	}
+	if def.Direction != schema.DirectionDirected {
+		t.Errorf("aws.registers expected directed, got %q", def.Direction)
+	}
+	if def.Participants == nil || len(def.Participants.SourceKinds) != 1 || len(def.Participants.TargetKinds) != 2 {
+		t.Fatalf("aws.registers participant kinds unexpected: %+v", def.Participants)
+	}
+	if def.Participants.SourceKinds[0] != TargetGroup {
+		t.Errorf("aws.registers source kind must be aws.target_group, got %q", def.Participants.SourceKinds[0])
+	}
+	if !containsKind(def.Participants.TargetKinds, EC2) || !containsKind(def.Participants.TargetKinds, LambdaFunction) {
+		t.Errorf("aws.registers target kinds must include aws.ec2 and aws.lambda_function, got %v", def.Participants.TargetKinds)
+	}
+}
+
+func TestAttachesTargetsIncludeNATGateway(t *testing.T) {
+	s, _, _ := newTestSetup(t)
+	def, ok := s.GetRelationTypeDef(Attaches)
+	if !ok {
+		t.Fatal("aws.attaches not registered in schema")
+	}
+	if !containsKind(def.Participants.TargetKinds, NATGateway) {
+		t.Error("aws.attaches target kinds must include aws.nat_gateway")
 	}
 }
 

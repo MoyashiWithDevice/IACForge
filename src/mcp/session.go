@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"fmt"
+	"os"
 	"sync"
 
 	"IACForge/src/core"
@@ -50,7 +51,14 @@ func (m *SessionManager) GetOrCreate(sessionID string) *SessionData {
 
 	setup, err := extension.NewSetup(extension.DefaultExtensionDir())
 	if err != nil {
-		panic(fmt.Sprintf("failed to initialize extension setup: %v", err))
+		// Keep the server running with built-in extensions only when the
+		// plugin extension directory is unavailable (e.g. IACFORGE_EXTENSIONS
+		// points to a missing directory).
+		fmt.Fprintf(os.Stderr, "IACForge MCP: extension setup failed (%v); continuing with core setup only\n", err)
+		setup, err = extension.NewCoreSetup()
+		if err != nil {
+			panic(fmt.Sprintf("failed to initialize core extension setup: %v", err))
+		}
 	}
 
 	sd = &SessionData{

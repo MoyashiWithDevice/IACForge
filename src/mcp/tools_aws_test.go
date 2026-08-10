@@ -436,7 +436,7 @@ objects:
 		t.Fatalf("serialize_to_string failed: %+v", ser)
 	}
 	serText := toolResultText(t, ser)
-	if !strings.Contains(serText, "aws.s3_bucket") || !strings.Contains(serText, "ec2-01") {
+	if !strings.Contains(serText, "s3_buckets") || !strings.Contains(serText, "ec2-01") {
 		t.Errorf("serialized output missing aws kinds/entities:\n%s", serText)
 	}
 

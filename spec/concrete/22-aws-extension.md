@@ -40,11 +40,16 @@ aws.organization
     │   │   ├── aws.s3_bucket
     │   │   ├── aws.elasticache
     │   │   └── aws.ebs_volume
+    │   ├── aws.s3_bucket
+    │   ├── aws.elasticache
+    │   ├── aws.efs
     │   └── aws.vpc
     │       ├── aws.subnet
     │       │   ├── aws.ec2
+    │       │   │   └── application (core kind)
     │       │   ├── aws.rds
     │       │   ├── aws.load_balancer
+    │       │   │   └── aws.listener
     │       │   └── aws.nat_gateway
     │       ├── aws.security_group
     │       │   └── aws.security_group_rule
@@ -59,11 +64,12 @@ aws.organization
     ├── aws.cloudwatch_alarm / aws.cloudwatch_log_group / aws.cloudwatch_dashboard
     ├── aws.ami / aws.key_pair / aws.launch_template / aws.auto_scaling_group
     ├── aws.ebs_snapshot / aws.elastic_ip / aws.target_group / aws.efs
-    ├── aws.vpc_peering_connection / aws.transit_gateway
-    └── aws.load_balancer (→ aws.listener)
+    └── aws.vpc_peering_connection / aws.transit_gateway
 ```
 
 Nested entities receive the parent as their `owner`, and an auto-generated `belongs_to` relation (member → parent) is created.
+
+> Note: `aws.s3_bucket`, `aws.elasticache`, and `aws.efs` are regional resources in AWS and may be nested directly under `aws.region`. The legacy `aws.availability_zone` (`s3_buckets`, `elasticache_clusters`) and `aws.account` (`efs_filesystems`) nest keys remain available for backward compatibility.
 
 ---
 
@@ -241,6 +247,9 @@ An AWS region.
 |----------|------------|
 | availability_zones | aws.availability_zone |
 | vpcs | aws.vpc |
+| s3_buckets | aws.s3_bucket |
+| elasticache_clusters | aws.elasticache |
+| efs_filesystems | aws.efs |
 
 **Typical Relations:** (none)
 
@@ -349,10 +358,10 @@ A route entry within a route table.
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
 | destination_cidr | string | no | - | Destination IPv4 CIDR block |
-| gateway_id | string | no | - | Internet gateway or virtual private gateway ID |
-| nat_gateway_id | string | no | - | NAT gateway ID |
-| transit_gateway_id | string | no | - | Transit gateway ID |
-| vpc_peering_connection_id | string | no | - | VPC peering connection ID |
+| gateway_id | reference | no | - | Reference to the internet gateway or virtual private gateway |
+| nat_gateway_id | reference | no | - | Reference to the NAT gateway |
+| transit_gateway_id | reference | no | - | Reference to the transit gateway |
+| vpc_peering_connection_id | reference | no | - | Reference to the VPC peering connection |
 
 **Typical Ownership:** aws.route_table
 
@@ -384,7 +393,7 @@ An AWS NAT gateway.
 
 **Typical Ownership:** aws.subnet
 
-**Typical Relations:** (none)
+**Typical Relations:** `aws.attaches` ← aws.elastic_ip
 
 ---
 
@@ -441,7 +450,7 @@ An AWS Elastic IP address.
 
 **Typical Ownership:** aws.account
 
-**Typical Relations:** `aws.associates` → aws.vpc, `aws.attaches` → aws.ec2
+**Typical Relations:** `aws.associates` → aws.vpc, `aws.attaches` → aws.ec2, aws.nat_gateway
 
 ---
 
@@ -509,7 +518,13 @@ An AWS EC2 instance.
 
 **Typical Ownership:** aws.subnet
 
-**Typical Relations:** `belongs_to` → aws.subnet, `aws.attaches` ← aws.ebs_volume, `aws.launches` ← aws.auto_scaling_group / aws.launch_template, `monitors` ← aws.cloudwatch_alarm, `mounted_on` ← aws.ebs_volume / aws.efs
+**Nestable Children:**
+
+| Nest Key | Child Kind |
+|----------|------------|
+| applications | application (core kind) |
+
+**Typical Relations:** `belongs_to` → aws.subnet, `aws.attaches` ← aws.ebs_volume, `aws.launches` ← aws.auto_scaling_group / aws.launch_template, `aws.registers` ← aws.target_group, `monitors` ← aws.cloudwatch_alarm, `mounted_on` ← aws.ebs_volume / aws.efs
 
 ---
 
@@ -757,7 +772,7 @@ An AWS target group for a load balancer.
 
 **Typical Ownership:** aws.account
 
-**Typical Relations:** `aws.serves` ← aws.load_balancer, `aws.forwards` ← aws.listener
+**Typical Relations:** `aws.serves` ← aws.load_balancer, `aws.forwards` ← aws.listener, `aws.registers` → aws.ec2, aws.lambda_function
 
 ---
 
@@ -959,11 +974,12 @@ All new relation types are directed binary relations (cardinality 1:N).
 | Type | Direction | Source Kinds | Target Kinds | Description |
 |------|-----------|--------------|--------------|-------------|
 | aws.associates | directed | aws.security_group, aws.route_table, aws.network_acl, aws.elastic_ip | aws.vpc, aws.subnet | Association between a network resource and a VPC or subnet |
-| aws.attaches | directed | aws.ebs_volume, aws.internet_gateway, aws.elastic_ip, aws.efs, aws.vpc_peering_connection | aws.ec2, aws.vpc, aws.transit_gateway | Attachment of a resource to a compute or network target |
+| aws.attaches | directed | aws.ebs_volume, aws.internet_gateway, aws.elastic_ip, aws.efs, aws.vpc_peering_connection | aws.ec2, aws.vpc, aws.transit_gateway, aws.nat_gateway | Attachment of a resource to a compute or network target |
 | aws.launches | directed | aws.auto_scaling_group, aws.launch_template | aws.ec2 | Launch of compute capacity |
 | aws.routes | directed | aws.route_table | aws.route | Ownership of a route entry by a route table |
 | aws.serves | directed | aws.load_balancer | aws.target_group | Load balancer traffic distribution to a target group |
 | aws.forwards | directed | aws.listener | aws.target_group | Forwarding of traffic from a listener to a target group |
+| aws.registers | directed | aws.target_group | aws.ec2, aws.lambda_function | Registration of a compute target with a target group |
 | aws.triggers | directed | aws.eventbridge_rule, aws.cloudwatch_alarm | aws.lambda_function, aws.sns_topic, aws.sqs_queue | Triggering of a target by a rule or alarm |
 | aws.subscribes | directed | aws.sns_topic | aws.sqs_queue, aws.lambda_function, aws.sns_topic | Subscription of a queue, function, or topic to an SNS topic |
 | aws.invokes | directed | aws.api_gateway | aws.lambda_function | Invocation of a Lambda function by an API Gateway |
@@ -1010,7 +1026,7 @@ The extension augments the following core relation types by adding AWS participa
 
 ## Validation
 
-- `valid-participant-kind` (Warning): all relation participants must be allowed by the relation type definition. AWS kinds added via `Augment` are validated against the merged constraints.
+- `valid-participant-kind` (Warning): all relation participants must be allowed by the relation type definition. Directed relations with explicit source/target participants are checked positionally (source against source kinds, target against target kinds); other shapes are checked against the union. AWS kinds added via `Augment` are validated against the merged constraints.
 - `valid-property` (Warning): entity and relation `spec` properties are validated against the extension kind definitions (type, enum, required, min/max, unknown properties).
 - Root kind rule: `aws.organization` is allowed as a root, so multiple accounts can exist under a single organization.
 

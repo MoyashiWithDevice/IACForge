@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"strings"
 	"testing"
 
 	"IACForge/src/core"
@@ -391,6 +392,56 @@ func TestValidateParticipantKindWarning(t *testing.T) {
 	}
 	if !found {
 		t.Error("expected valid-participant-kind warning for server in connects relation")
+	}
+}
+
+func TestValidateParticipantKindDirection(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+
+	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
+	graph.AddEntity(server)
+	vm := core.NewEntity("vm-01", kinds.VM, "VM 1")
+	graph.AddEntity(vm)
+
+	// hosts source kinds are {server,vm,container,application} and target
+	// kinds are {vm,container,application}, so a target of kind server is only
+	// caught when the direction is respected.
+	r := core.NewDirectedRelation("rel-rev", types.Hosts, "vm-01", "srv-01")
+	graph.AddRelation(r)
+
+	result := e.Validate(graph, nil)
+	var found []Finding
+	for _, f := range result.Findings {
+		if f.RuleID == "valid-participant-kind" && f.Severity == SeverityWarning {
+			found = append(found, f)
+		}
+	}
+	if len(found) != 1 {
+		t.Fatalf("expected exactly 1 valid-participant-kind warning for reversed hosts relation, got %d", len(found))
+	}
+	if !strings.Contains(found[0].Message, "target") {
+		t.Errorf("expected target role in message, got: %s", found[0].Message)
+	}
+}
+
+func TestValidateParticipantKindDirectionValid(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+
+	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
+	graph.AddEntity(server)
+	vm := core.NewEntity("vm-01", kinds.VM, "VM 1")
+	graph.AddEntity(vm)
+
+	r := core.NewDirectedRelation("rel-ok", types.Hosts, "srv-01", "vm-01")
+	graph.AddRelation(r)
+
+	result := e.Validate(graph, nil)
+	for _, f := range result.Findings {
+		if f.RuleID == "valid-participant-kind" && f.Severity == SeverityWarning {
+			t.Errorf("unexpected valid-participant-kind warning: %s", f.Message)
+		}
 	}
 }
 

@@ -3,6 +3,8 @@ package mcp
 import (
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+
+	_ "IACForge/src/extension/builtin/aws"
 )
 
 // NewMCPServer creates and configures a new MCP server with all IACForge tools.

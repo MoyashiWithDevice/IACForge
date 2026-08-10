@@ -29,6 +29,25 @@ func DefaultExtensionDir() string {
 // additional Go plugin (.so) extensions from extDir (when non-empty) and applies all
 // registered extensions exactly once.
 func NewSetup(extDir string) (*Setup, error) {
+	setup, err := NewCoreSetup()
+	if err != nil {
+		return nil, err
+	}
+
+	if extDir != "" {
+		if err := setup.Manager.LoadFromDir(extDir); err != nil {
+			return nil, fmt.Errorf("failed to load extensions from %s: %w", extDir, err)
+		}
+	}
+
+	return setup, nil
+}
+
+// NewCoreSetup constructs the default core schema, validation engine, and extension
+// manager with the built-in extensions applied, but without loading any external Go
+// plugin extensions. It is the fallback construction path for runtimes (e.g. the MCP
+// server) that must keep serving even when the plugin extension directory is invalid.
+func NewCoreSetup() (*Setup, error) {
 	s := schema.CoreSchema()
 	v := validation.NewEngine(s)
 	validation.RegisterCoreRules(v)
@@ -46,14 +65,8 @@ func NewSetup(extDir string) (*Setup, error) {
 		}
 	}
 
-	if extDir != "" {
-		if err := m.LoadFromDir(extDir); err != nil {
-			return nil, fmt.Errorf("failed to load extensions from %s: %w", extDir, err)
-		}
-	} else {
-		if err := m.LoadAll(); err != nil {
-			return nil, fmt.Errorf("failed to load extensions: %w", err)
-		}
+	if err := m.LoadAll(); err != nil {
+		return nil, fmt.Errorf("failed to load built-in extensions: %w", err)
 	}
 
 	return &Setup{Schema: s, Validation: v, Manager: m}, nil

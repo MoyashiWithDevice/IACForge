@@ -75,11 +75,16 @@ aws.organization
     │   │   ├── aws.s3_bucket
     │   │   ├── aws.elasticache
     │   │   └── aws.ebs_volume
+    │   ├── aws.s3_bucket
+    │   ├── aws.elasticache
+    │   ├── aws.efs
     │   └── aws.vpc
     │       ├── aws.subnet
     │       │   ├── aws.ec2
+    │       │   │   └── application (core kind)
     │       │   ├── aws.rds
     │       │   ├── aws.load_balancer
+    │       │   │   └── aws.listener
     │       │   └── aws.nat_gateway
     │       ├── aws.security_group
     │       │   └── aws.security_group_rule
@@ -94,9 +99,10 @@ aws.organization
     ├── aws.cloudwatch_alarm / aws.cloudwatch_log_group / aws.cloudwatch_dashboard
     ├── aws.ami / aws.key_pair / aws.launch_template / aws.auto_scaling_group
     ├── aws.ebs_snapshot / aws.elastic_ip / aws.target_group / aws.efs
-    ├── aws.vpc_peering_connection / aws.transit_gateway
-    └── aws.load_balancer (→ aws.listener)
+    └── aws.vpc_peering_connection / aws.transit_gateway
 ```
+
+> Note: `aws.s3_bucket`, `aws.elasticache`, `aws.efs` はリージョン直下にも配置できます（レガシーのAZ/account配下も引き続き利用可）。
 
 ---
 
@@ -300,7 +306,7 @@ AWSリージョン。
 
 **Ownership:** aws.account
 
-**Nestable Children:** `availability_zones` (aws.availability_zone), `vpcs` (aws.vpc)
+**Nestable Children:** `availability_zones` (aws.availability_zone), `vpcs` (aws.vpc), `s3_buckets` (aws.s3_bucket), `elasticache_clusters` (aws.elasticache), `efs_filesystems` (aws.efs)
 
 ```yaml
 - id: region-us-east-1
@@ -421,7 +427,7 @@ Virtual Private Cloud。
       - id: route-public
         spec:
           destination_cidr: 0.0.0.0/0
-          gateway_id: igw-01
+          gateway_id: "@igw-01"
 ```
 
 ---
@@ -433,10 +439,10 @@ Virtual Private Cloud。
 | Property | Type | Required | Default | Description |
 |----------|------|----------|---------|-------------|
 | destination_cidr | string | no | - | Destination IPv4 CIDR |
-| gateway_id | string | no | - | Internet/VPGW ID |
-| nat_gateway_id | string | no | - | NAT gateway ID |
-| transit_gateway_id | string | no | - | Transit gateway ID |
-| vpc_peering_connection_id | string | no | - | Peering connection ID |
+| gateway_id | reference | no | - | Reference to the internet gateway or virtual private gateway |
+| nat_gateway_id | reference | no | - | Reference to the NAT gateway |
+| transit_gateway_id | reference | no | - | Reference to the transit gateway |
+| vpc_peering_connection_id | reference | no | - | Reference to the VPC peering connection |
 
 **Ownership:** aws.route_table
 
@@ -448,7 +454,7 @@ Virtual Private Cloud。
     owner: rt-main
   spec:
     destination_cidr: 0.0.0.0/0
-    gateway_id: igw-01
+    gateway_id: "@igw-01"
 ```
 
 ---
@@ -482,6 +488,8 @@ NATゲートウェイ。
 | connectivity_type | string | no | - | Connectivity type (public, private) |
 
 **Ownership:** aws.subnet
+
+**Relations:** `aws.attaches` ← aws.elastic_ip
 
 ```yaml
 - id: nat-01
@@ -664,6 +672,8 @@ EC2インスタンス。
 | iam_instance_profile | reference | no | - | Instance profile reference |
 
 **Ownership:** aws.subnet
+
+**Nestable Children:** `applications` (application)
 
 ```yaml
 - id: ec2-web-01

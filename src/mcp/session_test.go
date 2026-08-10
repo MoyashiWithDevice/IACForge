@@ -38,3 +38,23 @@ func TestSessionExtensionManager(t *testing.T) {
 		t.Error("expected renderers extension point to be registered")
 	}
 }
+
+func TestSessionGetOrCreateFallsBackOnInvalidExtensionDir(t *testing.T) {
+	t.Setenv("IACFORGE_EXTENSIONS", t.TempDir()+"/missing-plugins")
+
+	sm := NewSessionManager()
+	sd := sm.GetOrCreate("fallback-session")
+
+	if sd == nil {
+		t.Fatal("expected non-nil session data when extension directory is invalid")
+	}
+	if !sd.Schema.HasEntityKind("server") {
+		t.Error("expected core kind 'server' in fallback session schema")
+	}
+	if !sd.Schema.HasEntityKind("aws.ec2") {
+		t.Error("expected built-in aws.ec2 kind in fallback session schema")
+	}
+	if !sd.Extensions.IsLoaded() {
+		t.Error("expected fallback extension manager to be loaded")
+	}
+}

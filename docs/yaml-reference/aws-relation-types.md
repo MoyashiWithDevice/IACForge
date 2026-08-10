@@ -20,6 +20,7 @@ AWS拡張（`iacforge.aws`）が定義するリレーションタイプのリフ
 | aws.routes | directed | 1:N | Route table owns route entries |
 | aws.serves | directed | 1:N | Load balancer serves target group |
 | aws.forwards | directed | 1:N | Listener forwards to target group |
+| aws.registers | directed | 1:N | Target group registers compute target |
 | aws.triggers | directed | 1:N | Rule/alarm triggers target |
 | aws.subscribes | directed | 1:N | SNS subscription |
 | aws.invokes | directed | 1:N | API Gateway invokes Lambda |
@@ -61,7 +62,7 @@ AWS拡張（`iacforge.aws`）が定義するリレーションタイプのリフ
 |----------|-------|
 | Direction | directed |
 | Source | aws.ebs_volume, aws.internet_gateway, aws.elastic_ip, aws.efs, aws.vpc_peering_connection |
-| Target | aws.ec2, aws.vpc, aws.transit_gateway |
+| Target | aws.ec2, aws.vpc, aws.transit_gateway, aws.nat_gateway |
 | Cardinality | 1:N |
 
 ```yaml
@@ -160,6 +161,33 @@ Auto Scalingグループ/起動テンプレートによるEC2起動。
   participants:
     source: alb-web-443
     target: tg-web
+```
+
+---
+
+### aws.registers
+
+ターゲットグループによるコンピュートターゲットの登録。
+
+| Property | Value |
+|----------|-------|
+| Direction | directed |
+| Source | aws.target_group |
+| Target | aws.ec2, aws.lambda_function |
+| Cardinality | 1:N |
+
+```yaml
+- id: rel-register-ec2
+  type: aws.registers
+  participants:
+    source: tg-web
+    target: ec2-web-01
+
+- id: rel-register-lambda
+  type: aws.registers
+  participants:
+    source: tg-api
+    target: lambda-processor
 ```
 
 ---

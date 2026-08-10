@@ -4,6 +4,7 @@ import (
 	"sort"
 
 	"IACForge/src/core"
+	"IACForge/src/core/kinds"
 	"IACForge/src/core/types"
 	"IACForge/src/extension"
 	"IACForge/src/schema"
@@ -172,6 +173,9 @@ func KindDefinitions() []extension.EntityKindContribution {
 			NestingDefs: []schema.NestingDefinition{
 				nest("availability_zones", AvailabilityZone),
 				nest("vpcs", VPC),
+				nest("s3_buckets", S3Bucket),
+				nest("elasticache_clusters", ElastiCache),
+				nest("efs_filesystems", EFS),
 			},
 		},
 		AvailabilityZone: {
@@ -227,10 +231,10 @@ func KindDefinitions() []extension.EntityKindContribution {
 			Description: "Route entry within a route table",
 			Properties: []schema.PropertyDefinition{
 				strProp("destination_cidr", false, "Destination IPv4 CIDR block"),
-				strProp("gateway_id", false, "Internet gateway or virtual private gateway ID"),
-				strProp("nat_gateway_id", false, "NAT gateway ID"),
-				strProp("transit_gateway_id", false, "Transit gateway ID"),
-				strProp("vpc_peering_connection_id", false, "VPC peering connection ID"),
+				refProp("gateway_id", "Reference to the internet gateway or virtual private gateway"),
+				refProp("nat_gateway_id", "Reference to the NAT gateway"),
+				refProp("transit_gateway_id", "Reference to the transit gateway"),
+				refProp("vpc_peering_connection_id", "Reference to the VPC peering connection"),
 			},
 		},
 		InternetGateway: {
@@ -304,6 +308,9 @@ func KindDefinitions() []extension.EntityKindContribution {
 				listProp("security_groups", "References to the security groups attached to the instance"),
 				strProp("user_data", false, "User data script passed at launch"),
 				refProp("iam_instance_profile", "Reference to the IAM instance profile"),
+			},
+			NestingDefs: []schema.NestingDefinition{
+				nest("applications", kinds.Application),
 			},
 		},
 		AMI: {

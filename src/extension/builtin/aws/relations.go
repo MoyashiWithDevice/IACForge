@@ -31,7 +31,7 @@ func RelationTypeDefinitions() []extension.RelationTypeContribution {
 				Description: "Attachment of a resource (EBS volume, internet gateway, Elastic IP, EFS, peering) to a compute or network target",
 				Participants: &schema.ParticipantConstraints{
 					SourceKinds:     []core.EntityKind{EBSVolume, InternetGateway, ElasticIP, EFS, VPCPeeringConnection},
-					TargetKinds:     []core.EntityKind{EC2, VPC, TransitGateway},
+					TargetKinds:     []core.EntityKind{EC2, VPC, TransitGateway, NATGateway},
 					MinParticipants: 2,
 					MaxParticipants: 2,
 				},
@@ -88,6 +88,19 @@ func RelationTypeDefinitions() []extension.RelationTypeContribution {
 				Participants: &schema.ParticipantConstraints{
 					SourceKinds:     []core.EntityKind{Listener},
 					TargetKinds:     []core.EntityKind{TargetGroup},
+					MinParticipants: 2,
+					MaxParticipants: 2,
+				},
+			},
+		},
+		{
+			Type: Registers,
+			Definition: &schema.RelationTypeDefinition{
+				Direction:   schema.DirectionDirected,
+				Description: "Registration of a compute target (EC2 instance or Lambda function) with a target group",
+				Participants: &schema.ParticipantConstraints{
+					SourceKinds:     []core.EntityKind{TargetGroup},
+					TargetKinds:     []core.EntityKind{EC2, LambdaFunction},
 					MinParticipants: 2,
 					MaxParticipants: 2,
 				},
