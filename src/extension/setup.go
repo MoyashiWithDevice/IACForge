@@ -38,6 +38,7 @@ func NewSetup(extDir string) (*Setup, error) {
 	m.RegisterExtensionPoint(NewRelationTypesExtensionPoint(s))
 	m.RegisterExtensionPoint(NewValidationRulesExtensionPoint(v))
 	m.RegisterExtensionPoint(NewRendererExtensionPoint(NewRendererRegistry()))
+	m.RegisterExtensionPoint(NewRootKindsExtensionPoint(v))
 
 	for _, ext := range BuiltinExtensions() {
 		if err := m.Register(ext); err != nil {

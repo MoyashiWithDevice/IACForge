@@ -1102,7 +1102,7 @@ func ruleDanglingReference(ctx *Context) []Finding {
 
 		// Check entity property references (@ prefix)
 		for key, value := range e.Properties {
-			if targetID, ok := core.ExtractReferenceValue(value); ok {
+			for _, targetID := range core.ExtractReferenceTargets(value) {
 				if _, found := g.ResolveReference(targetID); !found {
 					findings = append(findings, Finding{
 						Severity:   SeverityError,
@@ -1118,7 +1118,7 @@ func ruleDanglingReference(ctx *Context) []Finding {
 	// Check relation property references (@ prefix)
 	for _, r := range g.Relations() {
 		for key, value := range r.Properties {
-			if targetID, ok := core.ExtractReferenceValue(value); ok {
+			for _, targetID := range core.ExtractReferenceTargets(value) {
 				if _, found := g.ResolveReference(targetID); !found {
 					findings = append(findings, Finding{
 						Severity:   SeverityError,

@@ -848,6 +848,89 @@ func TestValidationRulesAllExtendedRules(t *testing.T) {
 	}
 }
 
+// --- RootKindsExtensionPoint Tests ---
+
+func TestRootKindsExtensionPointRegister(t *testing.T) {
+	s := schema.NewSchema("1.0", "1.0")
+	vEngine := validation.NewEngine(s)
+	ep := NewRootKindsExtensionPoint(vEngine)
+
+	ext := &Extension{
+		Manifest: &Manifest{ID: "test-ext", Namespace: "test"},
+		RootKinds: []core.EntityKind{
+			"aws.organization",
+			"aws.account",
+		},
+	}
+
+	if err := ep.Register(ext); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
+
+	if !vEngine.IsAllowedRootKind("aws.organization") {
+		t.Error("aws.organization was not granted root authority")
+	}
+	if !vEngine.IsAllowedRootKind("aws.account") {
+		t.Error("aws.account was not granted root authority")
+	}
+	if vEngine.IsAllowedRootKind("aws.vpc") {
+		t.Error("aws.vpc must not be granted root authority")
+	}
+
+	kinds := ep.GetRootKindsByExtension("test-ext")
+	if len(kinds) != 2 {
+		t.Errorf("expected 2 root kinds for test-ext, got %v", kinds)
+	}
+
+	extID, ok := ep.GetExtensionForRootKind("aws.organization")
+	if !ok || extID != "test-ext" {
+		t.Errorf("expected test-ext for aws.organization, got %q (%v)", extID, ok)
+	}
+
+	all := ep.AllRootKinds()
+	if len(all) != 2 || all["aws.organization"] != "test-ext" {
+		t.Errorf("unexpected all root kinds map: %v", all)
+	}
+}
+
+func TestRootKindsExtensionPointDuplicate(t *testing.T) {
+	s := schema.NewSchema("1.0", "1.0")
+	vEngine := validation.NewEngine(s)
+	ep := NewRootKindsExtensionPoint(vEngine)
+
+	ext := &Extension{
+		Manifest: &Manifest{ID: "test-ext", Namespace: "test"},
+		RootKinds: []core.EntityKind{
+			"aws.organization",
+			"aws.organization",
+		},
+	}
+
+	if err := ep.Register(ext); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
+	if got := len(ep.AllRootKinds()); got != 1 {
+		t.Errorf("expected 1 unique root kind after duplicate registration, got %d", got)
+	}
+}
+
+func TestRootKindsExtensionPointNoRootKinds(t *testing.T) {
+	s := schema.NewSchema("1.0", "1.0")
+	vEngine := validation.NewEngine(s)
+	ep := NewRootKindsExtensionPoint(vEngine)
+
+	ext := &Extension{
+		Manifest: &Manifest{ID: "test-ext", Namespace: "test"},
+	}
+
+	if err := ep.Register(ext); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
+	if len(ep.AllRootKinds()) != 0 {
+		t.Errorf("expected no root kinds, got %v", ep.AllRootKinds())
+	}
+}
+
 // --- RendererExtensionPoint Tests ---
 
 type mockRenderer struct {

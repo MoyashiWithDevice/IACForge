@@ -8,6 +8,7 @@ import (
 
 	"IACForge/src/core"
 	"IACForge/src/extension"
+	_ "IACForge/src/extension/builtin/aws"
 	iacmcp "IACForge/src/mcp"
 	"IACForge/src/parser"
 	"IACForge/src/query"

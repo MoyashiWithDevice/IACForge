@@ -793,7 +793,7 @@ func ResolveReferences(g *core.Graph) []error {
 	// Check entity property references (@ prefix)
 	for _, e := range g.Entities() {
 		for key, value := range e.Properties {
-			if targetID, ok := core.ExtractReferenceValue(value); ok {
+			for _, targetID := range core.ExtractReferenceTargets(value) {
 				if _, err := resolvePathReference(g, targetID); err != nil {
 					errs = append(errs, fmt.Errorf("entity %s property %q: %w", e.ID, key, err))
 				}
@@ -804,7 +804,7 @@ func ResolveReferences(g *core.Graph) []error {
 	// Check relation property references (@ prefix)
 	for _, r := range g.Relations() {
 		for key, value := range r.Properties {
-			if targetID, ok := core.ExtractReferenceValue(value); ok {
+			for _, targetID := range core.ExtractReferenceTargets(value) {
 				if _, err := resolvePathReference(g, targetID); err != nil {
 					errs = append(errs, fmt.Errorf("relation %s property %q: %w", r.ID, key, err))
 				}

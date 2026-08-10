@@ -1435,6 +1435,64 @@ objects:
 	}
 }
 
+func TestResolveReferencesListProperty(t *testing.T) {
+	yaml := `
+objects:
+  - id: net-mgmt
+    kind: network
+    name: Management Network
+    spec:
+      cidr: 10.0.0.0/24
+
+  - id: sg-01
+    kind: acl
+    name: Web SG
+
+  - id: ec2-01
+    kind: server
+    name: Web Server
+    spec:
+      security_groups:
+        - "@sg-01"
+        - "@ghost"
+
+  - id: lb-01
+    kind: server
+    name: Load Balancer
+    spec:
+      subnets:
+        - "@net-mgmt"
+`
+
+	parser := NewParser()
+	g, err := parser.Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("failed to parse: %v", err)
+	}
+
+	errs := ResolveReferences(g)
+	if len(errs) == 0 {
+		t.Fatal("expected reference error for dangling list element")
+	}
+	found := false
+	for _, e := range errs {
+		if strings.Contains(e.Error(), "ghost") {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("expected error about dangling list element @ghost, got %v", errs)
+	}
+
+	// lb-01's valid list reference must not produce an error mentioning it.
+	for _, e := range errs {
+		if strings.Contains(e.Error(), "lb-01") {
+			t.Errorf("lb-01 should not have a reference error, got: %v", e)
+		}
+	}
+}
+
 func TestParseRegionNestingAvailabilityZones(t *testing.T) {
 	yaml := `
 objects:

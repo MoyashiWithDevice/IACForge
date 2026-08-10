@@ -47,6 +47,30 @@ func ExtractReferenceValue(v interface{}) (string, bool) {
 	return "", false
 }
 
+// ExtractReferenceTargets returns the target IDs of all references in a
+// property value, walking nested lists and maps recursively. Values without
+// references produce no targets.
+func ExtractReferenceTargets(v interface{}) []string {
+	var targets []string
+	var walk func(x interface{})
+	walk = func(x interface{}) {
+		switch t := x.(type) {
+		case ReferenceValue:
+			targets = append(targets, string(t))
+		case []interface{}:
+			for _, item := range t {
+				walk(item)
+			}
+		case map[string]interface{}:
+			for _, item := range t {
+				walk(item)
+			}
+		}
+	}
+	walk(v)
+	return targets
+}
+
 type Status string
 
 const (

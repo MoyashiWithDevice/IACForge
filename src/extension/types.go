@@ -29,6 +29,7 @@ const (
 	ExtensionPointRelationTypes   ExtensionPointType = "relation_types"
 	ExtensionPointValidationRules ExtensionPointType = "validation_rules"
 	ExtensionPointRenderers       ExtensionPointType = "renderers"
+	ExtensionPointRootKinds       ExtensionPointType = "root_kinds"
 )
 
 // ExtensionPoint defines the interface that all extension points must implement.
@@ -65,11 +66,15 @@ type RendererContribution struct {
 	Renderer renderer.Renderer
 }
 
-// Extension represents a loaded extension with its contributions.
+// RootKinds grants root authority to the listed entity kinds. A graph may have
+// multiple root entities only when every root's kind has been granted root
+// authority. Root kinds are applied to the validation engine via the root_kinds
+// extension point.
 type Extension struct {
 	Manifest        *Manifest
 	EntityKinds     []EntityKindContribution
 	RelationTypes   []RelationTypeContribution
 	ValidationRules []ValidationRuleContribution
 	Renderers       []RendererContribution
+	RootKinds       []core.EntityKind
 }

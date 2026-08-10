@@ -253,6 +253,82 @@ func TestExtractReferenceValue(t *testing.T) {
 	}
 }
 
+func TestExtractReferenceTargets(t *testing.T) {
+	tests := []struct {
+		name  string
+		value interface{}
+		want  []string
+	}{
+		{
+			name:  "nil",
+			value: nil,
+			want:  nil,
+		},
+		{
+			name:  "plain string",
+			value: "net-mgmt",
+			want:  nil,
+		},
+		{
+			name:  "scalar reference",
+			value: NewReferenceValue("@net-mgmt"),
+			want:  []string{"net-mgmt"},
+		},
+		{
+			name: "list of references",
+			value: []interface{}{
+				NewReferenceValue("@sg-01"),
+				"plain",
+				NewReferenceValue("@sg-02"),
+			},
+			want: []string{"sg-01", "sg-02"},
+		},
+		{
+			name: "nested map",
+			value: map[string]interface{}{
+				"network": NewReferenceValue("@net-mgmt"),
+				"name":    "mgmt",
+			},
+			want: []string{"net-mgmt"},
+		},
+		{
+			name: "list of maps",
+			value: []interface{}{
+				map[string]interface{}{
+					"network": NewReferenceValue("@net-storage"),
+					"vlan":    float64(100),
+				},
+				map[string]interface{}{
+					"target": NewReferenceValue("@net-mgmt"),
+				},
+			},
+			want: []string{"net-storage", "net-mgmt"},
+		},
+		{
+			name: "empty containers",
+			value: []interface{}{
+				map[string]interface{}{"a": float64(1)},
+				"plain",
+			},
+			want: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ExtractReferenceTargets(tt.value)
+			if len(got) != len(tt.want) {
+				t.Fatalf("ExtractReferenceTargets() = %v, want %v", got, tt.want)
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("ExtractReferenceTargets() = %v, want %v", got, tt.want)
+				}
+			}
+		})
+	}
+}
+
 func TestEntityPropertyReference(t *testing.T) {
 	e := NewEntity("vlan-100", "vlan", "VLAN 100")
 	e.SetProperty("associated_network", NewReferenceValue("@net-mgmt"))

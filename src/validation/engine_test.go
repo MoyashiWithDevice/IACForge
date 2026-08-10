@@ -685,6 +685,71 @@ func TestDanglingPropertyReference(t *testing.T) {
 	}
 }
 
+func TestDanglingReferenceInListProperty(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+
+	region := core.NewEntity("region-01", kinds.Region, "Region 01")
+	graph.AddEntity(region)
+
+	net := core.NewEntity("net-mgmt", kinds.Network, "Management Network")
+	net.SetOwner("region-01")
+	graph.AddEntity(net)
+
+	sg := core.NewEntity("sg-01", kinds.ACL, "Web SG")
+	sg.SetOwner("region-01")
+	graph.AddEntity(sg)
+
+	// ec2-01 has one valid list reference (sg-01) and one dangling (ghost).
+	ec2 := core.NewEntity("ec2-01", kinds.Server, "Web Server")
+	ec2.SetOwner("region-01")
+	ec2.SetProperty("security_groups", []interface{}{
+		core.NewReferenceValue("@sg-01"),
+		core.NewReferenceValue("@ghost"),
+	})
+	graph.AddEntity(ec2)
+
+	// rds-01 has a nested-map reference that is dangling (nonexistent).
+	rds := core.NewEntity("rds-01", kinds.Server, "Database")
+	rds.SetOwner("region-01")
+	rds.SetProperty("vpc_config", map[string]interface{}{
+		"subnets": []interface{}{
+			core.NewReferenceValue("@net-mgmt"),
+			core.NewReferenceValue("@missing-subnet"),
+		},
+	})
+	graph.AddEntity(rds)
+
+	// lb-01 has only valid list references.
+	lb := core.NewEntity("lb-01", kinds.Server, "Load Balancer")
+	lb.SetOwner("region-01")
+	lb.SetProperty("subnets", []interface{}{
+		core.NewReferenceValue("@net-mgmt"),
+	})
+	graph.AddEntity(lb)
+
+	result := e.Validate(graph, nil)
+
+	findings := map[string]bool{}
+	for _, f := range result.Findings {
+		if f.RuleID == "dangling-reference" {
+			findings[f.Message] = true
+		}
+	}
+
+	if !findings["entity \"ec2-01\" property \"security_groups\" references non-existent object \"ghost\""] {
+		t.Error("expected dangling-reference error for list element @ghost on ec2-01")
+	}
+	if !findings["entity \"rds-01\" property \"vpc_config\" references non-existent object \"missing-subnet\""] {
+		t.Error("expected dangling-reference error for nested-map element @missing-subnet on rds-01")
+	}
+	for _, f := range result.Findings {
+		if f.RuleID == "dangling-reference" && f.ObjectID == "lb-01" {
+			t.Errorf("lb-01 should not have dangling-reference error, got: %v", f.Message)
+		}
+	}
+}
+
 func TestValidPropertyReference(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
