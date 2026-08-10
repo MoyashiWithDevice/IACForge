@@ -1,6 +1,7 @@
 package extension
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -459,6 +460,305 @@ func TestRelationTypesExtensionPointConflict(t *testing.T) {
 
 	if err := ep.Register(ext); err == nil {
 		t.Fatal("expected conflict error when registering duplicate relation type")
+	}
+}
+
+func TestRelationTypesExtensionPointAugment(t *testing.T) {
+	s := schema.NewSchema("1.0", "1.0")
+	s.AddRelationType("belongs_to", &schema.RelationTypeDefinition{
+		Direction: schema.DirectionDirected,
+		Participants: &schema.ParticipantConstraints{
+			SourceKinds: []core.EntityKind{"vm", "container"},
+			TargetKinds: []core.EntityKind{"region"},
+		},
+	})
+	ep := NewRelationTypesExtensionPoint(s)
+
+	ext := &Extension{
+		Manifest: &Manifest{ID: "aws-ext", Namespace: "aws"},
+		RelationTypes: []RelationTypeContribution{
+			{
+				Type:    "belongs_to",
+				Augment: true,
+				Definition: &schema.RelationTypeDefinition{
+					Participants: &schema.ParticipantConstraints{
+						SourceKinds: []core.EntityKind{"aws.subnet"},
+						TargetKinds: []core.EntityKind{"aws.vpc", "vm"},
+					},
+				},
+			},
+		},
+	}
+
+	if err := ep.Register(ext); err != nil {
+		t.Fatalf("Register with Augment failed: %v", err)
+	}
+
+	def, ok := s.GetRelationTypeDef("belongs_to")
+	if !ok {
+		t.Fatal("belongs_to should still exist in schema")
+	}
+
+	// Source kinds must include the existing core kinds plus the augmented kind.
+	if !containsKind(def.Participants.SourceKinds, "aws.subnet") {
+		t.Errorf("belongs_to source kinds should include aws.subnet, got %v", def.Participants.SourceKinds)
+	}
+	if !containsKind(def.Participants.SourceKinds, "vm") {
+		t.Errorf("belongs_to source kinds should retain existing vm, got %v", def.Participants.SourceKinds)
+	}
+	// Target kinds must include the augmented kinds without duplicates.
+	if !containsKind(def.Participants.TargetKinds, "aws.vpc") {
+		t.Errorf("belongs_to target kinds should include aws.vpc, got %v", def.Participants.TargetKinds)
+	}
+	if countKind(def.Participants.TargetKinds, "vm") != 1 {
+		t.Errorf("belongs_to target kinds should contain vm exactly once, got %v", def.Participants.TargetKinds)
+	}
+
+	// The augmenting extension should be tracked for the type.
+	extID, ok := ep.GetExtensionForType("belongs_to")
+	if !ok || extID != "aws-ext" {
+		t.Errorf("expected extension 'aws-ext' for belongs_to, got %q", extID)
+	}
+}
+
+func TestRelationTypesExtensionPointAugmentNilDefinition(t *testing.T) {
+	s := schema.NewSchema("1.0", "1.0")
+	s.AddRelationType("hosts", &schema.RelationTypeDefinition{Direction: schema.DirectionDirected})
+	ep := NewRelationTypesExtensionPoint(s)
+
+	ext := &Extension{
+		Manifest: &Manifest{ID: "bad-ext", Namespace: "bad"},
+		RelationTypes: []RelationTypeContribution{
+			{Type: "hosts", Augment: true, Definition: nil},
+		},
+	}
+
+	if err := ep.Register(ext); err == nil {
+		t.Fatal("expected error when augmenting with nil definition")
+	}
+}
+
+func TestAugmentCoreTypeViaManager(t *testing.T) {
+	s := schema.CoreSchema()
+	m := NewManager()
+
+	rtEP := NewRelationTypesExtensionPoint(s)
+	m.RegisterExtensionPoint(rtEP)
+
+	ext := &Extension{
+		Manifest: &Manifest{
+			ID:              "aws-ext",
+			Name:            "AWS Extension",
+			Version:         "1.0.0",
+			Namespace:       "aws",
+			ExtensionPoints: []string{string(ExtensionPointRelationTypes)},
+		},
+		RelationTypes: []RelationTypeContribution{
+			{
+				Type:    "belongs_to",
+				Augment: true,
+				Definition: &schema.RelationTypeDefinition{
+					Participants: &schema.ParticipantConstraints{
+						SourceKinds: []core.EntityKind{"aws.subnet"},
+						TargetKinds: []core.EntityKind{"aws.vpc"},
+					},
+				},
+			},
+		},
+	}
+
+	if err := m.Load(ext); err != nil {
+		t.Fatalf("Load of augmenting extension failed: %v", err)
+	}
+
+	def, ok := s.GetRelationTypeDef("belongs_to")
+	if !ok {
+		t.Fatal("belongs_to should exist in core schema")
+	}
+	if !containsKind(def.Participants.SourceKinds, "aws.subnet") {
+		t.Errorf("belongs_to source kinds should include aws.subnet, got %v", def.Participants.SourceKinds)
+	}
+	if !containsKind(def.Participants.TargetKinds, "aws.vpc") {
+		t.Errorf("belongs_to target kinds should include aws.vpc, got %v", def.Participants.TargetKinds)
+	}
+}
+
+func containsKind(kinds []core.EntityKind, k string) bool {
+	for _, kind := range kinds {
+		if string(kind) == k {
+			return true
+		}
+	}
+	return false
+}
+
+func countKind(kinds []core.EntityKind, k string) int {
+	count := 0
+	for _, kind := range kinds {
+		if string(kind) == k {
+			count++
+		}
+	}
+	return count
+}
+
+func TestRelationTypesExtensionPointAugmentDirectionConflict(t *testing.T) {
+	s := schema.NewSchema("1.0", "1.0")
+	s.AddRelationType("belongs_to", &schema.RelationTypeDefinition{
+		Direction: schema.DirectionDirected,
+		Participants: &schema.ParticipantConstraints{
+			SourceKinds: []core.EntityKind{"vm"},
+			TargetKinds: []core.EntityKind{"region"},
+		},
+	})
+	ep := NewRelationTypesExtensionPoint(s)
+
+	ext := &Extension{
+		Manifest: &Manifest{ID: "aws-ext", Namespace: "aws"},
+		RelationTypes: []RelationTypeContribution{
+			{
+				Type:    "belongs_to",
+				Augment: true,
+				Definition: &schema.RelationTypeDefinition{
+					Direction: schema.DirectionSymmetric,
+					Participants: &schema.ParticipantConstraints{
+						SourceKinds: []core.EntityKind{"aws.subnet"},
+					},
+				},
+			},
+		},
+	}
+
+	err := ep.Register(ext)
+	if err == nil {
+		t.Fatal("expected error when augmenting changes direction")
+	}
+	if !errors.Is(err, ErrInvalidExtension) {
+		t.Errorf("expected ErrInvalidExtension, got %v", err)
+	}
+}
+
+func TestRelationTypesExtensionPointAugmentPropertiesRejected(t *testing.T) {
+	s := schema.NewSchema("1.0", "1.0")
+	s.AddRelationType("belongs_to", &schema.RelationTypeDefinition{
+		Direction: schema.DirectionDirected,
+		Participants: &schema.ParticipantConstraints{
+			SourceKinds: []core.EntityKind{"vm"},
+			TargetKinds: []core.EntityKind{"region"},
+		},
+	})
+	ep := NewRelationTypesExtensionPoint(s)
+
+	ext := &Extension{
+		Manifest: &Manifest{ID: "aws-ext", Namespace: "aws"},
+		RelationTypes: []RelationTypeContribution{
+			{
+				Type:    "belongs_to",
+				Augment: true,
+				Definition: &schema.RelationTypeDefinition{
+					Participants: &schema.ParticipantConstraints{
+						SourceKinds: []core.EntityKind{"aws.subnet"},
+					},
+					Properties: []schema.PropertyDefinition{
+						{Name: "scope", Type: schema.PropertyTypeString},
+					},
+				},
+			},
+		},
+	}
+
+	if err := ep.Register(ext); err == nil {
+		t.Fatal("expected error when augmenting adds properties")
+	}
+}
+
+func TestRelationTypesExtensionPointAugmentMinMaxConflict(t *testing.T) {
+	s := schema.NewSchema("1.0", "1.0")
+	s.AddRelationType("belongs_to", &schema.RelationTypeDefinition{
+		Direction: schema.DirectionDirected,
+		Participants: &schema.ParticipantConstraints{
+			SourceKinds:     []core.EntityKind{"vm"},
+			TargetKinds:     []core.EntityKind{"region"},
+			MinParticipants: 2,
+			MaxParticipants: 2,
+		},
+	})
+	ep := NewRelationTypesExtensionPoint(s)
+
+	ext := &Extension{
+		Manifest: &Manifest{ID: "aws-ext", Namespace: "aws"},
+		RelationTypes: []RelationTypeContribution{
+			{
+				Type:    "belongs_to",
+				Augment: true,
+				Definition: &schema.RelationTypeDefinition{
+					Participants: &schema.ParticipantConstraints{
+						SourceKinds:     []core.EntityKind{"aws.subnet"},
+						MaxParticipants: 4,
+					},
+				},
+			},
+		},
+	}
+
+	if err := ep.Register(ext); err == nil {
+		t.Fatal("expected error when augmenting changes max participants")
+	}
+}
+
+func TestRelationTypesExtensionPointAugmentDoesNotMutateOriginal(t *testing.T) {
+	s := schema.NewSchema("1.0", "1.0")
+	original := &schema.RelationTypeDefinition{
+		Direction: schema.DirectionDirected,
+		Participants: &schema.ParticipantConstraints{
+			SourceKinds: []core.EntityKind{"vm", "container"},
+			TargetKinds: []core.EntityKind{"region"},
+		},
+	}
+	s.AddRelationType("belongs_to", original)
+	ep := NewRelationTypesExtensionPoint(s)
+
+	ext := &Extension{
+		Manifest: &Manifest{ID: "aws-ext", Namespace: "aws"},
+		RelationTypes: []RelationTypeContribution{
+			{
+				Type:    "belongs_to",
+				Augment: true,
+				Definition: &schema.RelationTypeDefinition{
+					Participants: &schema.ParticipantConstraints{
+						SourceKinds: []core.EntityKind{"aws.subnet"},
+						TargetKinds: []core.EntityKind{"aws.vpc"},
+					},
+				},
+			},
+		},
+	}
+
+	if err := ep.Register(ext); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
+
+	// The original definition must be untouched.
+	if len(original.Participants.SourceKinds) != 2 {
+		t.Errorf("original source kinds should be unchanged, got %v", original.Participants.SourceKinds)
+	}
+	if containsKind(original.Participants.SourceKinds, "aws.subnet") {
+		t.Error("original source kinds should not contain augmented kind")
+	}
+	if containsKind(original.Participants.TargetKinds, "aws.vpc") {
+		t.Error("original target kinds should not contain augmented kind")
+	}
+
+	// The stored definition must reflect the merged result.
+	def, ok := s.GetRelationTypeDef("belongs_to")
+	if !ok {
+		t.Fatal("belongs_to should exist in schema")
+	}
+	if def == original {
+		t.Error("stored definition should be a copy, not the original pointer")
+	}
+	if !containsKind(def.Participants.SourceKinds, "aws.subnet") {
+		t.Errorf("stored source kinds should include aws.subnet, got %v", def.Participants.SourceKinds)
 	}
 }
 

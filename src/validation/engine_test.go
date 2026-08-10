@@ -33,6 +33,7 @@ func TestEngineCoreRulesRegistered(t *testing.T) {
 	e := newTestEngine()
 	expectedRules := []string{
 		"unique-id", "valid-reference", "valid-owner", "single-owner",
+		"valid-property",
 		"required-kind", "required-name", "valid-kind", "valid-status",
 		"valid-port-range", "valid-acl-rule-parent",
 		"required-type", "required-participants", "valid-type", "valid-direction",
@@ -1046,5 +1047,300 @@ func TestNetworkRulesNoWarningsForCompliantGraph(t *testing.T) {
 		if _, ok := networkRules[f.RuleID]; ok {
 			t.Errorf("unexpected %s warning: %s", f.RuleID, f.Message)
 		}
+	}
+}
+
+// --- Valid Property Rule ---
+
+func hasFindingFor(result *Result, ruleID, objectID string) bool {
+	for _, f := range result.Findings {
+		if f.RuleID == ruleID && f.ObjectID == objectID {
+			return true
+		}
+	}
+	return false
+}
+
+func TestValidPropertyCompliant(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
+	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
+	server.SetOwner("region-01")
+	server.SetProperty("platform", "proxmox")
+	graph.AddEntity(server)
+
+	result := e.Validate(graph, nil)
+	for _, f := range result.Findings {
+		if f.RuleID == "valid-property" {
+			t.Errorf("unexpected valid-property warning: %s", f.Message)
+		}
+	}
+}
+
+func TestValidPropertyTypeMismatch(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
+	rack := core.NewEntity("rack-01", kinds.Rack, "Rack 1")
+	rack.SetOwner("region-01")
+	rack.SetProperty("height_units", "42") // defined as integer
+	graph.AddEntity(rack)
+
+	result := e.Validate(graph, nil)
+	if !hasFindingFor(result, "valid-property", "rack-01") {
+		t.Error("expected valid-property warning for rack-01 with non-integer height_units")
+	}
+}
+
+func TestValidPropertyEnumViolation(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
+	intf := core.NewEntity("eth0", kinds.Interface, "eth0")
+	intf.SetOwner("region-01")
+	intf.SetProperty("type", "ethernet")
+	graph.AddEntity(intf)
+	bad := core.NewEntity("eth1", kinds.Interface, "eth1")
+	bad.SetOwner("region-01")
+	bad.SetProperty("type", "warp") // not in enum
+	graph.AddEntity(bad)
+
+	result := e.Validate(graph, nil)
+	if !hasFindingFor(result, "valid-property", "eth1") {
+		t.Error("expected valid-property warning for eth1 with invalid interface type")
+	}
+	if hasFindingFor(result, "valid-property", "eth0") {
+		t.Error("eth0 with valid interface type should not have valid-property warning")
+	}
+}
+
+func TestValidPropertyMissingRequired(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
+	vlan := core.NewEntity("vlan-100", kinds.VLAN, "VLAN 100")
+	vlan.SetOwner("region-01")
+	// vlan_id is required but not set
+	graph.AddEntity(vlan)
+
+	result := e.Validate(graph, nil)
+	if !hasFindingFor(result, "valid-property", "vlan-100") {
+		t.Error("expected valid-property warning for vlan-100 missing required vlan_id")
+	}
+}
+
+func TestValidPropertyUndefinedProperty(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
+	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
+	server.SetOwner("region-01")
+	server.SetProperty("not_a_defined_property", "value")
+	graph.AddEntity(server)
+
+	result := e.Validate(graph, nil)
+	if !hasFindingFor(result, "valid-property", "srv-01") {
+		t.Error("expected valid-property warning for undefined property on srv-01")
+	}
+}
+
+func TestValidPropertyRelationProperty(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
+	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
+	server.SetOwner("region-01")
+	graph.AddEntity(server)
+	app := core.NewEntity("app-01", kinds.Application, "App 1")
+	app.SetOwner("srv-01")
+	graph.AddEntity(app)
+
+	// depends_on defines dependency_type (string) and critical (boolean).
+	bad := core.NewDirectedRelation("rel-bad", types.DependsOn, "app-01", "srv-01")
+	bad.SetProperty("critical", "not-a-bool")
+	graph.AddRelation(bad)
+	good := core.NewDirectedRelation("rel-good", types.DependsOn, "app-01", "srv-01")
+	good.SetProperty("critical", true)
+	graph.AddRelation(good)
+
+	result := e.Validate(graph, nil)
+	if !hasFindingFor(result, "valid-property", "rel-bad") {
+		t.Error("expected valid-property warning for relation with non-boolean critical")
+	}
+	if hasFindingFor(result, "valid-property", "rel-good") {
+		t.Error("relation with valid critical boolean should not have valid-property warning")
+	}
+}
+
+// --- Root-Authorized Kind Hook ---
+
+func TestAllowedRootKindsMethods(t *testing.T) {
+	e := NewEngine(schema.CoreSchema())
+	if len(e.AllowedRootKinds()) != 0 {
+		t.Error("new engine should have no allowed root kinds")
+	}
+	e.AddAllowedRootKind("aws.organization")
+	e.AddAllowedRootKind("aws.organization") // idempotent
+	e.AddAllowedRootKind("aws.account")
+
+	if !e.IsAllowedRootKind("aws.organization") {
+		t.Error("aws.organization should be an allowed root kind")
+	}
+	if e.IsAllowedRootKind("region") {
+		t.Error("region should not be an allowed root kind by default")
+	}
+	kinds := e.AllowedRootKinds()
+	if len(kinds) != 2 {
+		t.Errorf("expected 2 allowed root kinds, got %v", kinds)
+	}
+}
+
+func TestMultipleRootsAllAllowedKinds(t *testing.T) {
+	e := newTestEngine()
+	e.AddAllowedRootKind("aws.organization")
+
+	graph := core.NewGraph()
+	org1 := core.NewEntity("org-1", core.EntityKind("aws.organization"), "Org 1")
+	graph.AddEntity(org1)
+	org2 := core.NewEntity("org-2", core.EntityKind("aws.organization"), "Org 2")
+	graph.AddEntity(org2)
+
+	result := e.Validate(graph, nil)
+	for _, f := range result.Findings {
+		if f.RuleID == "root-entity" || f.RuleID == "single-owner" || f.RuleID == "ownership-tree" {
+			t.Errorf("unexpected %s error for all-authorized roots: %s", f.RuleID, f.Message)
+		}
+	}
+}
+
+func TestMultipleRootsMixedKinds(t *testing.T) {
+	e := newTestEngine()
+	e.AddAllowedRootKind("aws.organization")
+
+	graph := core.NewGraph()
+	org := core.NewEntity("org-1", core.EntityKind("aws.organization"), "Org 1")
+	graph.AddEntity(org)
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
+
+	result := e.Validate(graph, nil)
+	for _, f := range result.Findings {
+		if f.RuleID == "root-entity" && f.Severity == SeverityError {
+			return // expected
+		}
+	}
+	t.Error("expected root-entity error when a non-authorized root coexists with an authorized root")
+}
+
+func TestOwnershipTreeForestWithAuthorizedRoots(t *testing.T) {
+	e := newTestEngine()
+	e.AddAllowedRootKind("aws.organization")
+
+	graph := core.NewGraph()
+	org1 := core.NewEntity("org-1", core.EntityKind("aws.organization"), "Org 1")
+	graph.AddEntity(org1)
+	account1 := core.NewEntity("acct-1", core.EntityKind("aws.account"), "Account 1")
+	account1.SetOwner("org-1")
+	graph.AddEntity(account1)
+	org2 := core.NewEntity("org-2", core.EntityKind("aws.organization"), "Org 2")
+	graph.AddEntity(org2)
+	account2 := core.NewEntity("acct-2", core.EntityKind("aws.account"), "Account 2")
+	account2.SetOwner("org-2")
+	graph.AddEntity(account2)
+
+	result := e.Validate(graph, nil)
+	for _, f := range result.Findings {
+		if f.RuleID == "ownership-tree" {
+			t.Errorf("unexpected ownership-tree error for connected forest: %s", f.Message)
+		}
+		if f.RuleID == "single-owner" {
+			t.Errorf("unexpected single-owner error for authorized forest: %s", f.Message)
+		}
+		if f.RuleID == "root-entity" {
+			t.Errorf("unexpected root-entity error for authorized forest: %s", f.Message)
+		}
+	}
+}
+
+func TestOwnershipTreeDisconnectedForest(t *testing.T) {
+	e := newTestEngine()
+	e.AddAllowedRootKind("aws.organization")
+
+	graph := core.NewGraph()
+	org1 := core.NewEntity("org-1", core.EntityKind("aws.organization"), "Org 1")
+	graph.AddEntity(org1)
+	// acct-1 has an owner that does not exist (dangling), so it is unreachable
+	// from any root and the forest is disconnected.
+	orphan := core.NewEntity("orphan-1", core.EntityKind("aws.account"), "Orphan")
+	orphan.SetOwner("nonexistent")
+	graph.ForceAddEntity(orphan)
+
+	result := e.Validate(graph, nil)
+	found := false
+	for _, f := range result.Findings {
+		if f.RuleID == "ownership-tree" && f.Severity == SeverityError {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("expected ownership-tree error for disconnected forest")
+	}
+}
+
+func TestValidPropertyIntegerJSONFloat(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
+	rack := core.NewEntity("rack-01", kinds.Rack, "Rack 1")
+	rack.SetOwner("region-01")
+	rack.SetProperty("height_units", float64(42)) // JSON numbers decode to float64
+	graph.AddEntity(rack)
+
+	result := e.Validate(graph, nil)
+	if hasFindingFor(result, "valid-property", "rack-01") {
+		t.Error("integral float64 should not trigger valid-property warning")
+	}
+}
+
+func TestValidPropertyIntegerNonIntegralFloat(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
+	rack := core.NewEntity("rack-01", kinds.Rack, "Rack 1")
+	rack.SetOwner("region-01")
+	rack.SetProperty("height_units", 42.5)
+	graph.AddEntity(rack)
+
+	result := e.Validate(graph, nil)
+	if !hasFindingFor(result, "valid-property", "rack-01") {
+		t.Error("expected valid-property warning for non-integral float height_units")
+	}
+}
+
+func TestValidPropertyStringWithReference(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	graph.AddEntity(region)
+	net := core.NewEntity("net-01", kinds.Network, "Network 1")
+	net.SetOwner("region-01")
+	// gateway is a string property; the parser converts @-prefixed strings to
+	// ReferenceValue, which must not trigger a type warning.
+	net.SetProperty("gateway", core.NewReferenceValue("@gw-01"))
+	graph.AddEntity(net)
+
+	result := e.Validate(graph, nil)
+	if hasFindingFor(result, "valid-property", "net-01") {
+		t.Error("string property holding a ReferenceValue should not warn")
 	}
 }

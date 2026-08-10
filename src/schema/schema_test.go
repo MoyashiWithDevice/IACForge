@@ -608,3 +608,64 @@ func TestCoreSchemaInterfaceVlanIDProperty(t *testing.T) {
 		t.Errorf("expected max 4094, got %v", *vlanIDProp.Constraints.Max)
 	}
 }
+
+func TestValidatePropertyIntegerFloat(t *testing.T) {
+	s := CoreSchema()
+
+	// Integral float64 (as produced by encoding/json) is acceptable for integer.
+	integral := &PropertyDefinition{Name: "height_units", Type: PropertyTypeInteger}
+	if err := s.ValidateProperty(integral, float64(42)); err != nil {
+		t.Errorf("integer property with integral float64 should be accepted, got %v", err)
+	}
+
+	// Non-integral float64 must be rejected.
+	if err := s.ValidateProperty(integral, 42.5); err == nil {
+		t.Error("integer property with non-integral float64 should be rejected")
+	}
+
+	// Plain int remains accepted.
+	if err := s.ValidateProperty(integral, 42); err != nil {
+		t.Errorf("integer property with int should be accepted, got %v", err)
+	}
+}
+
+func TestValidatePropertyNumberUnsigned(t *testing.T) {
+	s := CoreSchema()
+	def := &PropertyDefinition{Name: "voltage", Type: PropertyTypeNumber}
+	if err := s.ValidateProperty(def, uint(240)); err != nil {
+		t.Errorf("number property with uint should be accepted, got %v", err)
+	}
+	if err := s.ValidateProperty(def, uint64(240)); err != nil {
+		t.Errorf("number property with uint64 should be accepted, got %v", err)
+	}
+}
+
+func TestValidateNumericConstraintsUnsigned(t *testing.T) {
+	s := CoreSchema()
+	def := &PropertyDefinition{
+		Name:        "vlan_id",
+		Type:        PropertyTypeInteger,
+		Constraints: &Constraint{Min: intPtr(1), Max: intPtr(4094)},
+	}
+	if err := s.ValidateProperty(def, uint(100)); err != nil {
+		t.Errorf("unsigned integer with min/max constraints should pass, got %v", err)
+	}
+	if err := s.ValidateProperty(def, uint(5000)); err == nil {
+		t.Error("unsigned integer exceeding max should be rejected")
+	}
+}
+
+func TestValidatePropertyStringReferenceValue(t *testing.T) {
+	s := CoreSchema()
+	def := &PropertyDefinition{
+		Name:        "gateway",
+		Type:        PropertyTypeString,
+		Constraints: &Constraint{MinLength: intPtrInt(1)},
+	}
+	if err := s.ValidateProperty(def, core.NewReferenceValue("@gw-01")); err != nil {
+		t.Errorf("string property with ReferenceValue should be accepted, got %v", err)
+	}
+	if err := s.ValidateProperty(def, "10.0.0.1"); err != nil {
+		t.Errorf("string property with plain string should be accepted, got %v", err)
+	}
+}

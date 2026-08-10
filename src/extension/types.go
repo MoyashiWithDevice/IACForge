@@ -44,9 +44,14 @@ type EntityKindContribution struct {
 }
 
 // RelationTypeContribution represents a single relation type contributed by an extension.
+// When Augment is true, the contribution adds participant kinds to an existing relation
+// type definition (e.g. a core type like belongs_to) instead of defining a new type.
+// Only Participant.SourceKinds/TargetKinds are merged; attempting to change other
+// definition fields (Direction, Properties, min/max participants) is rejected.
 type RelationTypeContribution struct {
 	Type       core.RelationType
 	Definition *schema.RelationTypeDefinition
+	Augment    bool
 }
 
 // ValidationRuleContribution represents a single validation rule contributed by an extension.

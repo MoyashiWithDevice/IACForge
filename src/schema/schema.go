@@ -2,6 +2,7 @@ package schema
 
 import (
 	"fmt"
+	"math"
 
 	"IACForge/src/core"
 )
@@ -242,6 +243,11 @@ func (s *Schema) ValidateProperty(propDef *PropertyDefinition, value interface{}
 		}
 	}
 
+	// Generic type validation (list and reference types are handled separately).
+	if err := validatePropertyType(propDef, value); err != nil {
+		return err
+	}
+
 	if propDef.Constraints != nil {
 		if err := validateConstraints(propDef, value); err != nil {
 			return fmt.Errorf("property %q: %w", propDef.Name, err)
@@ -262,6 +268,78 @@ func (s *Schema) ValidateProperty(propDef *PropertyDefinition, value interface{}
 	return nil
 }
 
+func validatePropertyType(propDef *PropertyDefinition, value interface{}) error {
+	switch propDef.Type {
+	case PropertyTypeString:
+		switch value.(type) {
+		case string, core.ReferenceValue:
+			// ReferenceValue is accepted because the parser converts any
+			// @-prefixed string into a reference regardless of the declared type.
+		default:
+			return fmt.Errorf("property %q: expected string value, got %T", propDef.Name, value)
+		}
+	case PropertyTypeInteger:
+		f, ok := numericValue(value)
+		if !ok {
+			return fmt.Errorf("property %q: expected integer value, got %T", propDef.Name, value)
+		}
+		if f != math.Trunc(f) {
+			return fmt.Errorf("property %q: expected integer value, got %T (%v)", propDef.Name, value, f)
+		}
+	case PropertyTypeNumber:
+		if _, ok := numericValue(value); !ok {
+			return fmt.Errorf("property %q: expected numeric value, got %T", propDef.Name, value)
+		}
+	case PropertyTypeBoolean:
+		if _, ok := value.(bool); !ok {
+			return fmt.Errorf("property %q: expected boolean value, got %T", propDef.Name, value)
+		}
+	case PropertyTypeMap:
+		switch value.(type) {
+		case map[string]interface{}, map[string]string:
+		default:
+			return fmt.Errorf("property %q: expected map value, got %T", propDef.Name, value)
+		}
+	case PropertyTypeList:
+		// List values are validated in ValidateProperty itself.
+	case PropertyTypeReference:
+		// Reference values are validated in ValidateProperty itself.
+	}
+	return nil
+}
+
+// numericValue coerces a value to float64 if it is a numeric type.
+func numericValue(v interface{}) (float64, bool) {
+	switch n := v.(type) {
+	case int:
+		return float64(n), true
+	case int8:
+		return float64(n), true
+	case int16:
+		return float64(n), true
+	case int32:
+		return float64(n), true
+	case int64:
+		return float64(n), true
+	case uint:
+		return float64(n), true
+	case uint8:
+		return float64(n), true
+	case uint16:
+		return float64(n), true
+	case uint32:
+		return float64(n), true
+	case uint64:
+		return float64(n), true
+	case float32:
+		return float64(n), true
+	case float64:
+		return n, true
+	default:
+		return 0, false
+	}
+}
+
 func validateConstraints(propDef *PropertyDefinition, value interface{}) error {
 	c := propDef.Constraints
 
@@ -280,17 +358,8 @@ func validateConstraints(propDef *PropertyDefinition, value interface{}) error {
 }
 
 func validateNumericConstraints(c *Constraint, value interface{}) error {
-	var fval float64
-	switch v := value.(type) {
-	case int:
-		fval = float64(v)
-	case int64:
-		fval = float64(v)
-	case float64:
-		fval = v
-	case float32:
-		fval = float64(v)
-	default:
+	fval, ok := numericValue(value)
+	if !ok {
 		return fmt.Errorf("expected numeric value, got %T", value)
 	}
 
@@ -324,6 +393,14 @@ func validateListConstraints(c *Constraint, value interface{}) error {
 }
 
 func validateStringConstraints(c *Constraint, value interface{}) error {
+	switch v := value.(type) {
+	case core.ReferenceValue:
+		value = v.String()
+	case string:
+	default:
+		return fmt.Errorf("expected string value, got %T", value)
+	}
+
 	sval, ok := value.(string)
 	if !ok {
 		return fmt.Errorf("expected string value, got %T", value)

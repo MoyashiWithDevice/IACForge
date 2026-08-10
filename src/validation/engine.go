@@ -14,19 +14,68 @@ import (
 
 // Engine is the validation engine that evaluates rules against a graph.
 type Engine struct {
-	schema   *schema.Schema
-	rules    map[string]RuleFunc
-	ruleDefs map[string]*Rule
+	schema           *schema.Schema
+	rules            map[string]RuleFunc
+	ruleDefs         map[string]*Rule
+	allowedRootKinds map[core.EntityKind]bool
 }
 
 // NewEngine creates a new validation engine with the given schema.
 func NewEngine(s *schema.Schema) *Engine {
 	e := &Engine{
-		schema:   s,
-		rules:    make(map[string]RuleFunc),
-		ruleDefs: make(map[string]*Rule),
+		schema:           s,
+		rules:            make(map[string]RuleFunc),
+		ruleDefs:         make(map[string]*Rule),
+		allowedRootKinds: make(map[core.EntityKind]bool),
 	}
 	return e
+}
+
+// AddAllowedRootKind grants root authority to the given entity kind. A graph may
+// have multiple root entities only when every root's kind has been granted root
+// authority (e.g. an extension registering aws.organization).
+func (e *Engine) AddAllowedRootKind(kind core.EntityKind) {
+	e.allowedRootKinds[kind] = true
+}
+
+// AllowedRootKinds returns the entity kinds granted root authority.
+func (e *Engine) AllowedRootKinds() []core.EntityKind {
+	result := make([]core.EntityKind, 0, len(e.allowedRootKinds))
+	for k := range e.allowedRootKinds {
+		result = append(result, k)
+	}
+	sort.Slice(result, func(i, j int) bool { return result[i] < result[j] })
+	return result
+}
+
+// IsAllowedRootKind reports whether the given kind has been granted root authority.
+func (e *Engine) IsAllowedRootKind(kind core.EntityKind) bool {
+	return e.allowedRootKinds[kind]
+}
+
+// rootEntities returns the root entity IDs (entities without an owner).
+func rootEntities(g *core.Graph) []string {
+	var roots []string
+	for _, e := range g.Entities() {
+		if e.Owner == "" {
+			roots = append(roots, e.ID)
+		}
+	}
+	sort.Strings(roots)
+	return roots
+}
+
+// disallowedRoots returns the root entity IDs whose kind has not been granted
+// root authority.
+func (e *Engine) disallowedRoots(g *core.Graph) []string {
+	var disallowed []string
+	for _, ent := range g.Entities() {
+		if ent.Owner == "" && !e.IsAllowedRootKind(ent.Kind) {
+			disallowed = append(disallowed, ent.ID)
+		}
+	}
+	sort.Strings(disallowed)
+	return disallowed
 }
 
 // RegisterRule registers a validation rule with the engine.
@@ -164,7 +213,15 @@ func registerGraphIntegrityRules(e *Engine) {
 		Name:     "Single Owner",
 		Severity: SeverityError,
 		Scope:    ScopeOwnership,
-	}, ruleSingleOwner)
+	}, e.ruleSingleOwner)
+
+	e.RegisterRule(&Rule{
+		ID:          "valid-property",
+		Name:        "Valid Property",
+		Description: "entity spec and relation properties MUST conform to the schema property definitions (type, enum, required, min/max); undefined properties are reported",
+		Severity:    SeverityWarning,
+		Scope:       ScopeGraph,
+	}, ruleValidProperty)
 }
 
 func registerEntityRules(e *Engine) {
@@ -275,7 +332,7 @@ func registerOwnershipRules(e *Engine) {
 		Name:     "Ownership Tree",
 		Severity: SeverityError,
 		Scope:    ScopeOwnership,
-	}, ruleOwnershipTree)
+	}, e.ruleOwnershipTree)
 
 	e.RegisterRule(&Rule{
 		ID:       "no-ownership-cycle",
@@ -289,7 +346,7 @@ func registerOwnershipRules(e *Engine) {
 		Name:     "Root Entity",
 		Severity: SeverityError,
 		Scope:    ScopeOwnership,
-	}, ruleRootEntity)
+	}, e.ruleRootEntity)
 }
 
 func registerReferenceRules(e *Engine) {
@@ -441,45 +498,115 @@ func ruleValidOwner(ctx *Context) []Finding {
 	return findings
 }
 
-func ruleSingleOwner(ctx *Context) []Finding {
+func ruleValidProperty(ctx *Context) []Finding {
 	g := ctx.Graph.(*core.Graph)
+	s := ctx.Schema.(*schema.Schema)
 	var findings []Finding
 
-	// Find root entities (those without owner)
-	var roots []string
 	for _, e := range g.Entities() {
-		if e.Owner == "" {
-			roots = append(roots, e.ID)
+		def, ok := s.GetEntityKindDef(e.Kind)
+		if !ok {
+			continue // undefined kind is handled by valid-kind
+		}
+		findings = append(findings, validateObjectProperties(s, e.ID, ObjectTypeEntity, def.Properties, e.Properties)...)
+	}
+
+	for _, r := range g.Relations() {
+		def, ok := s.GetRelationTypeDef(r.Type)
+		if !ok {
+			continue // undefined type is handled by valid-type
+		}
+		findings = append(findings, validateObjectProperties(s, r.ID, ObjectTypeRelation, def.Properties, r.Properties)...)
+	}
+
+	return findings
+}
+
+// validateObjectProperties validates an object's spec properties against the
+// schema property definitions, reporting type/enum/constraint violations,
+// missing required properties, and undefined properties as warnings.
+func validateObjectProperties(s *schema.Schema, objectID string, objectType ObjectType, defs []schema.PropertyDefinition, values map[string]interface{}) []Finding {
+	var findings []Finding
+	defined := make(map[string]bool, len(defs))
+
+	for i := range defs {
+		def := defs[i]
+		defined[def.Name] = true
+
+		value, present := values[def.Name]
+		if !present {
+			if def.Required {
+				findings = append(findings, Finding{
+					Severity:   SeverityWarning,
+					Message:    fmt.Sprintf("%s %q is missing required property %q", objectType, objectID, def.Name),
+					ObjectID:   objectID,
+					ObjectType: objectType,
+				})
+			}
+			continue
+		}
+
+		if err := s.ValidateProperty(&def, value); err != nil {
+			findings = append(findings, Finding{
+				Severity:   SeverityWarning,
+				Message:    fmt.Sprintf("%s %q property %q: %v", objectType, objectID, def.Name, err),
+				ObjectID:   objectID,
+				ObjectType: objectType,
+			})
 		}
 	}
 
+	for key := range values {
+		if !defined[key] {
+			findings = append(findings, Finding{
+				Severity:   SeverityWarning,
+				Message:    fmt.Sprintf("%s %q has undefined property %q", objectType, objectID, key),
+				ObjectID:   objectID,
+				ObjectType: objectType,
+			})
+		}
+	}
+
+	return findings
+}
+
+func (e *Engine) ruleSingleOwner(ctx *Context) []Finding {
+	g := ctx.Graph.(*core.Graph)
+	var findings []Finding
+
+	roots := rootEntities(g)
+
 	// For each entity with an owner, verify the owner exists
-	for _, e := range g.Entities() {
-		if e.Owner == "" {
+	for _, ent := range g.Entities() {
+		if ent.Owner == "" {
 			continue
 		}
-		_, found := g.GetEntity(e.Owner)
+		_, found := g.GetEntity(ent.Owner)
 		if !found {
 			findings = append(findings, Finding{
 				Severity:   SeverityError,
-				Message:    fmt.Sprintf("entity %q has no valid owner (references non-existent entity %q)", e.ID, e.Owner),
-				ObjectID:   e.ID,
+				Message:    fmt.Sprintf("entity %q has no valid owner (references non-existent entity %q)", ent.ID, ent.Owner),
+				ObjectID:   ent.ID,
 				ObjectType: ObjectTypeEntity,
 			})
 		}
 	}
 
-	// Check that exactly one root exists (complements root-entity rule)
+	// Check that exactly one root exists (complements root-entity rule),
+	// unless every root's kind has been granted root authority.
 	if len(roots) == 0 {
 		findings = append(findings, Finding{
 			Severity: SeverityError,
 			Message:  "no root entity found (every entity has an owner, but one root is required)",
 		})
 	} else if len(roots) > 1 {
-		findings = append(findings, Finding{
-			Severity: SeverityError,
-			Message:  fmt.Sprintf("multiple root entities found: %v (exactly one root is required)", roots),
-		})
+		disallowed := e.disallowedRoots(g)
+		if len(disallowed) > 0 {
+			findings = append(findings, Finding{
+				Severity: SeverityError,
+				Message:  fmt.Sprintf("multiple root entities found: %v (exactly one root is required unless every root is of a root-authorized kind; disallowed roots: %v)", roots, disallowed),
+			})
+		}
 	}
 
 	return findings
@@ -820,16 +947,11 @@ func ruleValidParticipantKind(ctx *Context) []Finding {
 	return findings
 }
 
-func ruleOwnershipTree(ctx *Context) []Finding {
+func (e *Engine) ruleOwnershipTree(ctx *Context) []Finding {
 	g := ctx.Graph.(*core.Graph)
 	var findings []Finding
 
-	var roots []string
-	for _, e := range g.Entities() {
-		if e.Owner == "" {
-			roots = append(roots, e.ID)
-		}
-	}
+	roots := rootEntities(g)
 
 	if len(roots) == 0 {
 		findings = append(findings, Finding{
@@ -840,14 +962,18 @@ func ruleOwnershipTree(ctx *Context) []Finding {
 	}
 
 	if len(roots) > 1 {
-		findings = append(findings, Finding{
-			Severity: SeverityError,
-			Message:  fmt.Sprintf("multiple root entities found: %v (ownership tree must have exactly one root)", roots),
-		})
+		disallowed := e.disallowedRoots(g)
+		if len(disallowed) > 0 {
+			findings = append(findings, Finding{
+				Severity: SeverityError,
+				Message:  fmt.Sprintf("multiple root entities found: %v (ownership tree must have exactly one root unless every root is of a root-authorized kind; disallowed roots: %v)", roots, disallowed),
+			})
+		}
 	}
 
+	// Verify the forest reaches every entity from the set of roots.
+	visited := make(map[string]bool)
 	for _, rootID := range roots {
-		visited := make(map[string]bool)
 		visited[rootID] = true
 		queue := []string{rootID}
 		for len(queue) > 0 {
@@ -861,12 +987,12 @@ func ruleOwnershipTree(ctx *Context) []Finding {
 				queue = append(queue, child.ID)
 			}
 		}
-		if len(visited) != g.EntityCount() {
-			findings = append(findings, Finding{
-				Severity: SeverityError,
-				Message:  fmt.Sprintf("ownership tree is disconnected: root %q reaches %d of %d entities", rootID, len(visited), g.EntityCount()),
-			})
-		}
+	}
+	if len(visited) != g.EntityCount() {
+		findings = append(findings, Finding{
+			Severity: SeverityError,
+			Message:  fmt.Sprintf("ownership tree is disconnected: roots %v reach %d of %d entities", roots, len(visited), g.EntityCount()),
+		})
 	}
 
 	return findings
@@ -918,16 +1044,11 @@ func detectCycle(g *core.Graph, entityID string, visited map[string]bool) error 
 	return nil
 }
 
-func ruleRootEntity(ctx *Context) []Finding {
+func (e *Engine) ruleRootEntity(ctx *Context) []Finding {
 	g := ctx.Graph.(*core.Graph)
 	var findings []Finding
 
-	var roots []string
-	for _, e := range g.Entities() {
-		if e.Owner == "" {
-			roots = append(roots, e.ID)
-		}
-	}
+	roots := rootEntities(g)
 
 	if len(roots) == 0 {
 		findings = append(findings, Finding{
@@ -936,10 +1057,13 @@ func ruleRootEntity(ctx *Context) []Finding {
 		})
 	} else if len(roots) > 1 {
 		sort.Strings(roots)
-		findings = append(findings, Finding{
-			Severity: SeverityError,
-			Message:  fmt.Sprintf("multiple root entities found: %v", roots),
-		})
+		disallowed := e.disallowedRoots(g)
+		if len(disallowed) > 0 {
+			findings = append(findings, Finding{
+				Severity: SeverityError,
+				Message:  fmt.Sprintf("multiple root entities found: %v (disallowed roots: %v)", roots, disallowed),
+			})
+		}
 	}
 
 	return findings

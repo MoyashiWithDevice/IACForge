@@ -216,6 +216,10 @@ func (m *Manager) validateNoCoreConflict(ext *Extension) error {
 		}
 	}
 	for _, rt := range ext.RelationTypes {
+		if rt.Augment {
+			// Augmenting an existing type (e.g. adding kinds to a core type) is allowed.
+			continue
+		}
 		if isCoreRelationType(rt.Type) {
 			return fmt.Errorf("%w: relation type %q is a core type", ErrCoreConflict, rt.Type)
 		}
