@@ -53,7 +53,7 @@ Commands:
   validate   Validate a YAML infrastructure model
   info       Show summary of a YAML infrastructure model
   render     Render a view to an artifact (svg, markdown, mermaid, json)
-  query      Execute a query against a model
+  query      Execute a query against a model (formats: text, json, mermaid, markdown)
   mcp        Start MCP server (SSE transport)
   version    Print version
 
@@ -69,6 +69,8 @@ Examples:
   iacforge info
   iacforge render --format markdown
   iacforge query --kind server
+  iacforge query --kind server --format mermaid
+  iacforge query --type connects --format json --output out.json
   iacforge mcp --port 8080`)
 }
 
@@ -284,6 +286,8 @@ func cmdQuery(args []string) {
 
 	kind := ""
 	relType := ""
+	format := "text"
+	output := ""
 
 	for i := 0; i < len(args)-1; i++ {
 		switch args[i] {
@@ -292,6 +296,12 @@ func cmdQuery(args []string) {
 			i++
 		case "--type":
 			relType = args[i+1]
+			i++
+		case "--format":
+			format = args[i+1]
+			i++
+		case "--output":
+			output = args[i+1]
 			i++
 		}
 	}
@@ -324,9 +334,39 @@ func cmdQuery(args []string) {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Results: %d items\n\n", result.Count)
-	for _, item := range result.Results {
-		fmt.Printf("  %-12s %s (%s)\n", item.Type, item.ID, item.Path)
+	content, err := formatQueryOutput(qe, result, format)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Query error: %v\n", err)
+		os.Exit(1)
+	}
+
+	if output != "" {
+		if err := os.WriteFile(output, []byte(content), 0644); err != nil {
+			fmt.Fprintf(os.Stderr, "Write error: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("Output written to %s\n", output)
+	} else {
+		fmt.Print(content)
+	}
+}
+
+// formatQueryOutput formats a query result as text, json, mermaid, or markdown.
+func formatQueryOutput(qe *query.Engine, result *query.Result, format string) (string, error) {
+	switch format {
+	case "text":
+		var b strings.Builder
+		fmt.Fprintf(&b, "Results: %d items\n\n", result.Count)
+		for _, item := range result.Results {
+			fmt.Fprintf(&b, "  %-12s %s (%s)\n", item.Type, item.ID, item.Path)
+		}
+		return b.String(), nil
+	case "json":
+		return string(result.JSON()), nil
+	case "mermaid", "markdown", "md":
+		return renderer.RenderFormat(qe.ToViewResult(result, true), format)
+	default:
+		return "", fmt.Errorf("unknown format: %s (supported: text, json, mermaid, markdown)", format)
 	}
 }
 

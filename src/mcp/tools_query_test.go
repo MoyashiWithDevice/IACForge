@@ -139,6 +139,96 @@ func TestQueryRelatedDescendants(t *testing.T) {
 	}
 }
 
+func TestQueryEntitiesMermaid(t *testing.T) {
+	sm := NewSessionManager()
+	_ = seedTestGraph(t, sm)
+	s := NewMCPServer(sm)
+
+	req := mcp.CallToolRequest{
+		Params: mcp.CallToolParams{
+			Name: "query_entities",
+			Arguments: map[string]interface{}{
+				"kind":   "server",
+				"format": "mermaid",
+			},
+		},
+	}
+	res, err := s.GetTool("query_entities").Handler(context.Background(), req)
+	if err != nil {
+		t.Fatalf("handler error: %v", err)
+	}
+	if res.IsError {
+		t.Fatalf("expected success, got: %+v", res)
+	}
+	text := toolResultText(t, res)
+
+	for _, want := range []string{"graph TB", "srv_01", "srv_02"} {
+		if !strings.Contains(text, want) {
+			t.Errorf("expected %q in mermaid output:\n%s", want, text)
+		}
+	}
+	if strings.Contains(text, "vm_01") {
+		t.Errorf("did not expect out-of-result entity vm_01 in mermaid output:\n%s", text)
+	}
+}
+
+func TestQueryRelatedMarkdown(t *testing.T) {
+	sm := NewSessionManager()
+	_ = seedTestGraph(t, sm)
+	s := NewMCPServer(sm)
+
+	req := mcp.CallToolRequest{
+		Params: mcp.CallToolParams{
+			Name: "query_related",
+			Arguments: map[string]interface{}{
+				"from":      "srv-01",
+				"operation": "descendants",
+				"format":    "markdown",
+			},
+		},
+	}
+	res, err := s.GetTool("query_related").Handler(context.Background(), req)
+	if err != nil {
+		t.Fatalf("handler error: %v", err)
+	}
+	if res.IsError {
+		t.Fatalf("expected success, got: %+v", res)
+	}
+	text := toolResultText(t, res)
+
+	for _, want := range []string{"## Entities", "vm-01", "net-mgmt", "eth0"} {
+		if !strings.Contains(text, want) {
+			t.Errorf("expected %q in markdown output:\n%s", want, text)
+		}
+	}
+}
+
+func TestQueryEntitiesUnknownFormat(t *testing.T) {
+	sm := NewSessionManager()
+	_ = seedTestGraph(t, sm)
+	s := NewMCPServer(sm)
+
+	req := mcp.CallToolRequest{
+		Params: mcp.CallToolParams{
+			Name: "query_entities",
+			Arguments: map[string]interface{}{
+				"kind":   "server",
+				"format": "xml",
+			},
+		},
+	}
+	res, err := s.GetTool("query_entities").Handler(context.Background(), req)
+	if err != nil {
+		t.Fatalf("handler error: %v", err)
+	}
+	if !res.IsError {
+		t.Fatal("expected error result for unknown format")
+	}
+	if !strings.Contains(toolResultText(t, res), "unknown format") {
+		t.Errorf("expected unknown format message, got: %s", toolResultText(t, res))
+	}
+}
+
 func TestResolvePath(t *testing.T) {
 	sm := NewSessionManager()
 	_ = seedTestGraph(t, sm)

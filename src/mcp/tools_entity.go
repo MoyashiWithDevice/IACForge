@@ -9,38 +9,8 @@ import (
 	mcpserver "github.com/mark3labs/mcp-go/server"
 
 	"IACForge/src/core"
+	"IACForge/src/query"
 )
-
-// entityToJSONMap converts an Entity to a map with snake_case keys for consistent JSON output.
-func entityToJSONMap(e *core.Entity) map[string]interface{} {
-	m := map[string]interface{}{
-		"id":   e.ID,
-		"kind": string(e.Kind),
-		"name": e.Name,
-	}
-	if e.Owner != "" {
-		m["owner"] = e.Owner
-	}
-	if e.Description != "" {
-		m["description"] = e.Description
-	}
-	if e.Status != "" {
-		m["status"] = string(e.Status)
-	}
-	if len(e.Tags) > 0 {
-		m["tags"] = e.Tags
-	}
-	if len(e.Labels) > 0 {
-		m["labels"] = e.Labels
-	}
-	if len(e.Extensions) > 0 {
-		m["extensions"] = e.Extensions
-	}
-	if len(e.Properties) > 0 {
-		m["spec"] = e.Properties
-	}
-	return m
-}
 
 func registerEntityMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 	s.AddTool(
@@ -126,7 +96,7 @@ func registerEntityMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 			if !ok {
 				return toolError(fmt.Sprintf("entity not found: %s", id)), nil
 			}
-			data, _ := json.MarshalIndent(entityToJSONMap(e), "", "  ")
+			data, _ := json.MarshalIndent(query.EntityJSONMap(e), "", "  ")
 			return toolResult(string(data)), nil
 		},
 	)

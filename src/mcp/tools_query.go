@@ -10,6 +10,7 @@ import (
 
 	"IACForge/src/core"
 	"IACForge/src/query"
+	"IACForge/src/renderer"
 )
 
 func registerQueryMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
@@ -18,6 +19,7 @@ func registerQueryMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 			mcp.WithDescription("Query entities by kind and optional conditions. Conditions are a JSON list of {\"field\",\"operator\",\"value\"}; operators include eq, ne, in, nin, gt, ge, lt, le, contains, starts_with, ends_with, matches, defined, undefined."),
 			mcp.WithString("kind", mcp.Description("Entity kind to filter by (e.g. server)")),
 			mcp.WithString("where_json", mcp.Description("JSON list of conditions, e.g. [{\"field\":\"status\",\"operator\":\"eq\",\"value\":\"active\"}]")),
+			mcp.WithString("format", mcp.Description("Output format (json, mermaid, markdown). Default: json")),
 			mcp.WithNumber("limit", mcp.Description("Maximum number of results")),
 			mcp.WithNumber("offset", mcp.Description("Number of results to skip")),
 		),
@@ -43,12 +45,13 @@ func registerQueryMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 				q.Offset = offset
 			}
 
-			result, err := query.NewEngine(sd.Graph).Execute(q)
+			eng := query.NewEngine(sd.Graph)
+			result, err := eng.Execute(q)
 			if err != nil {
 				return toolError(fmt.Sprintf("query failed: %v", err)), nil
 			}
 
-			return toolResult(string(queryResultsJSON(result))), nil
+			return renderQueryResult(eng, result, req.GetString("format", "json")), nil
 		},
 	)
 
@@ -58,6 +61,7 @@ func registerQueryMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 			mcp.WithString("from", mcp.Required(), mcp.Description("Starting entity ID")),
 			mcp.WithString("operation", mcp.Required(), mcp.Description("Traversal operation (children, parent, ancestors, descendants, related, sources, targets, outgoing, incoming, reverse_ownership)")),
 			mcp.WithString("relation_type", mcp.Description("Optional relation type filter for relation traversals")),
+			mcp.WithString("format", mcp.Description("Output format (json, mermaid, markdown). Default: json")),
 			mcp.WithNumber("depth", mcp.Description("Traversal depth limit")),
 		),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -84,12 +88,13 @@ func registerQueryMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 			q.Select = query.NewSelectClause()
 			q.Traverse = traverse
 
-			result, err := query.NewEngine(sd.Graph).Execute(q)
+			eng := query.NewEngine(sd.Graph)
+			result, err := eng.Execute(q)
 			if err != nil {
 				return toolError(fmt.Sprintf("traverse failed: %v", err)), nil
 			}
 
-			return toolResult(string(queryResultsJSON(result))), nil
+			return renderQueryResult(eng, result, req.GetString("format", "json")), nil
 		},
 	)
 
@@ -109,7 +114,7 @@ func registerQueryMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 			if !ok {
 				return toolError(fmt.Sprintf("reference %q could not be resolved", ref)), nil
 			}
-			data, _ := json.MarshalIndent(entityToJSONMap(e), "", "  ")
+			data, _ := json.MarshalIndent(query.EntityJSONMap(e), "", "  ")
 			return toolResult(string(data)), nil
 		},
 	)
@@ -195,74 +200,20 @@ func parseConditions(jsonStr string) (*query.WhereClause, error) {
 	return where, nil
 }
 
-// queryResultsJSON serializes query results as JSON, mapping objects to
-// snake_case summaries consistent with other MCP tool responses.
-func queryResultsJSON(result *query.Result) []byte {
-	type resultItem struct {
-		ID     string      `json:"id"`
-		Type   string      `json:"type"`
-		Path   string      `json:"path,omitempty"`
-		Object interface{} `json:"object"`
-	}
-
-	items := make([]resultItem, 0, len(result.Results))
-	for _, item := range result.Results {
-		var obj interface{}
-		switch o := item.Object.(type) {
-		case *core.Entity:
-			obj = entityToJSONMap(o)
-		case *core.Relation:
-			obj = relationToJSONMap(o)
-		default:
-			obj = o
+// renderQueryResult formats a query result for MCP tool output.
+func renderQueryResult(eng *query.Engine, result *query.Result, format string) *mcp.CallToolResult {
+	switch format {
+	case "json", "":
+		return toolResult(string(result.JSON()))
+	case "mermaid", "markdown", "md":
+		content, err := renderer.RenderFormat(eng.ToViewResult(result, true), format)
+		if err != nil {
+			return toolError(fmt.Sprintf("render failed: %v", err))
 		}
-		items = append(items, resultItem{
-			ID:     item.ID,
-			Type:   item.Type,
-			Path:   item.Path,
-			Object: obj,
-		})
-	}
-
-	resp := map[string]interface{}{
-		"count":     result.Count,
-		"truncated": result.Truncated,
-		"results":   items,
-	}
-	data, _ := json.MarshalIndent(resp, "", "  ")
-	return data
-}
-
-// relationToJSONMap converts a Relation to a map with snake_case keys.
-func relationToJSONMap(r *core.Relation) map[string]interface{} {
-	m := map[string]interface{}{
-		"id":        r.ID,
-		"type":      string(r.Type),
-		"direction": string(r.Direction),
-	}
-	switch r.Direction {
-	case core.DirectionSymmetric:
-		m["participants"] = r.Participants.List
+		return toolResult(content)
 	default:
-		m["source"] = r.Source()
-		m["target"] = r.Target()
+		return toolError(fmt.Sprintf("unknown format: %q (supported: json, mermaid, markdown)", format))
 	}
-	if r.Description != "" {
-		m["description"] = r.Description
-	}
-	if r.Status != "" {
-		m["status"] = string(r.Status)
-	}
-	if len(r.Tags) > 0 {
-		m["tags"] = r.Tags
-	}
-	if len(r.Labels) > 0 {
-		m["labels"] = r.Labels
-	}
-	if len(r.Properties) > 0 {
-		m["spec"] = r.Properties
-	}
-	return m
 }
 
 // valueReferences reports whether a property value (recursively) references the given ID.

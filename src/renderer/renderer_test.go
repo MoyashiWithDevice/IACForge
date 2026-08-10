@@ -1,6 +1,7 @@
 package renderer
 
 import (
+	"strings"
 	"testing"
 
 	"IACForge/src/core"
@@ -141,6 +142,37 @@ func TestMermaidRendererRender(t *testing.T) {
 	}
 	if len(artifact.Content) == 0 {
 		t.Error("expected non-empty content")
+	}
+}
+
+func TestMermaidRendererSymmetricRelation(t *testing.T) {
+	g := core.NewGraph()
+	e1 := core.NewEntity("eth0-01", "interface", "eth0")
+	g.AddEntity(e1)
+	e2 := core.NewEntity("eth0-02", "interface", "eth0")
+	g.AddEntity(e2)
+	r1 := core.NewSymmetricRelation("rel-conn", "connects", []string{"eth0-01", "eth0-02"})
+	g.AddRelation(r1)
+
+	v := view.NewView("test-view", "Test View")
+	engine := view.NewEngine(g)
+	result, err := engine.Apply(v)
+	if err != nil {
+		t.Fatalf("failed to apply view: %v", err)
+	}
+
+	renderer := NewMermaidRenderer()
+	artifact, err := renderer.Render(result, nil)
+	if err != nil {
+		t.Fatalf("failed to render: %v", err)
+	}
+
+	content := artifact.Content
+	if !strings.Contains(content, "eth0_01 -->|connects| eth0_02") {
+		t.Errorf("expected symmetric edge between participant endpoints:\n%s", content)
+	}
+	if strings.Contains(content, "-->|connects| \n") {
+		t.Errorf("found dangling edge without endpoints:\n%s", content)
 	}
 }
 
@@ -337,5 +369,74 @@ func TestEscapeMermaid(t *testing.T) {
 		if result != test.expected {
 			t.Errorf("escapeMermaid(%s) = %s, expected %s", test.input, result, test.expected)
 		}
+	}
+}
+
+func TestRenderFormat(t *testing.T) {
+	g := core.NewGraph()
+	g.AddEntity(core.NewEntity("srv-1", "server", "Server 1"))
+
+	v := view.NewView("test-view", "Test View")
+	engine := view.NewEngine(g)
+	result, err := engine.Apply(v)
+	if err != nil {
+		t.Fatalf("failed to apply view: %v", err)
+	}
+
+	mermaid, err := RenderFormat(result, "mermaid")
+	if err != nil {
+		t.Fatalf("mermaid render failed: %v", err)
+	}
+	if !strings.HasPrefix(mermaid, "graph ") {
+		t.Errorf("expected mermaid graph, got:\n%s", mermaid)
+	}
+
+	for _, format := range []string{"markdown", "md"} {
+		md, err := RenderFormat(result, format)
+		if err != nil {
+			t.Fatalf("%s render failed: %v", format, err)
+		}
+		if !strings.Contains(md, "srv-1") {
+			t.Errorf("expected srv-1 in %s output:\n%s", format, md)
+		}
+	}
+}
+
+func TestRenderFormatUnknown(t *testing.T) {
+	v := view.NewView("test-view", "Test View")
+	engine := view.NewEngine(core.NewGraph())
+	result, err := engine.Apply(v)
+	if err != nil {
+		t.Fatalf("failed to apply view: %v", err)
+	}
+
+	if _, err := RenderFormat(result, "xml"); err == nil {
+		t.Error("expected error for unknown format")
+	} else if !strings.Contains(err.Error(), "unknown render format") {
+		t.Errorf("expected unknown render format error, got: %v", err)
+	}
+}
+
+func TestMermaidRendererSkipsDanglingEdge(t *testing.T) {
+	e1 := core.NewEntity("srv-1", "server", "Server 1")
+	e2 := core.NewEntity("srv-2", "server", "Server 2")
+	rel := core.NewDirectedRelation("rel-1", "connects", "srv-1", "missing")
+
+	vr := &view.ViewResult{
+		ViewID:           "dangling",
+		Title:            "Dangling",
+		VisibleEntities:  []*core.Entity{e1, e2},
+		VisibleRelations: []*core.Relation{rel},
+		Annotations:      make(map[string]map[string]interface{}),
+	}
+
+	artifact, err := NewMermaidRenderer().Render(vr, nil)
+	if err != nil {
+		t.Fatalf("failed to render: %v", err)
+	}
+
+	content := artifact.Content
+	if strings.Contains(content, "missing") {
+		t.Errorf("found dangling edge referencing missing node:\n%s", content)
 	}
 }

@@ -69,9 +69,35 @@ func (r *MermaidRenderer) Render(v *view.ViewResult, opts *RenderOptions) (*Arti
 		mermaid.WriteString("    end\n")
 	}
 
+	nodeSet := make(map[string]struct{}, len(v.VisibleEntities))
+	for _, entity := range v.VisibleEntities {
+		nodeSet[entity.ID] = struct{}{}
+	}
+
 	for _, rel := range v.VisibleRelations {
-		source := sanitizeID(rel.Source())
-		target := sanitizeID(rel.Target())
+		source, target := rel.Source(), rel.Target()
+		if source == "" || target == "" {
+			// Symmetric relations (e.g. connects) carry a participant list
+			// rather than source/target. Draw the edge between the first two.
+			// Relations with more than two participants are only partially
+			// drawn; Mermaid has no native hyperedge support.
+			ids := rel.ParticipantIDs()
+			if len(ids) >= 2 {
+				source, target = ids[0], ids[1]
+			}
+		}
+		if source == "" || target == "" {
+			// Skip malformed relations without two endpoints.
+			continue
+		}
+		if _, ok := nodeSet[source]; !ok {
+			continue
+		}
+		if _, ok := nodeSet[target]; !ok {
+			continue
+		}
+		source = sanitizeID(source)
+		target = sanitizeID(target)
 		edgeLabel := string(rel.Type)
 		if rel.Description != "" {
 			edgeLabel = rel.Description
