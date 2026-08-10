@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/mark3labs/mcp-go/mcp"
+
+	_ "IACForge/src/extension/builtin/aws"
 )
 
 func TestExtensionToolsRegistered(t *testing.T) {
@@ -19,7 +21,7 @@ func TestExtensionToolsRegistered(t *testing.T) {
 	}
 }
 
-func TestListExtensionsEmpty(t *testing.T) {
+func TestListExtensionsIncludesBuiltin(t *testing.T) {
 	sm := NewSessionManager()
 	s := NewMCPServer(sm)
 
@@ -37,12 +39,12 @@ func TestListExtensionsEmpty(t *testing.T) {
 		t.Fatalf("expected success, got: %+v", res)
 	}
 	text := toolResultText(t, res)
-	if !strings.Contains(text, "[]") {
-		t.Errorf("expected empty list, got: %s", text)
+	if !strings.Contains(text, `"id": "iacforge.aws"`) {
+		t.Errorf("expected builtin AWS extension in list, got: %s", text)
 	}
 }
 
-func TestListExtensionKindsEmpty(t *testing.T) {
+func TestListExtensionKindsIncludesBuiltin(t *testing.T) {
 	sm := NewSessionManager()
 	s := NewMCPServer(sm)
 
@@ -60,12 +62,12 @@ func TestListExtensionKindsEmpty(t *testing.T) {
 		t.Fatalf("expected success, got: %+v", res)
 	}
 	text := toolResultText(t, res)
-	if !strings.Contains(text, "{}") {
-		t.Errorf("expected empty object, got: %s", text)
+	if !strings.Contains(text, "iacforge.aws") || !strings.Contains(text, "aws.ec2") {
+		t.Errorf("expected builtin AWS extension kinds, got: %s", text)
 	}
 }
 
-func TestLoadExtensionDirEmpty(t *testing.T) {
+func TestLoadExtensionDirEmptyKeepsBuiltin(t *testing.T) {
 	sm := NewSessionManager()
 	s := NewMCPServer(sm)
 
@@ -83,8 +85,8 @@ func TestLoadExtensionDirEmpty(t *testing.T) {
 		t.Fatalf("expected success, got: %+v", res)
 	}
 	text := toolResultText(t, res)
-	if !strings.Contains(text, "Loaded 0 extension(s)") {
-		t.Errorf("expected 0 loaded extensions, got: %s", text)
+	if !strings.Contains(text, "iacforge.aws") {
+		t.Errorf("expected builtin AWS extension in load order, got: %s", text)
 	}
 }
 
