@@ -14,7 +14,6 @@ var (
 	ErrOwnerNotFound       = errors.New("owner entity not found")
 	ErrOwnershipCycle      = errors.New("ownership cycle detected")
 	ErrInvalidReference    = errors.New("invalid reference to non-existent object")
-	ErrOwnershipTreeBroken = errors.New("ownership tree is broken")
 )
 
 type Graph struct {
@@ -55,14 +54,6 @@ func (g *Graph) ForceAddRelation(r *Relation) {
 func (g *Graph) GetEntity(id string) (*Entity, bool) {
 	e, ok := g.entities[id]
 	return e, ok
-}
-
-func (g *Graph) MustGetEntity(id string) *Entity {
-	e, ok := g.entities[id]
-	if !ok {
-		panic(fmt.Sprintf("entity not found: %s", id))
-	}
-	return e
 }
 
 func (g *Graph) RemoveEntity(id string) bool {
@@ -141,14 +132,6 @@ func (g *Graph) isValidReference(ref string) bool {
 func (g *Graph) GetRelation(id string) (*Relation, bool) {
 	r, ok := g.relations[id]
 	return r, ok
-}
-
-func (g *Graph) MustGetRelation(id string) *Relation {
-	r, ok := g.relations[id]
-	if !ok {
-		panic(fmt.Sprintf("relation not found: %s", id))
-	}
-	return r
 }
 
 func (g *Graph) RemoveRelation(id string) bool {
@@ -373,84 +356,4 @@ func (g *Graph) Descendants(entityID string) []*Entity {
 		}
 	}
 	return result
-}
-
-func (g *Graph) ValidateIntegrity() []error {
-	var errs []error
-
-	for _, e := range g.entities {
-		if err := e.Validate(); err != nil {
-			errs = append(errs, fmt.Errorf("entity %s: %w", e.ID, err))
-		}
-	}
-
-	for _, r := range g.relations {
-		if err := r.Validate(); err != nil {
-			errs = append(errs, fmt.Errorf("relation %s: %w", r.ID, err))
-		}
-		for _, pid := range r.ParticipantIDs() {
-			if _, ok := g.entities[pid]; !ok {
-				errs = append(errs, fmt.Errorf("%w: relation %s references non-existent entity %s", ErrInvalidReference, r.ID, pid))
-			}
-		}
-	}
-
-	for _, e := range g.entities {
-		if !e.IsRoot() {
-			if _, ok := g.entities[e.Owner]; !ok {
-				errs = append(errs, fmt.Errorf("%w: entity %s references owner %s", ErrOwnerNotFound, e.ID, e.Owner))
-			}
-		}
-	}
-
-	if err := g.checkOwnershipTree(); err != nil {
-		errs = append(errs, err)
-	}
-
-	return errs
-}
-
-func (g *Graph) checkOwnershipTree() error {
-	visited := make(map[string]bool)
-	path := make(map[string]bool)
-
-	var visit func(id string) error
-	visit = func(id string) error {
-		if path[id] {
-			return fmt.Errorf("%w: %s", ErrOwnershipCycle, id)
-		}
-		if visited[id] {
-			return nil
-		}
-		visited[id] = true
-		path[id] = true
-		defer func() { path[id] = false }()
-
-		for _, child := range g.Children(id) {
-			if err := visit(child.ID); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-
-	for _, e := range g.entities {
-		if e.IsRoot() {
-			if err := visit(e.ID); err != nil {
-				return err
-			}
-		}
-	}
-
-	ownershipCount := 0
-	for _, e := range g.entities {
-		if e.IsRoot() {
-			ownershipCount++
-		}
-	}
-	if ownershipCount > 1 {
-		return ErrOwnershipTreeBroken
-	}
-
-	return nil
 }

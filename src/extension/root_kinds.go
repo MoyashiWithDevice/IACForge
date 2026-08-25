@@ -51,12 +51,3 @@ func (ep *RootKindsExtensionPoint) GetExtensionForRootKind(kind core.EntityKind)
 	extID, ok := ep.kinds[kind]
 	return extID, ok
 }
-
-// AllRootKinds returns all root kinds granted by extensions.
-func (ep *RootKindsExtensionPoint) AllRootKinds() map[core.EntityKind]string {
-	result := make(map[core.EntityKind]string, len(ep.kinds))
-	for k, v := range ep.kinds {
-		result[k] = v
-	}
-	return result
-}

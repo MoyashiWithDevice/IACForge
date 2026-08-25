@@ -27,28 +27,27 @@ func TestViewAddVisibility(t *testing.T) {
 
 func TestViewAddGrouping(t *testing.T) {
 	v := NewView("test-view", "Test View")
-	rule := NewGroupingRule("server", "rack")
+	rule := &GroupingRule{
+		TargetKind: "server",
+		GroupKind:  "rack",
+		GroupBy:    []string{},
+	}
 	v.AddGrouping(rule)
 	if len(v.Grouping) != 1 {
 		t.Errorf("expected 1 grouping rule, got %d", len(v.Grouping))
 	}
 }
 
-func TestViewAddAnnotationRule(t *testing.T) {
-	v := NewView("test-view", "Test View")
-	rule := NewAnnotationRule()
-	v.AddAnnotationRule(rule)
-	if len(v.Annotations) != 1 {
-		t.Errorf("expected 1 annotation rule, got %d", len(v.Annotations))
-	}
-}
-
 func TestEngineApplyNoRules(t *testing.T) {
 	g := core.NewGraph()
 	e1 := core.NewEntity("srv-1", "server", "Server 1")
-	g.AddEntity(e1)
+	if err := g.AddEntity(e1); err != nil {
+		t.Fatalf("failed to add entity: %v", err)
+	}
 	e2 := core.NewEntity("srv-2", "server", "Server 2")
-	g.AddEntity(e2)
+	if err := g.AddEntity(e2); err != nil {
+		t.Fatalf("failed to add entity: %v", err)
+	}
 
 	engine := NewEngine(g)
 	v := NewView("test-view", "Test View")
@@ -66,9 +65,13 @@ func TestEngineApplyNoRules(t *testing.T) {
 func TestEngineApplyVisibilityHide(t *testing.T) {
 	g := core.NewGraph()
 	e1 := core.NewEntity("srv-1", "server", "Server 1")
-	g.AddEntity(e1)
+	if err := g.AddEntity(e1); err != nil {
+		t.Fatalf("failed to add entity: %v", err)
+	}
 	e2 := core.NewEntity("vm-1", "vm", "VM 1")
-	g.AddEntity(e2)
+	if err := g.AddEntity(e2); err != nil {
+		t.Fatalf("failed to add entity: %v", err)
+	}
 
 	engine := NewEngine(g)
 	v := NewView("test-view", "Test View")
@@ -92,9 +95,13 @@ func TestEngineApplyVisibilityHide(t *testing.T) {
 func TestEngineApplyVisibilityShow(t *testing.T) {
 	g := core.NewGraph()
 	e1 := core.NewEntity("srv-1", "server", "Server 1")
-	g.AddEntity(e1)
+	if err := g.AddEntity(e1); err != nil {
+		t.Fatalf("failed to add entity: %v", err)
+	}
 	e2 := core.NewEntity("vm-1", "vm", "VM 1")
-	g.AddEntity(e2)
+	if err := g.AddEntity(e2); err != nil {
+		t.Fatalf("failed to add entity: %v", err)
+	}
 
 	engine := NewEngine(g)
 	v := NewView("test-view", "Test View")
@@ -118,13 +125,21 @@ func TestEngineApplyVisibilityShow(t *testing.T) {
 func TestEngineApplyGrouping(t *testing.T) {
 	g := core.NewGraph()
 	e1 := core.NewEntity("srv-1", "server", "Server 1")
-	g.AddEntity(e1)
+	if err := g.AddEntity(e1); err != nil {
+		t.Fatalf("failed to add entity: %v", err)
+	}
 	e2 := core.NewEntity("srv-2", "server", "Server 2")
-	g.AddEntity(e2)
+	if err := g.AddEntity(e2); err != nil {
+		t.Fatalf("failed to add entity: %v", err)
+	}
 
 	engine := NewEngine(g)
 	v := NewView("test-view", "Test View")
-	rule := NewGroupingRule("server", "server_group")
+	rule := &GroupingRule{
+		TargetKind: "server",
+		GroupKind:  "server_group",
+		GroupBy:    []string{},
+	}
 	v.AddGrouping(rule)
 
 	result, err := engine.Apply(v)
@@ -144,19 +159,20 @@ func TestEngineApplyAnnotations(t *testing.T) {
 	g := core.NewGraph()
 	e1 := core.NewEntity("srv-1", "server", "Server 1")
 	e1.SetProperty("cpu_cores", 8)
-	g.AddEntity(e1)
+	if err := g.AddEntity(e1); err != nil {
+		t.Fatalf("failed to add entity: %v", err)
+	}
 
 	engine := NewEngine(g)
 	v := NewView("test-view", "Test View")
 
-	selector := NewEntitySelector()
-	selector.Kind = "server"
-	rule := NewAnnotationRule()
-	rule.TargetSelector = selector
-	ann := NewAnnotation("cpu_count")
-	ann.SourceProperty = "cpu_cores"
-	rule.Annotations = append(rule.Annotations, ann)
-	v.AddAnnotationRule(rule)
+	rule := &AnnotationRule{
+		TargetSelector: &EntitySelector{Kind: "server"},
+		Annotations: []*Annotation{
+			{Property: "cpu_count", SourceProperty: "cpu_cores"},
+		},
+	}
+	v.Annotations = append(v.Annotations, rule)
 
 	result, err := engine.Apply(v)
 	if err != nil {
@@ -175,18 +191,27 @@ func TestEngineApplyGroupingByProperty(t *testing.T) {
 	g := core.NewGraph()
 	e1 := core.NewEntity("srv-1", "server", "Server 1")
 	e1.SetLabel("rack", "rack-A")
-	g.AddEntity(e1)
+	if err := g.AddEntity(e1); err != nil {
+		t.Fatalf("failed to add entity: %v", err)
+	}
 	e2 := core.NewEntity("srv-2", "server", "Server 2")
 	e2.SetLabel("rack", "rack-B")
-	g.AddEntity(e2)
+	if err := g.AddEntity(e2); err != nil {
+		t.Fatalf("failed to add entity: %v", err)
+	}
 	e3 := core.NewEntity("srv-3", "server", "Server 3")
 	e3.SetLabel("rack", "rack-A")
-	g.AddEntity(e3)
+	if err := g.AddEntity(e3); err != nil {
+		t.Fatalf("failed to add entity: %v", err)
+	}
 
 	engine := NewEngine(g)
 	v := NewView("test-view", "Test View")
-	rule := NewGroupingRule("server", "rack_group")
-	rule.GroupBy = []string{"rack"}
+	rule := &GroupingRule{
+		TargetKind: "server",
+		GroupKind:  "rack_group",
+		GroupBy:    []string{"rack"},
+	}
 	v.AddGrouping(rule)
 
 	result, err := engine.Apply(v)
@@ -199,26 +224,13 @@ func TestEngineApplyGroupingByProperty(t *testing.T) {
 	}
 }
 
-func TestValidateView(t *testing.T) {
-	v := NewView("test-view", "Test View")
-	if err := ValidateView(v); err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-
-	v2 := &View{}
-	if err := ValidateView(v2); err == nil {
-		t.Error("expected error for empty view")
-	}
-}
-
 func TestWhereClause(t *testing.T) {
-	w := NewWhereClause()
-	cond := w.AddCondition("status", "eq", "active")
+	w := &WhereClause{Conditions: []*Condition{{Field: "status", Operator: "eq", Value: "active"}}}
 	if len(w.Conditions) != 1 {
 		t.Errorf("expected 1 condition, got %d", len(w.Conditions))
 	}
-	if cond.Field != "status" {
-		t.Errorf("expected field 'status', got '%s'", cond.Field)
+	if w.Conditions[0].Field != "status" {
+		t.Errorf("expected field 'status', got '%s'", w.Conditions[0].Field)
 	}
 }
 

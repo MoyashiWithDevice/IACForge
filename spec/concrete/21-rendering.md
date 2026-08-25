@@ -35,6 +35,13 @@ Every Renderer is defined with:
 
 The core specification defines the following output formats.
 
+> **Implementation status:** The current IACForge implementation ships the
+> `svg`, `mermaid`, `markdown`, and `json` renderers. The `png`, `pdf`,
+> `graphviz`, `d2`, `html`, and `csv` renderers described below are part of the
+> specification but are **not yet implemented**; the CLI and MCP accept only
+> the implemented formats. Renderers contributed through extensions can add
+> additional formats at runtime.
+
 ### Diagram Formats
 
 | Format | Description | Extension |
@@ -100,7 +107,6 @@ Renders View as SVG diagram.
 |--------|------|---------|-------------|
 | width | integer | 800 | Image width in pixels |
 | height | integer | 600 | Image height in pixels |
-| scale | number | 1.0 | Scale factor |
 | standalone | boolean | true | Include SVG headers |
 
 ### PNG Renderer
@@ -123,6 +129,17 @@ Renders View as Mermaid diagram.
 | direction | enum | TB | Diagram direction (TB, LR, BT, RL) |
 | theme | enum | default | Mermaid theme |
 | title | string | - | Diagram title |
+
+Lifted content (see the View Model spec) is rendered as follows:
+
+- Lifted structural groups are emitted as `subgraph` blocks, declared before
+  any edge that references them.
+- Lifted edges are drawn with dashed arrows (`-.->`) to distinguish them from
+  explicitly modeled Relations; symmetric lifted edges use dashed open links
+  (`-.-`).
+- An endpoint referencing a lifted group links against the subgraph ID.
+- When a lifted edge collapsed multiple anchor candidates onto a
+  representative, its label carries an aggregation suffix (e.g. `connects ×3`).
 
 ### Graphviz Renderer
 
@@ -236,8 +253,6 @@ Themes define presentation characteristics.
 | name | string | yes | Human-readable name |
 | colors | ColorPalette | no | Color definitions |
 | typography | Typography | no | Font definitions |
-| spacing | Spacing | no | Spacing definitions |
-| icons | IconSet | no | Icon definitions |
 | lines | LineStyles | no | Line style definitions |
 
 ### Color Palette
@@ -263,27 +278,6 @@ Themes define presentation characteristics.
 | font_size | integer | Base font size |
 | heading_size | integer | Heading font size |
 | code_font | string | Monospace font |
-
-### Spacing
-
-| Field | Type | Description |
-|-------|------|-------------|
-| unit | number | Base spacing unit |
-| small | number | Small spacing |
-| medium | number | Medium spacing |
-| large | number | Large spacing |
-
-### Icon Set
-
-| Field | Type | Description |
-|-------|------|-------------|
-| region | string | Region icon |
-| rack | string | Rack icon |
-| server | string | Server icon |
-| vm | string | VM icon |
-| network | string | Network icon |
-| switch | string | Switch icon |
-| firewall | string | Firewall icon |
 
 ### Line Styles
 

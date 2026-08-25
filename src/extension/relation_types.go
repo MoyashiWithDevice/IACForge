@@ -132,12 +132,3 @@ func (ep *RelationTypesExtensionPoint) GetExtensionForType(relType core.Relation
 	extID, ok := ep.types[relType]
 	return extID, ok
 }
-
-// AllExtendedTypes returns all relation types added by extensions.
-func (ep *RelationTypesExtensionPoint) AllExtendedTypes() map[core.RelationType]string {
-	result := make(map[core.RelationType]string, len(ep.types))
-	for k, v := range ep.types {
-		result[k] = v
-	}
-	return result
-}

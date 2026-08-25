@@ -13,13 +13,13 @@ import (
 func newTestGraph() *core.Graph {
 	g := core.NewGraph()
 	region := core.NewEntity("region-01", kinds.Region, "Region 01")
-	g.AddEntity(region)
+	_ = g.AddEntity(region)
 	rack := core.NewEntity("rack-01", kinds.Rack, "Rack 01")
 	rack.SetOwner("region-01")
-	g.AddEntity(rack)
+	_ = g.AddEntity(rack)
 	server := core.NewEntity("srv-01", kinds.Server, "Server 01")
 	server.SetOwner("rack-01")
-	g.AddEntity(server)
+	_ = g.AddEntity(server)
 	return g
 }
 
@@ -73,7 +73,9 @@ func TestValidateDuplicateEntityID(t *testing.T) {
 	graph := core.NewGraph()
 
 	region := core.NewEntity("dup-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	for _, f := range result.Findings {
@@ -88,13 +90,19 @@ func TestValidateDuplicateRelationID(t *testing.T) {
 	graph := core.NewGraph()
 
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
 	server.SetOwner("region-01")
-	graph.AddEntity(server)
+	if err := graph.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	r1 := core.NewDirectedRelation("rel-01", types.Hosts, "srv-01", "region-01")
-	graph.AddRelation(r1)
+	if err := graph.AddRelation(r1); err != nil {
+		t.Fatalf("failed to addrelation: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	for _, f := range result.Findings {
@@ -170,7 +178,9 @@ func TestValidateInvalidStatus(t *testing.T) {
 
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
 	region.SetStatus("invalid_status")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	found := false
@@ -190,15 +200,21 @@ func TestValidateInvalidPortRange(t *testing.T) {
 	graph := core.NewGraph()
 
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
 	server.SetOwner("region-01")
-	graph.AddEntity(server)
+	if err := graph.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	port := core.NewEntity("port-01", kinds.OpenPort, "Port 1")
 	port.SetOwner("srv-01")
 	port.SetProperty("port", 70000)
-	graph.AddEntity(port)
+	if err := graph.AddEntity(port); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	found := false
@@ -218,15 +234,21 @@ func TestValidateValidPortRange(t *testing.T) {
 	graph := core.NewGraph()
 
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
 	server.SetOwner("region-01")
-	graph.AddEntity(server)
+	if err := graph.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	port := core.NewEntity("port-01", kinds.OpenPort, "Port 1")
 	port.SetOwner("srv-01")
 	port.SetProperty("port", 443)
-	graph.AddEntity(port)
+	if err := graph.AddEntity(port); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	for _, f := range result.Findings {
@@ -241,15 +263,21 @@ func TestValidateACLRULEParent(t *testing.T) {
 	graph := core.NewGraph()
 
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	acl := core.NewEntity("acl-01", kinds.ACL, "ACL 1")
 	acl.SetOwner("region-01")
-	graph.AddEntity(acl)
+	if err := graph.AddEntity(acl); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	rule := core.NewEntity("rule-01", kinds.ACLRule, "Rule 1")
 	rule.SetOwner("acl-01")
 	rule.SetProperty("action", "allow")
-	graph.AddEntity(rule)
+	if err := graph.AddEntity(rule); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	for _, f := range result.Findings {
@@ -264,15 +292,21 @@ func TestValidateACLRULEWrongParent(t *testing.T) {
 	graph := core.NewGraph()
 
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
 	server.SetOwner("region-01")
-	graph.AddEntity(server)
+	if err := graph.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	rule := core.NewEntity("rule-01", kinds.ACLRule, "Rule 1")
 	rule.SetOwner("srv-01")
 	rule.SetProperty("action", "allow")
-	graph.AddEntity(rule)
+	if err := graph.AddEntity(rule); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	found := false
@@ -292,10 +326,14 @@ func TestValidateMissingRelationType(t *testing.T) {
 	graph := core.NewGraph()
 
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
 	server.SetOwner("region-01")
-	graph.AddEntity(server)
+	if err := graph.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	r := core.NewRelation("rel-01", "", core.DirectionDirected)
 	r.Participants.Source = "srv-01"
@@ -320,13 +358,19 @@ func TestValidateInvalidRelationType(t *testing.T) {
 	graph := core.NewGraph()
 
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
 	server.SetOwner("region-01")
-	graph.AddEntity(server)
+	if err := graph.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	r := core.NewDirectedRelation("rel-01", "nonexistent_type", "srv-01", "region-01")
-	graph.AddRelation(r)
+	if err := graph.AddRelation(r); err != nil {
+		t.Fatalf("failed to addrelation: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	found := false
@@ -346,10 +390,14 @@ func TestValidateDirectedRelationMissingTarget(t *testing.T) {
 	graph := core.NewGraph()
 
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
 	server.SetOwner("region-01")
-	graph.AddEntity(server)
+	if err := graph.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	r := core.NewRelation("rel-01", types.Hosts, core.DirectionDirected)
 	r.Participants.Source = "srv-01"
@@ -373,14 +421,20 @@ func TestValidateParticipantKindWarning(t *testing.T) {
 	graph := core.NewGraph()
 
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
 	server.SetOwner("region-01")
-	graph.AddEntity(server)
+	if err := graph.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	// connects should have interface participants, not server
 	r := core.NewDirectedRelation("rel-01", types.Connects, "srv-01", "region-01")
-	graph.AddRelation(r)
+	if err := graph.AddRelation(r); err != nil {
+		t.Fatalf("failed to addrelation: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	found := false
@@ -400,15 +454,21 @@ func TestValidateParticipantKindDirection(t *testing.T) {
 	graph := core.NewGraph()
 
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
-	graph.AddEntity(server)
+	if err := graph.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	vm := core.NewEntity("vm-01", kinds.VM, "VM 1")
-	graph.AddEntity(vm)
+	if err := graph.AddEntity(vm); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	// hosts source kinds are {server,vm,container,application} and target
 	// kinds are {vm,container,application}, so a target of kind server is only
 	// caught when the direction is respected.
 	r := core.NewDirectedRelation("rel-rev", types.Hosts, "vm-01", "srv-01")
-	graph.AddRelation(r)
+	if err := graph.AddRelation(r); err != nil {
+		t.Fatalf("failed to addrelation: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	var found []Finding
@@ -430,12 +490,18 @@ func TestValidateParticipantKindDirectionValid(t *testing.T) {
 	graph := core.NewGraph()
 
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
-	graph.AddEntity(server)
+	if err := graph.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	vm := core.NewEntity("vm-01", kinds.VM, "VM 1")
-	graph.AddEntity(vm)
+	if err := graph.AddEntity(vm); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	r := core.NewDirectedRelation("rel-ok", types.Hosts, "srv-01", "vm-01")
-	graph.AddRelation(r)
+	if err := graph.AddRelation(r); err != nil {
+		t.Fatalf("failed to addrelation: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	for _, f := range result.Findings {
@@ -474,9 +540,13 @@ func TestValidateMultipleRoots(t *testing.T) {
 	graph := core.NewGraph()
 
 	root1 := core.NewEntity("root-1", kinds.Region, "Root 1")
-	graph.AddEntity(root1)
+	if err := graph.AddEntity(root1); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	root2 := core.NewEntity("root-2", kinds.Region, "Root 2")
-	graph.AddEntity(root2)
+	if err := graph.AddEntity(root2); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	found := false
@@ -520,19 +590,29 @@ func TestValidatePathReferenceParticipant(t *testing.T) {
 	graph := core.NewGraph()
 
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
 	server.SetOwner("region-01")
-	graph.AddEntity(server)
+	if err := graph.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	network := core.NewEntity("net-01", kinds.Network, "Network 1")
 	network.SetOwner("region-01")
-	graph.AddEntity(network)
+	if err := graph.AddEntity(network); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	intf := core.NewEntity("eth0", kinds.Interface, "eth0")
 	intf.SetOwner("srv-01")
-	graph.AddEntity(intf)
+	if err := graph.AddEntity(intf); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	r := core.NewDirectedRelation("rel-01", types.BelongsTo, "srv-01/eth0", "net-01")
-	graph.AddRelation(r)
+	if err := graph.AddRelation(r); err != nil {
+		t.Fatalf("failed to addrelation: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	for _, f := range result.Findings {
@@ -547,7 +627,9 @@ func TestValidateDanglingReference(t *testing.T) {
 	graph := core.NewGraph()
 
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
-	graph.AddEntity(server)
+	if err := graph.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	r := core.NewDirectedRelation("rel-01", types.Hosts, "srv-01", "nonexistent")
 	graph.ForceAddRelation(r)
@@ -570,13 +652,19 @@ func TestValidateValidRelationParticipants(t *testing.T) {
 	graph := core.NewGraph()
 
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
 	server.SetOwner("region-01")
-	graph.AddEntity(server)
+	if err := graph.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	r := core.NewDirectedRelation("rel-01", types.Hosts, "srv-01", "region-01")
-	graph.AddRelation(r)
+	if err := graph.AddRelation(r); err != nil {
+		t.Fatalf("failed to addrelation: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	for _, f := range result.Findings {
@@ -606,8 +694,7 @@ func TestValidateWithProfile(t *testing.T) {
 	graph := newTestGraph()
 
 	profile := schema.NewProfile("minimal")
-	profile.AddRule("required-kind")
-	profile.AddRule("required-name")
+	profile.Rules = []string{"required-kind", "required-name"}
 
 	result := e.Validate(graph, profile)
 
@@ -632,7 +719,9 @@ func TestValidateProfileRequiredKinds(t *testing.T) {
 	graph := core.NewGraph()
 
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	profile := schema.NewProfile("with-kinds")
 	profile.AddRequiredKind("server")
@@ -675,7 +764,9 @@ func TestValidateProfileRequiredRelations(t *testing.T) {
 func TestValidateResultPassed(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
-	graph.AddEntity(core.NewEntity("region-01", kinds.Region, "Region 1"))
+	if err := graph.AddEntity(core.NewEntity("region-01", kinds.Region, "Region 1")); err != nil {
+		t.Fatalf("failed to add entity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 
@@ -699,21 +790,29 @@ func TestDanglingPropertyReference(t *testing.T) {
 	graph := core.NewGraph()
 
 	region := core.NewEntity("region-01", kinds.Region, "Region 01")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	net := core.NewEntity("net-mgmt", kinds.Network, "Management Network")
 	net.SetOwner("region-01")
-	graph.AddEntity(net)
+	if err := graph.AddEntity(net); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	vlan := core.NewEntity("vlan-100", kinds.VLAN, "VLAN 100")
 	vlan.SetOwner("region-01")
 	vlan.SetProperty("associated_network", core.NewReferenceValue("@net-mgmt"))
-	graph.AddEntity(vlan)
+	if err := graph.AddEntity(vlan); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	vlan2 := core.NewEntity("vlan-200", kinds.VLAN, "VLAN 200")
 	vlan2.SetOwner("region-01")
 	vlan2.SetProperty("associated_network", core.NewReferenceValue("@nonexistent"))
-	graph.AddEntity(vlan2)
+	if err := graph.AddEntity(vlan2); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 
@@ -741,15 +840,21 @@ func TestDanglingReferenceInListProperty(t *testing.T) {
 	graph := core.NewGraph()
 
 	region := core.NewEntity("region-01", kinds.Region, "Region 01")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	net := core.NewEntity("net-mgmt", kinds.Network, "Management Network")
 	net.SetOwner("region-01")
-	graph.AddEntity(net)
+	if err := graph.AddEntity(net); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	sg := core.NewEntity("sg-01", kinds.ACL, "Web SG")
 	sg.SetOwner("region-01")
-	graph.AddEntity(sg)
+	if err := graph.AddEntity(sg); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	// ec2-01 has one valid list reference (sg-01) and one dangling (ghost).
 	ec2 := core.NewEntity("ec2-01", kinds.Server, "Web Server")
@@ -758,7 +863,9 @@ func TestDanglingReferenceInListProperty(t *testing.T) {
 		core.NewReferenceValue("@sg-01"),
 		core.NewReferenceValue("@ghost"),
 	})
-	graph.AddEntity(ec2)
+	if err := graph.AddEntity(ec2); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	// rds-01 has a nested-map reference that is dangling (nonexistent).
 	rds := core.NewEntity("rds-01", kinds.Server, "Database")
@@ -769,7 +876,9 @@ func TestDanglingReferenceInListProperty(t *testing.T) {
 			core.NewReferenceValue("@missing-subnet"),
 		},
 	})
-	graph.AddEntity(rds)
+	if err := graph.AddEntity(rds); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	// lb-01 has only valid list references.
 	lb := core.NewEntity("lb-01", kinds.Server, "Load Balancer")
@@ -777,7 +886,9 @@ func TestDanglingReferenceInListProperty(t *testing.T) {
 	lb.SetProperty("subnets", []interface{}{
 		core.NewReferenceValue("@net-mgmt"),
 	})
-	graph.AddEntity(lb)
+	if err := graph.AddEntity(lb); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 
@@ -806,16 +917,22 @@ func TestValidPropertyReference(t *testing.T) {
 	graph := core.NewGraph()
 
 	region := core.NewEntity("region-01", kinds.Region, "Region 01")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	net := core.NewEntity("net-mgmt", kinds.Network, "Management Network")
 	net.SetOwner("region-01")
-	graph.AddEntity(net)
+	if err := graph.AddEntity(net); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	vlan := core.NewEntity("vlan-100", kinds.VLAN, "VLAN 100")
 	vlan.SetOwner("region-01")
 	vlan.SetProperty("associated_network", core.NewReferenceValue("@net-mgmt"))
-	graph.AddEntity(vlan)
+	if err := graph.AddEntity(vlan); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 
@@ -832,12 +949,16 @@ func TestInvalidPathNonExistentEntity(t *testing.T) {
 
 	region := core.NewEntity("region-01", kinds.Region, "Region 01")
 	region.SetPath("/region-01")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	server := core.NewEntity("srv-01", kinds.Server, "Server 01")
 	server.SetOwner("region-01")
 	server.SetPath("/region-01/nonexistent/srv-01")
-	graph.AddEntity(server)
+	if err := graph.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	found := false
@@ -858,17 +979,23 @@ func TestInvalidPathWrongOwnership(t *testing.T) {
 
 	region := core.NewEntity("region-01", kinds.Region, "Region 01")
 	region.SetPath("/region-01")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	rack := core.NewEntity("rack-01", kinds.Rack, "Rack 01")
 	rack.SetOwner("region-01")
 	rack.SetPath("/region-01/rack-01")
-	graph.AddEntity(rack)
+	if err := graph.AddEntity(rack); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	server := core.NewEntity("srv-01", kinds.Server, "Server 01")
 	server.SetOwner("rack-01")
 	server.SetPath("/region-01/rack-01/srv-01")
-	graph.AddEntity(server)
+	if err := graph.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	// Manually set wrong path (not matching ownership)
 	server.SetPath("/region-01/srv-01")
@@ -891,17 +1018,23 @@ func TestValidPath(t *testing.T) {
 
 	region := core.NewEntity("region-01", kinds.Region, "Region 01")
 	region.SetPath("/region-01")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	rack := core.NewEntity("rack-01", kinds.Rack, "Rack 01")
 	rack.SetOwner("region-01")
 	rack.SetPath("/region-01/rack-01")
-	graph.AddEntity(rack)
+	if err := graph.AddEntity(rack); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	server := core.NewEntity("srv-01", kinds.Server, "Server 01")
 	server.SetOwner("rack-01")
 	server.SetPath("/region-01/rack-01/srv-01")
-	graph.AddEntity(server)
+	if err := graph.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	for _, f := range result.Findings {
@@ -916,21 +1049,21 @@ func TestValidPath(t *testing.T) {
 func newNetworkGraph() *core.Graph {
 	g := core.NewGraph()
 	region := core.NewEntity("region-01", kinds.Region, "Region 01")
-	g.AddEntity(region)
+	_ = g.AddEntity(region)
 	server := core.NewEntity("srv-01", kinds.Server, "Server 01")
 	server.SetOwner("region-01")
-	g.AddEntity(server)
+	_ = g.AddEntity(server)
 	net := core.NewEntity("net-01", kinds.Network, "Network 01")
 	net.SetOwner("region-01")
 	net.SetProperty("cidr", "10.0.1.0/24")
-	g.AddEntity(net)
+	_ = g.AddEntity(net)
 	return g
 }
 
 func newServerInterface(graph *core.Graph, id string) *core.Entity {
 	intf := core.NewEntity(id, kinds.Interface, id)
 	intf.SetOwner("srv-01")
-	graph.AddEntity(intf)
+	_ = graph.AddEntity(intf)
 	return intf
 }
 
@@ -946,17 +1079,23 @@ func hasFindingByRule(result *Result, ruleID string) bool {
 func TestRuleValidIPFormat(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
-	graph.AddEntity(core.NewEntity("region-01", kinds.Region, "Region 01"))
+	if err := graph.AddEntity(core.NewEntity("region-01", kinds.Region, "Region 01")); err != nil {
+		t.Fatalf("failed to add entity: %v", err)
+	}
 
 	valid := core.NewEntity("eth0", kinds.Interface, "eth0")
 	valid.SetOwner("region-01")
 	valid.SetProperty("ip_address", "10.0.1.10")
-	graph.AddEntity(valid)
+	if err := graph.AddEntity(valid); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	invalid := core.NewEntity("eth1", kinds.Interface, "eth1")
 	invalid.SetOwner("region-01")
 	invalid.SetProperty("ip_address", []interface{}{"10.0.1.10", "not-an-ip"})
-	graph.AddEntity(invalid)
+	if err := graph.AddEntity(invalid); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	if hasFindingByRule(result, "valid-ip-format") == false {
@@ -1007,7 +1146,9 @@ func TestRuleIPRequiresNetworkViaBelongsTo(t *testing.T) {
 	intf.SetProperty("ip_address", []interface{}{"10.0.1.10"})
 
 	rel := core.NewDirectedRelation("rel-intf-net", types.BelongsTo, "eth0", "net-01")
-	graph.AddRelation(rel)
+	if err := graph.AddRelation(rel); err != nil {
+		t.Fatalf("failed to addrelation: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	if hasFindingByRule(result, "ip-requires-network") {
@@ -1068,7 +1209,9 @@ func TestRuleNetworkCIDRRequired(t *testing.T) {
 
 	net2 := core.NewEntity("net-02", kinds.Network, "Network 02")
 	net2.SetOwner("region-01")
-	graph.AddEntity(net2)
+	if err := graph.AddEntity(net2); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	withNetwork := newServerInterface(graph, "eth0")
 	withNetwork.SetProperty("ip_address", []interface{}{"10.0.1.10"})
@@ -1097,19 +1240,25 @@ func TestRuleGatewayInCIDR(t *testing.T) {
 	good.SetOwner("region-01")
 	good.SetProperty("cidr", "10.0.1.0/24")
 	good.SetProperty("gateway", "10.0.1.1")
-	graph.AddEntity(good)
+	if err := graph.AddEntity(good); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	bad := core.NewEntity("net-bad", kinds.Network, "Bad Network")
 	bad.SetOwner("region-01")
 	bad.SetProperty("cidr", "10.0.1.0/24")
 	bad.SetProperty("gateway", "192.168.0.1")
-	graph.AddEntity(bad)
+	if err := graph.AddEntity(bad); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	invalid := core.NewEntity("net-invalid", kinds.Network, "Invalid Gateway Network")
 	invalid.SetOwner("region-01")
 	invalid.SetProperty("cidr", "10.0.1.0/24")
 	invalid.SetProperty("gateway", "not-an-ip")
-	graph.AddEntity(invalid)
+	if err := graph.AddEntity(invalid); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	if !hasFindingByRule(result, "gateway-in-cidr") {
@@ -1181,11 +1330,15 @@ func TestValidPropertyCompliant(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
 	server.SetOwner("region-01")
 	server.SetProperty("platform", "proxmox")
-	graph.AddEntity(server)
+	if err := graph.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	for _, f := range result.Findings {
@@ -1199,11 +1352,15 @@ func TestValidPropertyTypeMismatch(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	rack := core.NewEntity("rack-01", kinds.Rack, "Rack 1")
 	rack.SetOwner("region-01")
 	rack.SetProperty("height_units", "42") // defined as integer
-	graph.AddEntity(rack)
+	if err := graph.AddEntity(rack); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	if !hasFindingFor(result, "valid-property", "rack-01") {
@@ -1215,15 +1372,21 @@ func TestValidPropertyEnumViolation(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	intf := core.NewEntity("eth0", kinds.Interface, "eth0")
 	intf.SetOwner("region-01")
 	intf.SetProperty("type", "ethernet")
-	graph.AddEntity(intf)
+	if err := graph.AddEntity(intf); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	bad := core.NewEntity("eth1", kinds.Interface, "eth1")
 	bad.SetOwner("region-01")
 	bad.SetProperty("type", "warp") // not in enum
-	graph.AddEntity(bad)
+	if err := graph.AddEntity(bad); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	if !hasFindingFor(result, "valid-property", "eth1") {
@@ -1238,11 +1401,15 @@ func TestValidPropertyMissingRequired(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	vlan := core.NewEntity("vlan-100", kinds.VLAN, "VLAN 100")
 	vlan.SetOwner("region-01")
 	// vlan_id is required but not set
-	graph.AddEntity(vlan)
+	if err := graph.AddEntity(vlan); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	if !hasFindingFor(result, "valid-property", "vlan-100") {
@@ -1254,11 +1421,15 @@ func TestValidPropertyUndefinedProperty(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
 	server.SetOwner("region-01")
 	server.SetProperty("not_a_defined_property", "value")
-	graph.AddEntity(server)
+	if err := graph.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	if !hasFindingFor(result, "valid-property", "srv-01") {
@@ -1270,21 +1441,31 @@ func TestValidPropertyRelationProperty(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
 	server.SetOwner("region-01")
-	graph.AddEntity(server)
+	if err := graph.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	app := core.NewEntity("app-01", kinds.Application, "App 1")
 	app.SetOwner("srv-01")
-	graph.AddEntity(app)
+	if err := graph.AddEntity(app); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	// depends_on defines dependency_type (string) and critical (boolean).
 	bad := core.NewDirectedRelation("rel-bad", types.DependsOn, "app-01", "srv-01")
 	bad.SetProperty("critical", "not-a-bool")
-	graph.AddRelation(bad)
+	if err := graph.AddRelation(bad); err != nil {
+		t.Fatalf("failed to addrelation: %v", err)
+	}
 	good := core.NewDirectedRelation("rel-good", types.DependsOn, "app-01", "srv-01")
 	good.SetProperty("critical", true)
-	graph.AddRelation(good)
+	if err := graph.AddRelation(good); err != nil {
+		t.Fatalf("failed to addrelation: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	if !hasFindingFor(result, "valid-property", "rel-bad") {
@@ -1295,12 +1476,64 @@ func TestValidPropertyRelationProperty(t *testing.T) {
 	}
 }
 
+func TestValidPropertyCoreKindEnumViolation(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	net := core.NewEntity("net-01", kinds.Network, "Network 1")
+	net.SetOwner("region-01")
+	net.SetProperty("network_type", "carrier") // not in enum
+	if err := graph.AddEntity(net); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	good := core.NewEntity("net-02", kinds.Network, "Network 2")
+	good.SetOwner("region-01")
+	good.SetProperty("network_type", "storage")
+	if err := graph.AddEntity(good); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+
+	result := e.Validate(graph, nil)
+	if !hasFindingFor(result, "valid-property", "net-01") {
+		t.Error("expected valid-property warning for net-01 with invalid network_type")
+	}
+	if hasFindingFor(result, "valid-property", "net-02") {
+		t.Error("net-02 with valid network_type should not have valid-property warning")
+	}
+}
+
+func TestValidPropertyListUnknownKeyWarning(t *testing.T) {
+	e := newTestEngine()
+	graph := core.NewGraph()
+	region := core.NewEntity("region-01", kinds.Region, "Region 1")
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	server := core.NewEntity("srv-01", kinds.Server, "Server 1")
+	server.SetOwner("region-01")
+	server.SetProperty("cpu", []interface{}{
+		map[string]interface{}{"cores": 4, "architecture": "x86_64"},
+		map[string]interface{}{"cores": 8, "sockets": 2}, // unknown key
+	})
+	if err := graph.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+
+	result := e.Validate(graph, nil)
+	if !hasFindingFor(result, "valid-property", "srv-01") {
+		t.Error("expected valid-property warning for srv-01 cpu item with unknown key")
+	}
+}
+
 // --- Root-Authorized Kind Hook ---
 
 func TestAllowedRootKindsMethods(t *testing.T) {
 	e := NewEngine(schema.CoreSchema())
-	if len(e.AllowedRootKinds()) != 0 {
-		t.Error("new engine should have no allowed root kinds")
+	if e.IsAllowedRootKind("region") {
+		t.Error("region should not be an allowed root kind by default")
 	}
 	e.AddAllowedRootKind("aws.organization")
 	e.AddAllowedRootKind("aws.organization") // idempotent
@@ -1312,10 +1545,6 @@ func TestAllowedRootKindsMethods(t *testing.T) {
 	if e.IsAllowedRootKind("region") {
 		t.Error("region should not be an allowed root kind by default")
 	}
-	kinds := e.AllowedRootKinds()
-	if len(kinds) != 2 {
-		t.Errorf("expected 2 allowed root kinds, got %v", kinds)
-	}
 }
 
 func TestMultipleRootsAllAllowedKinds(t *testing.T) {
@@ -1324,9 +1553,13 @@ func TestMultipleRootsAllAllowedKinds(t *testing.T) {
 
 	graph := core.NewGraph()
 	org1 := core.NewEntity("org-1", core.EntityKind("aws.organization"), "Org 1")
-	graph.AddEntity(org1)
+	if err := graph.AddEntity(org1); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	org2 := core.NewEntity("org-2", core.EntityKind("aws.organization"), "Org 2")
-	graph.AddEntity(org2)
+	if err := graph.AddEntity(org2); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	for _, f := range result.Findings {
@@ -1342,9 +1575,13 @@ func TestMultipleRootsMixedKinds(t *testing.T) {
 
 	graph := core.NewGraph()
 	org := core.NewEntity("org-1", core.EntityKind("aws.organization"), "Org 1")
-	graph.AddEntity(org)
+	if err := graph.AddEntity(org); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	for _, f := range result.Findings {
@@ -1361,15 +1598,23 @@ func TestOwnershipTreeForestWithAuthorizedRoots(t *testing.T) {
 
 	graph := core.NewGraph()
 	org1 := core.NewEntity("org-1", core.EntityKind("aws.organization"), "Org 1")
-	graph.AddEntity(org1)
+	if err := graph.AddEntity(org1); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	account1 := core.NewEntity("acct-1", core.EntityKind("aws.account"), "Account 1")
 	account1.SetOwner("org-1")
-	graph.AddEntity(account1)
+	if err := graph.AddEntity(account1); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	org2 := core.NewEntity("org-2", core.EntityKind("aws.organization"), "Org 2")
-	graph.AddEntity(org2)
+	if err := graph.AddEntity(org2); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	account2 := core.NewEntity("acct-2", core.EntityKind("aws.account"), "Account 2")
 	account2.SetOwner("org-2")
-	graph.AddEntity(account2)
+	if err := graph.AddEntity(account2); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	for _, f := range result.Findings {
@@ -1391,7 +1636,9 @@ func TestOwnershipTreeDisconnectedForest(t *testing.T) {
 
 	graph := core.NewGraph()
 	org1 := core.NewEntity("org-1", core.EntityKind("aws.organization"), "Org 1")
-	graph.AddEntity(org1)
+	if err := graph.AddEntity(org1); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	// acct-1 has an owner that does not exist (dangling), so it is unreachable
 	// from any root and the forest is disconnected.
 	orphan := core.NewEntity("orphan-1", core.EntityKind("aws.account"), "Orphan")
@@ -1415,11 +1662,15 @@ func TestValidPropertyIntegerJSONFloat(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	rack := core.NewEntity("rack-01", kinds.Rack, "Rack 1")
 	rack.SetOwner("region-01")
 	rack.SetProperty("height_units", float64(42)) // JSON numbers decode to float64
-	graph.AddEntity(rack)
+	if err := graph.AddEntity(rack); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	if hasFindingFor(result, "valid-property", "rack-01") {
@@ -1431,11 +1682,15 @@ func TestValidPropertyIntegerNonIntegralFloat(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	rack := core.NewEntity("rack-01", kinds.Rack, "Rack 1")
 	rack.SetOwner("region-01")
 	rack.SetProperty("height_units", 42.5)
-	graph.AddEntity(rack)
+	if err := graph.AddEntity(rack); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	if !hasFindingFor(result, "valid-property", "rack-01") {
@@ -1447,13 +1702,17 @@ func TestValidPropertyStringWithReference(t *testing.T) {
 	e := newTestEngine()
 	graph := core.NewGraph()
 	region := core.NewEntity("region-01", kinds.Region, "Region 1")
-	graph.AddEntity(region)
+	if err := graph.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	net := core.NewEntity("net-01", kinds.Network, "Network 1")
 	net.SetOwner("region-01")
 	// gateway is a string property; the parser converts @-prefixed strings to
 	// ReferenceValue, which must not trigger a type warning.
 	net.SetProperty("gateway", core.NewReferenceValue("@gw-01"))
-	graph.AddEntity(net)
+	if err := graph.AddEntity(net); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	result := e.Validate(graph, nil)
 	if hasFindingFor(result, "valid-property", "net-01") {

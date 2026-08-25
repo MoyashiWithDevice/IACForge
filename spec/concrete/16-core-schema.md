@@ -250,7 +250,6 @@ A definition includes:
 |-------|-------------|
 | directed | Has source and target |
 | symmetric | All participants equal |
-| undirected | No inherent direction |
 
 ### Participant Constraints
 

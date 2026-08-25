@@ -3,6 +3,7 @@ package mcp
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	mcpserver "github.com/mark3labs/mcp-go/server"
@@ -57,7 +58,10 @@ func registerGraphMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 				})
 			}
 
-			data, _ := json.MarshalIndent(resp, "", "  ")
+			data, err := json.MarshalIndent(resp, "", "  ")
+			if err != nil {
+				return toolError(fmt.Sprintf("failed to marshal response: %v", err)), nil
+			}
 			return toolResult(string(data)), nil
 		},
 	)
@@ -105,7 +109,10 @@ func registerGraphMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 				RelationTypes:  rt,
 			}
 
-			data, _ := json.MarshalIndent(resp, "", "  ")
+			data, err := json.MarshalIndent(resp, "", "  ")
+			if err != nil {
+				return toolError(fmt.Sprintf("failed to marshal response: %v", err)), nil
+			}
 			return toolResult(string(data)), nil
 		},
 	)

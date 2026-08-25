@@ -5,7 +5,10 @@ This guide explains how to create plugins (extensions) for IACForge.
 ## Overview
 
 IACForge supports runtime plugin loading via Go's `plugin` package.
-Place compiled `.so` files in the `extensions/` directory, and they will be automatically loaded at startup.
+Plugins are `.so` files built with `-buildmode=plugin`. They are loaded from
+the directory given by the `IACFORGE_EXTENSIONS` environment variable (and by
+the `--extensions` flag of the `validate` command). There is no automatic
+startup scan of a fixed directory.
 
 ## Quick Start
 
@@ -33,12 +36,11 @@ import (
 func Extension() *extension.Extension {
 	return &extension.Extension{
 		Manifest: &extension.Manifest{
-			ID:          "my-organization.my-plugin",
-			Name:        "My Custom Plugin",
-			Version:     "1.0.0",
-			Author:      "Your Name",
-			Description: "Adds custom entity kinds for our infrastructure",
-			Namespace:   "myorg",
+			ID:              "my-organization.my-plugin",
+			Name:            "My Custom Plugin",
+			Version:         "1.0.0",
+			Description:     "Adds custom entity kinds for our infrastructure",
+			Namespace:       "myorg",
 			ExtensionPoints: []string{
 				string(extension.ExtensionPointEntityKinds),
 			},
@@ -82,8 +84,15 @@ go build -buildmode=plugin -o my-plugin.so .
 
 ### 4. Deploy
 
+Point `IACFORGE_EXTENSIONS` at a directory containing the built `.so` files.
+The directory is scanned for `.so` files on startup; subdirectories and other
+files are ignored.
+
 ```bash
-cp my-plugin.so /path/to/iacforge/extensions/
+mkdir -p /path/to/my-extensions
+cp my-plugin.so /path/to/my-extensions/
+export IACFORGE_EXTENSIONS=/path/to/my-extensions
+iacforge validate infra.yaml
 ```
 
 ## Manifest
@@ -92,15 +101,12 @@ The `Manifest` struct defines plugin metadata:
 
 ```go
 type Manifest struct {
-	ID             string   `yaml:"id"`
-	Name           string   `yaml:"name"`
-	Version        string   `yaml:"version"`
-	Author         string   `yaml:"author,omitempty"`
-	Description    string   `yaml:"description,omitempty"`
-	SpecVersion    string   `yaml:"spec_version,omitempty"`
-	SchemaVersion  string   `yaml:"schema_version,omitempty"`
-	Namespace      string   `yaml:"namespace"`
-	Dependencies   []string `yaml:"dependencies,omitempty"`
+	ID              string   `yaml:"id"`
+	Name            string   `yaml:"name"`
+	Version         string   `yaml:"version"`
+	Description     string   `yaml:"description,omitempty"`
+	Namespace       string   `yaml:"namespace"`
+	Dependencies    []string `yaml:"dependencies,omitempty"`
 	ExtensionPoints []string `yaml:"extension_points"`
 }
 ```
@@ -111,10 +117,7 @@ type Manifest struct {
 | `Name` | Yes | Human-readable name |
 | `Version` | Yes | Semantic version (e.g., `1.0.0`) |
 | `Namespace` | Yes | Prevents naming conflicts |
-| `Author` | No | Plugin author |
 | `Description` | No | What the plugin does |
-| `SpecVersion` | No | Compatible IACForge spec version |
-| `SchemaVersion` | No | Compatible schema version |
 | `Dependencies` | No | List of required plugin IDs |
 | `ExtensionPoints` | No | Types of extensions provided |
 
@@ -139,14 +142,21 @@ EntityKinds: []extension.EntityKindContribution{
 					Required: true,
 					Description: "Number of CPU cores",
 					Constraints: &schema.Constraint{
-						Min: float6Ptr(1),
-						Max: float6Ptr(128),
+						Min: f64Ptr(1),
+						Max: f64Ptr(128),
 					},
 				},
 			},
 		},
 	},
 },
+```
+
+`f64Ptr` is a local helper you define in your plugin; the schema package does
+not export pointer helpers:
+
+```go
+func f64Ptr(v float64) *float64 { return &v }
 ```
 
 **Core entity kinds that CANNOT be redefined:**
@@ -175,7 +185,6 @@ RelationTypes: []extension.RelationTypeContribution{
 **Direction types:**
 - `directed` - Has source and target
 - `symmetric` - Same meaning in both directions
-- `undirected` - No directionality
 
 **Core relation types that CANNOT be redefined:**
 `connects`, `hosts`, `depends_on`, `belongs_to`, `replicates_to`, `backs_up`, `monitors`, `managed_by`, `mounted_on`, `applies_to`, `listens_on`
@@ -192,7 +201,6 @@ ValidationRules: []extension.ValidationRuleContribution{
 			Name:        "Custom Validation Rule",
 			Description: "Ensures custom business logic",
 			Severity:    validation.SeverityWarning,
-			Scope:       validation.ScopeEntity,
 		},
 		Fn: func(ctx *validation.Context) []validation.Finding {
 			g := ctx.Graph.(*core.Graph)
@@ -211,8 +219,6 @@ ValidationRules: []extension.ValidationRuleContribution{
 ```
 
 **Severity levels:** `info`, `warning`, `error`
-
-**Scopes:** `graph`, `entity`, `relation`, `ownership`
 
 ### renderers
 
@@ -272,25 +278,47 @@ org.company.infrastructure-type
 | `list` | `[]interface{}` | Array of values |
 | `map` | `map[string]interface{}` | Key-value pairs |
 | `reference` | `string` | Reference to another entity |
-| `enum` | `string` | One of predefined values |
 
 ## Constraints
 
+`Constraint` fields that are pointers (`Min`, `Max`, `MinLength`, `MaxLength`,
+`Pattern`, `UniqueItems`) require pointer values. The schema package does not
+export pointer helpers; define small helpers in your plugin:
+
+```go
+func f64Ptr(v float64) *float64 { return &v }
+func intPtr(v int) *int         { return &v }
+func strPtr(v string) *string   { return &v }
+func boolPtr(v bool) *bool      { return &v }
+```
+
 ```go
 &schema.Constraint{
-	Min:         float6Ptr(0),       // Minimum numeric value
-	Max:         float6Ptr(100),     // Maximum numeric value
-	MinLength:   intPtr(1),          // Minimum string length
-	MaxLength:   intPtr(255),        // Maximum string length
-	Pattern:     stringPtr("^[a-z]"),// Regex pattern
+	Min:         f64Ptr(0),        // Minimum numeric value
+	Max:         f64Ptr(100),      // Maximum numeric value
+	MinLength:   intPtr(1),        // Minimum string length
+	MaxLength:   intPtr(255),      // Maximum string length
+	Pattern:     strPtr("^[a-z]"), // Regex pattern
 	Enum:        []string{"a", "b"}, // Allowed values
-	UniqueItems: boolPtr(true),      // List items must be unique
+	UniqueItems: boolPtr(true),    // List items must be unique
 }
 ```
 
 ## Complete Example
 
-See `testdata/plugins/testplugin/main.go` for a working example.
+A runnable example plugin lives in `testdata/plugins/testplugin/`.
+
+- `testdata/plugins/testplugin/main.go` — the plugin source.
+- `testdata/plugins/run-example.sh` — builds the plugin and loads it from a
+  standalone host program.
+
+Go plugins require the host binary and the plugin to be built with identical
+Go versions and dependency build IDs, so the runtime load is demonstrated via
+the script rather than inside `go test` (see `src/extension/plugin_load_test.go`).
+
+```bash
+bash testdata/plugins/run-example.sh
+```
 
 ## Troubleshooting
 

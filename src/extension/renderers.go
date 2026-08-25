@@ -90,12 +90,3 @@ func (ep *RendererExtensionPoint) GetExtensionForRenderer(rendererID string) (st
 	extID, ok := ep.renderers[rendererID]
 	return extID, ok
 }
-
-// AllExtendedRenderers returns all renderer IDs added by extensions.
-func (ep *RendererExtensionPoint) AllExtendedRenderers() map[string]string {
-	result := make(map[string]string, len(ep.renderers))
-	for k, v := range ep.renderers {
-		result[k] = v
-	}
-	return result
-}

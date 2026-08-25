@@ -129,6 +129,43 @@ func (r *JSONRenderer) Render(v *view.ViewResult, opts *RenderOptions) (*Artifac
 	}
 	data["groups"] = groups
 
+	if includeMetadata {
+		data["lifted_relation_count"] = len(v.LiftedRelations)
+		data["lifted_group_count"] = len(v.LiftedGroups)
+	}
+
+	liftedRelations := make([]map[string]interface{}, 0, len(v.LiftedRelations))
+	for _, rel := range v.LiftedRelations {
+		lr := map[string]interface{}{
+			"id":               rel.ID,
+			"type":             rel.Type,
+			"source_ref":       rel.SourceRef,
+			"target_ref":       rel.TargetRef,
+			"via":              rel.Via,
+			"aggregated_count": rel.AggregatedCount,
+		}
+		if rel.Direction != "" {
+			lr["direction"] = rel.Direction
+		}
+		liftedRelations = append(liftedRelations, lr)
+	}
+	if len(liftedRelations) > 0 {
+		data["lifted_relations"] = liftedRelations
+	}
+
+	if len(v.LiftedGroups) > 0 {
+		liftedGroups := make([]map[string]interface{}, 0, len(v.LiftedGroups))
+		for _, group := range v.LiftedGroups {
+			liftedGroups = append(liftedGroups, map[string]interface{}{
+				"id":      group.ID,
+				"kind":    group.Kind,
+				"name":    group.Name,
+				"members": group.Members,
+			})
+		}
+		data["lifted_groups"] = liftedGroups
+	}
+
 	data["annotations"] = v.Annotations
 
 	jsonBytes, err := json.MarshalIndent(data, "", strings.Repeat(" ", indent))

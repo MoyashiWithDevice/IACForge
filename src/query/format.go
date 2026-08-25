@@ -17,8 +17,12 @@ import (
 //
 // When includeRelations is true, every graph relation whose participants are
 // all present as nodes is included, producing the induced subgraph over the
-// matched entities. Relations whose participants include objects outside the
-// node set are omitted so diagrams never contain dangling edges.
+// matched entities. Relations anchored on objects outside the node set are
+// lifted (see view.LiftRelations): their endpoints are mapped up to visible
+// ancestors or down to visible hosted entities, and the derived edges are
+// attached to the result as LiftedRelations/LiftedGroups so diagrams such as
+// application-only views still express connectivity defined on hidden nodes
+// or clusters.
 //
 // Participant references (e.g. interface references like "srv-01/eth0") are
 // resolved to entity IDs on the returned relations so that edge endpoints
@@ -45,13 +49,16 @@ func (e *Engine) ToViewResult(result *Result, includeRelations bool) *view.ViewR
 	}
 
 	// Include graph relations among visible entities (induced subgraph).
+	induced := make([]*core.Relation, 0, len(relations))
 	if includeRelations {
 		for _, rel := range e.graph.Relations() {
 			if _, present := relations[rel.ID]; present {
 				continue
 			}
 			if e.allParticipantsVisible(rel, entities) {
-				relations[rel.ID] = e.resolvedRelation(rel)
+				resolved := e.resolvedRelation(rel)
+				relations[rel.ID] = resolved
+				induced = append(induced, resolved)
 			}
 		}
 	}
@@ -74,7 +81,7 @@ func (e *Engine) ToViewResult(result *Result, includeRelations bool) *view.ViewR
 		viewID = "query-result"
 	}
 
-	return &view.ViewResult{
+	vr := &view.ViewResult{
 		ViewID:           viewID,
 		Title:            fmt.Sprintf("Query %s", viewID),
 		Description:      "Query result graph",
@@ -82,6 +89,13 @@ func (e *Engine) ToViewResult(result *Result, includeRelations bool) *view.ViewR
 		VisibleRelations: visibleRelations,
 		Annotations:      make(map[string]map[string]interface{}),
 	}
+
+	if includeRelations {
+		vr.LiftedGroups, vr.LiftedRelations = view.LiftRelations(
+			e.graph, visibleEntities, induced, e.graph.Relations())
+	}
+
+	return vr
 }
 
 // resolveParticipant resolves a relation participant reference to an entity.

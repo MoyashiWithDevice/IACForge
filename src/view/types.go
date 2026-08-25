@@ -9,11 +9,9 @@ type View struct {
 	ID          string            `yaml:"id"`
 	Name        string            `yaml:"name"`
 	Description string            `yaml:"description,omitempty"`
-	Audience    string            `yaml:"audience,omitempty"`
 	Visibility  []*VisibilityRule `yaml:"visibility,omitempty"`
 	Grouping    []*GroupingRule   `yaml:"grouping,omitempty"`
 	Annotations []*AnnotationRule `yaml:"annotations,omitempty"`
-	Layout      *LayoutHint       `yaml:"layout,omitempty"`
 }
 
 // VisibilityRule determines which objects are shown or hidden.
@@ -46,7 +44,6 @@ type GroupingRule struct {
 	TargetKind string       `yaml:"target_kind"`
 	GroupKind  string       `yaml:"group_kind"`
 	GroupBy    []string     `yaml:"group_by"`
-	Owner      string       `yaml:"owner,omitempty"`
 	Where      *WhereClause `yaml:"where,omitempty"`
 }
 
@@ -54,14 +51,6 @@ type GroupingRule struct {
 type AnnotationRule struct {
 	TargetSelector *EntitySelector `yaml:"target_selector"`
 	Annotations    []*Annotation   `yaml:"annotations"`
-}
-
-// LayoutHint provides spatial arrangement hints.
-type LayoutHint struct {
-	Type      string  `yaml:"type,omitempty"`
-	Direction string  `yaml:"direction,omitempty"`
-	Spacing   float64 `yaml:"spacing,omitempty"`
-	Padding   float64 `yaml:"padding,omitempty"`
 }
 
 // EntitySelector defines entity selection criteria.
@@ -91,6 +80,11 @@ type Annotation struct {
 }
 
 // ViewResult represents the result of applying a View to a Graph.
+//
+// In addition to the explicitly visible subgraph, the result carries lifted
+// content produced by LiftRelations: edges derived between visible entities
+// from relations anchored on hidden objects (e.g. applications connected via
+// relations defined on their host nodes or clusters).
 type ViewResult struct {
 	ViewID           string
 	Title            string
@@ -98,6 +92,8 @@ type ViewResult struct {
 	VisibleEntities  []*core.Entity
 	VisibleRelations []*core.Relation
 	Groups           []*Group
+	LiftedGroups     []*Group
+	LiftedRelations  []*LiftedRelation
 	Annotations      map[string]map[string]interface{}
 }
 
@@ -107,8 +103,26 @@ type Group struct {
 	Kind       string
 	Name       string
 	Members    []string
-	Owner      string
 	Properties map[string]interface{}
+}
+
+// LiftedRelation is a derived edge between visible objects produced by the
+// relation lift step. Each endpoint references either a visible entity ID or
+// the ID of a LiftedGroups entry (structural group), so diagrams can express
+// relations between hidden ancestors (nodes, clusters, sites) without showing
+// those ancestors.
+type LiftedRelation struct {
+	ID        string
+	Type      core.RelationType
+	Direction core.Direction
+	SourceRef string
+	TargetRef string
+	// AggregatedCount reports how many anchor candidates were collapsed onto
+	// a single representative endpoint when no structural group was available.
+	// Values <= 1 mean no aggregation happened on either side.
+	AggregatedCount int
+	// Via lists the IDs of the source relations this edge was derived from.
+	Via []string
 }
 
 // NewView creates a new View.
@@ -127,60 +141,6 @@ func NewVisibilityRule(target VisibilityTarget, action VisibilityAction) *Visibi
 	}
 }
 
-// NewGroupingRule creates a new GroupingRule.
-func NewGroupingRule(targetKind, groupKind string) *GroupingRule {
-	return &GroupingRule{
-		TargetKind: targetKind,
-		GroupKind:  groupKind,
-		GroupBy:    make([]string, 0),
-	}
-}
-
-// NewAnnotationRule creates a new AnnotationRule.
-func NewAnnotationRule() *AnnotationRule {
-	return &AnnotationRule{
-		Annotations: make([]*Annotation, 0),
-	}
-}
-
-// NewLayoutHint creates a new LayoutHint.
-func NewLayoutHint() *LayoutHint {
-	return &LayoutHint{}
-}
-
-// NewEntitySelector creates a new EntitySelector.
-func NewEntitySelector() *EntitySelector {
-	return &EntitySelector{}
-}
-
-// NewWhereClause creates a new WhereClause.
-func NewWhereClause() *WhereClause {
-	return &WhereClause{}
-}
-
-// NewCondition creates a new Condition.
-func NewCondition(field, operator string, value interface{}) *Condition {
-	return &Condition{
-		Field:    field,
-		Operator: operator,
-		Value:    value,
-	}
-}
-
-// NewAnnotation creates a new Annotation.
-func NewAnnotation(property string) *Annotation {
-	return &Annotation{
-		Property: property,
-	}
-}
-
-// AddCondition adds a condition to the where clause.
-func (w *WhereClause) AddCondition(field, operator string, value interface{}) *Condition {
-	cond := NewCondition(field, operator, value)
-	w.Conditions = append(w.Conditions, cond)
-	return cond
-}
-
 // AddVisibility adds a visibility rule to the view.
 func (v *View) AddVisibility(rule *VisibilityRule) {
 	v.Visibility = append(v.Visibility, rule)
@@ -189,9 +149,4 @@ func (v *View) AddVisibility(rule *VisibilityRule) {
 // AddGrouping adds a grouping rule to the view.
 func (v *View) AddGrouping(rule *GroupingRule) {
 	v.Grouping = append(v.Grouping, rule)
-}
-
-// AddAnnotationRule adds an annotation rule to the view.
-func (v *View) AddAnnotationRule(rule *AnnotationRule) {
-	v.Annotations = append(v.Annotations, rule)
 }

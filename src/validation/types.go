@@ -9,16 +9,6 @@ const (
 	SeverityError   Severity = "error"
 )
 
-// Scope represents the evaluation scope of a validation rule.
-type Scope string
-
-const (
-	ScopeGraph     Scope = "graph"
-	ScopeEntity    Scope = "entity"
-	ScopeRelation  Scope = "relation"
-	ScopeOwnership Scope = "ownership"
-)
-
 // ObjectType represents the type of object a finding relates to.
 type ObjectType string
 
@@ -43,7 +33,6 @@ type Rule struct {
 	Name        string   `yaml:"name"`
 	Description string   `yaml:"description,omitempty"`
 	Severity    Severity `yaml:"severity"`
-	Scope       Scope    `yaml:"scope"`
 }
 
 // Result holds the complete validation result.

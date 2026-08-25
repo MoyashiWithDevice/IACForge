@@ -2,7 +2,6 @@ package parser
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -91,30 +90,6 @@ func (p *Parser) Parse(data []byte) (*core.Graph, error) {
 	if err := yaml.Unmarshal(data, &doc); err != nil {
 		return nil, fmt.Errorf("failed to parse YAML: %w", err)
 	}
-
-	if err := p.parseObjects(doc.Objects); err != nil {
-		return nil, err
-	}
-
-	if err := p.graph.BuildOwnershipPaths(); err != nil {
-		return nil, fmt.Errorf("failed to build ownership paths: %w", err)
-	}
-
-	return p.graph, nil
-}
-
-// ParseReader parses YAML from a reader into a Graph.
-func (p *Parser) ParseReader(r io.Reader) (*core.Graph, error) {
-	var doc struct {
-		Objects []map[string]interface{} `yaml:"objects"`
-	}
-
-	decoder := yaml.NewDecoder(r)
-	if err := decoder.Decode(&doc); err != nil {
-		return nil, fmt.Errorf("failed to parse YAML: %w", err)
-	}
-
-	p.graph = core.NewGraph()
 
 	if err := p.parseObjects(doc.Objects); err != nil {
 		return nil, err
@@ -459,28 +434,21 @@ func (p *Parser) parseEntity(obj map[string]interface{}, parentID string) (*core
 		if owner, ok := getStringOptional(attrs, "owner"); ok {
 			entity.SetOwner(owner)
 		}
-		if description, ok := getStringOptional(attrs, "description"); ok {
-			entity.Description = description
+		ca := parseCommonAttributes(attrs)
+		if ca.description != "" {
+			entity.Description = ca.description
 		}
-		if statusStr, ok := getStringOptional(attrs, "status"); ok {
-			entity.SetStatus(core.Status(statusStr))
+		if ca.status != "" {
+			entity.SetStatus(ca.status)
 		}
-		if tags, ok := getSliceOptional(attrs, "tags"); ok {
-			for _, tag := range tags {
-				if tagStr, ok := tag.(string); ok {
-					entity.AddTag(tagStr)
-				}
-			}
+		for _, tag := range ca.tags {
+			entity.AddTag(tag)
 		}
-		if labels, ok := getMapOptional(attrs, "labels"); ok {
-			for k, v := range labels {
-				if vStr, ok := v.(string); ok {
-					entity.SetLabel(k, vStr)
-				}
-			}
+		for k, v := range ca.labels {
+			entity.SetLabel(k, v)
 		}
-		if extensions, ok := getMapOptional(attrs, "extensions"); ok {
-			entity.Extensions = extensions
+		if ca.extensions != nil {
+			entity.Extensions = ca.extensions
 		}
 	}
 
@@ -616,28 +584,21 @@ func (p *Parser) parseRelation(obj map[string]interface{}, entities map[string]*
 
 	// Parse attributes sub-key
 	if attrs, ok := getMapOptional(obj, "attributes"); ok {
-		if description, ok := getStringOptional(attrs, "description"); ok {
-			relation.Description = description
+		ca := parseCommonAttributes(attrs)
+		if ca.description != "" {
+			relation.Description = ca.description
 		}
-		if statusStr, ok := getStringOptional(attrs, "status"); ok {
-			relation.SetStatus(core.Status(statusStr))
+		if ca.status != "" {
+			relation.SetStatus(ca.status)
 		}
-		if tags, ok := getSliceOptional(attrs, "tags"); ok {
-			for _, tag := range tags {
-				if tagStr, ok := tag.(string); ok {
-					relation.AddTag(tagStr)
-				}
-			}
+		for _, tag := range ca.tags {
+			relation.AddTag(tag)
 		}
-		if labels, ok := getMapOptional(attrs, "labels"); ok {
-			for k, v := range labels {
-				if vStr, ok := v.(string); ok {
-					relation.SetLabel(k, vStr)
-				}
-			}
+		for k, v := range ca.labels {
+			relation.SetLabel(k, v)
 		}
-		if extensions, ok := getMapOptional(attrs, "extensions"); ok {
-			relation.Extensions = extensions
+		if ca.extensions != nil {
+			relation.Extensions = ca.extensions
 		}
 	}
 
@@ -688,6 +649,46 @@ func (p *Parser) parseParticipants(obj map[string]interface{}, relType core.Rela
 	default:
 		return nil, "", fmt.Errorf("invalid participants format: expected list or map, got %T", participantsRaw)
 	}
+}
+
+// rawCommonAttributes holds the common entity/relation attributes parsed from YAML.
+type rawCommonAttributes struct {
+	description string
+	status      core.Status
+	tags        []string
+	labels      map[string]string
+	extensions  map[string]interface{}
+}
+
+// parseCommonAttributes extracts the attributes shared by entities and relations
+// from an attributes map (description, status, tags, labels, extensions).
+func parseCommonAttributes(attrs map[string]interface{}) rawCommonAttributes {
+	var ca rawCommonAttributes
+	if description, ok := getStringOptional(attrs, "description"); ok {
+		ca.description = description
+	}
+	if statusStr, ok := getStringOptional(attrs, "status"); ok {
+		ca.status = core.Status(statusStr)
+	}
+	if tags, ok := getSliceOptional(attrs, "tags"); ok {
+		for _, tag := range tags {
+			if tagStr, ok := tag.(string); ok {
+				ca.tags = append(ca.tags, tagStr)
+			}
+		}
+	}
+	if labels, ok := getMapOptional(attrs, "labels"); ok {
+		ca.labels = make(map[string]string, len(labels))
+		for k, v := range labels {
+			if vStr, ok := v.(string); ok {
+				ca.labels[k] = vStr
+			}
+		}
+	}
+	if extensions, ok := getMapOptional(attrs, "extensions"); ok {
+		ca.extensions = extensions
+	}
+	return ca
 }
 
 // getString extracts a string value from a map.

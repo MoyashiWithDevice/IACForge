@@ -18,7 +18,6 @@ type Renderer interface {
 type RenderOptions struct {
 	Width   float64                `yaml:"width,omitempty"`
 	Height  float64                `yaml:"height,omitempty"`
-	Scale   float64                `yaml:"scale,omitempty"`
 	Theme   *Theme                 `yaml:"theme,omitempty"`
 	Layout  *LayoutConfig          `yaml:"layout,omitempty"`
 	Options map[string]interface{} `yaml:"options,omitempty"`
@@ -41,8 +40,6 @@ type Theme struct {
 	Name       string        `yaml:"name"`
 	Colors     *ColorPalette `yaml:"colors,omitempty"`
 	Typography *Typography   `yaml:"typography,omitempty"`
-	Spacing    *Spacing      `yaml:"spacing,omitempty"`
-	Icons      *IconSet      `yaml:"icons,omitempty"`
 	Lines      *LineStyles   `yaml:"lines,omitempty"`
 }
 
@@ -66,25 +63,6 @@ type Typography struct {
 	FontSize    int    `yaml:"font_size,omitempty"`
 	HeadingSize int    `yaml:"heading_size,omitempty"`
 	CodeFont    string `yaml:"code_font,omitempty"`
-}
-
-// Spacing defines spacing definitions.
-type Spacing struct {
-	Unit   float64 `yaml:"unit,omitempty"`
-	Small  float64 `yaml:"small,omitempty"`
-	Medium float64 `yaml:"medium,omitempty"`
-	Large  float64 `yaml:"large,omitempty"`
-}
-
-// IconSet defines icon definitions.
-type IconSet struct {
-	Region   string `yaml:"region,omitempty"`
-	Rack     string `yaml:"rack,omitempty"`
-	Server   string `yaml:"server,omitempty"`
-	VM       string `yaml:"vm,omitempty"`
-	Network  string `yaml:"network,omitempty"`
-	Switch   string `yaml:"switch,omitempty"`
-	Firewall string `yaml:"firewall,omitempty"`
 }
 
 // LineStyles defines line style definitions.
@@ -154,43 +132,10 @@ func NewArtifact(id, rendererID, viewID, format, content string) *Artifact {
 	}
 }
 
-// NewTheme creates a new Theme with default values.
-func NewTheme(id, name string) *Theme {
-	return &Theme{
-		ID:   id,
-		Name: name,
-		Colors: &ColorPalette{
-			Primary:    "#3b82f6",
-			Secondary:  "#6b7280",
-			Background: "#ffffff",
-			Surface:    "#f9fafb",
-			Text:       "#111827",
-			Border:     "#e5e7eb",
-			Success:    "#10b981",
-			Warning:    "#f59e0b",
-			Error:      "#ef4444",
-			Info:       "#3b82f6",
-		},
-		Typography: &Typography{
-			FontFamily:  "Inter, sans-serif",
-			FontSize:    14,
-			HeadingSize: 18,
-			CodeFont:    "Fira Code, monospace",
-		},
-		Spacing: &Spacing{
-			Unit:   4,
-			Small:  8,
-			Medium: 16,
-			Large:  32,
-		},
-	}
-}
-
 // NewRenderOptions creates new RenderOptions with defaults.
 func NewRenderOptions() *RenderOptions {
 	return &RenderOptions{
 		Width:  800,
 		Height: 600,
-		Scale:  1.0,
 	}
 }

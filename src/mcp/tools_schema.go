@@ -44,7 +44,10 @@ func registerSchemaMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 				})
 			}
 
-			data, _ := json.MarshalIndent(kinds, "", "  ")
+			data, err := json.MarshalIndent(kinds, "", "  ")
+			if err != nil {
+				return toolError(fmt.Sprintf("failed to marshal response: %v", err)), nil
+			}
 			return toolResult(string(data)), nil
 		},
 	)
@@ -115,7 +118,10 @@ func registerSchemaMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 				"nesting_defs": nestings,
 			}
 
-			data, _ := json.MarshalIndent(result, "", "  ")
+			data, err := json.MarshalIndent(result, "", "  ")
+			if err != nil {
+				return toolError(fmt.Sprintf("failed to marshal response: %v", err)), nil
+			}
 			return toolResult(string(data)), nil
 		},
 	)
@@ -144,7 +150,10 @@ func registerSchemaMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 				})
 			}
 
-			data, _ := json.MarshalIndent(types, "", "  ")
+			data, err := json.MarshalIndent(types, "", "  ")
+			if err != nil {
+				return toolError(fmt.Sprintf("failed to marshal response: %v", err)), nil
+			}
 			return toolResult(string(data)), nil
 		},
 	)

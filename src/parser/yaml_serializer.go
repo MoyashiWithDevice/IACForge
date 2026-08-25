@@ -3,7 +3,6 @@ package parser
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"sort"
 
@@ -35,11 +34,6 @@ func NewSerializerWithSchema(s *schema.Schema) *Serializer {
 	}
 }
 
-// SetIndent sets the indentation level.
-func (s *Serializer) SetIndent(indent int) {
-	s.indent = indent
-}
-
 // SerializeFile writes a Graph to a YAML file.
 func (s *Serializer) SerializeFile(g *core.Graph, path string) error {
 	data, err := s.Serialize(g)
@@ -66,20 +60,6 @@ func (s *Serializer) Serialize(g *core.Graph) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
-}
-
-// SerializeTo writes a Graph to a writer.
-func (s *Serializer) SerializeTo(g *core.Graph, w io.Writer) error {
-	doc := s.buildDocument(g)
-
-	encoder := yaml.NewEncoder(w)
-	encoder.SetIndent(s.indent)
-
-	if err := encoder.Encode(doc); err != nil {
-		return fmt.Errorf("failed to encode YAML: %w", err)
-	}
-
-	return encoder.Close()
 }
 
 // buildDocument constructs the YAML document structure.
@@ -181,39 +161,12 @@ func (s *Serializer) buildEntityWithChildren(e *core.Entity, childrenByParent ma
 	}
 
 	// Build attributes sub-key (omit owner for nested entities)
-	attrs := make(map[string]interface{})
-	if !isNested && e.Owner != "" {
-		attrs["owner"] = e.Owner
-	}
-	if e.Description != "" {
-		attrs["description"] = e.Description
-	}
-	if e.Status != "" {
-		attrs["status"] = string(e.Status)
-	}
-	if len(e.Tags) > 0 {
-		attrs["tags"] = e.Tags
-	}
-	if len(e.Labels) > 0 {
-		attrs["labels"] = sortMap(e.Labels)
-	}
-	if len(e.Extensions) > 0 {
-		attrs["extensions"] = sortInterfaceMap(e.Extensions)
-	}
-	if len(attrs) > 0 {
+	if attrs := buildAttributes(e.Description, e.Status, e.Tags, e.Labels, e.Extensions, !isNested, e.Owner); attrs != nil {
 		obj["attributes"] = attrs
 	}
 
 	// Build spec sub-key for kind-specific properties
-	spec := make(map[string]interface{})
-	sortedKeys := make([]string, 0, len(e.Properties))
-	for k := range e.Properties {
-		sortedKeys = append(sortedKeys, k)
-	}
-	sort.Strings(sortedKeys)
-	for _, k := range sortedKeys {
-		spec[k] = serializePropertyValue(e.Properties[k])
-	}
+	spec := buildSpec(e.Properties)
 
 	// Group children by nest key and recurse
 	directChildren := childrenByParent[e.ID]
@@ -269,42 +222,60 @@ func (s *Serializer) buildRelation(r *core.Relation) map[string]interface{} {
 	}
 
 	// Build attributes sub-key
-	attrs := make(map[string]interface{})
-	if r.Description != "" {
-		attrs["description"] = r.Description
-	}
-	if r.Status != "" {
-		attrs["status"] = string(r.Status)
-	}
-	if len(r.Tags) > 0 {
-		attrs["tags"] = r.Tags
-	}
-	if len(r.Labels) > 0 {
-		attrs["labels"] = sortMap(r.Labels)
-	}
-	if len(r.Extensions) > 0 {
-		attrs["extensions"] = sortInterfaceMap(r.Extensions)
-	}
-	if len(attrs) > 0 {
+	if attrs := buildAttributes(r.Description, r.Status, r.Tags, r.Labels, r.Extensions, false, ""); attrs != nil {
 		obj["attributes"] = attrs
 	}
 
 	// Build spec sub-key for relation-type-specific properties
-	if len(r.Properties) > 0 {
-		spec := make(map[string]interface{})
-		sortedKeys := make([]string, 0, len(r.Properties))
-		for k := range r.Properties {
-			sortedKeys = append(sortedKeys, k)
-		}
-		sort.Strings(sortedKeys)
-
-		for _, k := range sortedKeys {
-			spec[k] = serializePropertyValue(r.Properties[k])
-		}
+	if spec := buildSpec(r.Properties); len(spec) > 0 {
 		obj["spec"] = spec
 	}
 
 	return obj
+}
+
+// buildAttributes constructs the shared attributes map for entities and relations.
+// Owner is included only when includeOwner is true and owner is non-empty.
+// Returns nil when no attributes are present.
+func buildAttributes(description string, status core.Status, tags []string, labels map[string]string, extensions map[string]interface{}, includeOwner bool, owner string) map[string]interface{} {
+	attrs := make(map[string]interface{})
+	if includeOwner && owner != "" {
+		attrs["owner"] = owner
+	}
+	if description != "" {
+		attrs["description"] = description
+	}
+	if status != "" {
+		attrs["status"] = string(status)
+	}
+	if len(tags) > 0 {
+		attrs["tags"] = tags
+	}
+	if len(labels) > 0 {
+		attrs["labels"] = sortMap(labels)
+	}
+	if len(extensions) > 0 {
+		attrs["extensions"] = sortInterfaceMap(extensions)
+	}
+	if len(attrs) == 0 {
+		return nil
+	}
+	return attrs
+}
+
+// buildSpec constructs a spec map from kind-specific properties, sorted for
+// deterministic YAML output. Returns an empty map when no properties exist.
+func buildSpec(properties map[string]interface{}) map[string]interface{} {
+	spec := make(map[string]interface{})
+	sortedKeys := make([]string, 0, len(properties))
+	for k := range properties {
+		sortedKeys = append(sortedKeys, k)
+	}
+	sort.Strings(sortedKeys)
+	for _, k := range sortedKeys {
+		spec[k] = serializePropertyValue(properties[k])
+	}
+	return spec
 }
 
 // sortMap returns a sorted copy of a string map for deterministic YAML output.

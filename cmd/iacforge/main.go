@@ -248,36 +248,20 @@ func cmdRender(args []string) {
 		os.Exit(1)
 	}
 
-	var r renderer.Renderer
-	switch format {
-	case "svg":
-		r = renderer.NewSVGRenderer()
-	case "markdown", "md":
-		r = renderer.NewMarkdownRenderer()
-		format = "markdown"
-	case "mermaid":
-		r = renderer.NewMermaidRenderer()
-	case "json":
-		r = renderer.NewJSONRenderer()
-	default:
-		fmt.Fprintf(os.Stderr, "unknown format: %s (supported: svg, markdown, mermaid, json)\n", format)
-		os.Exit(1)
-	}
-
-	artifact, err := r.Render(vr, renderer.NewRenderOptions())
+	content, err := renderer.RenderFormat(vr, format)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Render error: %v\n", err)
 		os.Exit(1)
 	}
 
 	if output != "" {
-		if err := os.WriteFile(output, []byte(artifact.Content), 0644); err != nil {
+		if err := os.WriteFile(output, []byte(content), 0644); err != nil {
 			fmt.Fprintf(os.Stderr, "Write error: %v\n", err)
 			os.Exit(1)
 		}
 		fmt.Printf("Output written to %s\n", output)
 	} else {
-		fmt.Print(artifact.Content)
+		fmt.Print(content)
 	}
 }
 
@@ -319,13 +303,11 @@ func cmdQuery(args []string) {
 	q.Select = query.NewSelectClause()
 
 	if kind != "" {
-		sel := q.Select.AddEntity(core.EntityKind(kind))
-		_ = sel
+		q.Select.AddEntity(core.EntityKind(kind))
 	} else if relType != "" {
 		q.Select.AddRelation(core.RelationType(relType))
 	} else {
-		sel := q.Select.AddEntity("")
-		_ = sel
+		q.Select.AddEntity("")
 	}
 
 	result, err := qe.Execute(q)

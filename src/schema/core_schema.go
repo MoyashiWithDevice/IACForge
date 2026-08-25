@@ -7,9 +7,6 @@ import (
 )
 
 func intPtr(v float64) *float64 { return &v }
-func strPtr(s string) *string   { return &s }
-func boolPtr(b bool) *bool      { return &b }
-func intPtrInt(v int) *int      { return &v }
 
 // CoreSchema returns the default core schema with all entity kinds and relation types.
 func CoreSchema() *Schema {
@@ -65,7 +62,7 @@ func registerEntityKinds(s *Schema) {
 			{Name: "serial_number", Type: PropertyTypeString, Required: false, Description: "Serial number"},
 			{Name: "cpu", Type: PropertyTypeList, Required: false, Description: "CPU configurations", Properties: []PropertyDefinition{
 				{Name: "cores", Type: PropertyTypeInteger, Required: false, Constraints: &Constraint{Min: intPtr(1), Max: intPtr(1024)}, Description: "Number of CPU cores"},
-				{Name: "architecture", Type: PropertyTypeString, Required: false, Description: "CPU architecture (x86_64, arm64)"},
+				{Name: "architecture", Type: PropertyTypeString, Required: false, Constraints: &Constraint{Enum: []string{"x86_64", "arm64"}}, Description: "CPU architecture (x86_64, arm64)"},
 			}},
 			{Name: "memory", Type: PropertyTypeList, Required: false, Description: "Memory modules", Properties: []PropertyDefinition{
 				{Name: "size_gb", Type: PropertyTypeNumber, Required: true, Description: "Memory module size in GB"},
@@ -76,7 +73,7 @@ func registerEntityKinds(s *Schema) {
 				{Name: "size_gb", Type: PropertyTypeNumber, Required: false, Description: "Storage size in GB"},
 				{Name: "type", Type: PropertyTypeString, Required: false, Description: "Storage type (ssd, hdd, nvme)"},
 			}},
-			{Name: "platform", Type: PropertyTypeString, Required: false, Description: "Virtualization platform"},
+			{Name: "platform", Type: PropertyTypeString, Required: false, Constraints: &Constraint{Enum: []string{"proxmox", "vmware", "kubernetes", "baremetal"}}, Description: "Virtualization platform"},
 			{Name: "bios_version", Type: PropertyTypeString, Required: false, Description: "BIOS/UEFI version"},
 		},
 		NestingDefs: []NestingDefinition{
@@ -129,7 +126,7 @@ func registerEntityKinds(s *Schema) {
 			{Name: "gateway", Type: PropertyTypeString, Required: false, Description: "Default gateway address"},
 			{Name: "dns_servers", Type: PropertyTypeList, Required: false, Description: "DNS server addresses"},
 			{Name: "vlan_id", Type: PropertyTypeInteger, Required: false, Description: "Associated VLAN ID"},
-			{Name: "network_type", Type: PropertyTypeString, Required: false, Description: "Network type (management, storage, vm, public)"},
+			{Name: "network_type", Type: PropertyTypeString, Required: false, Constraints: &Constraint{Enum: []string{"management", "storage", "vm", "public"}}, Description: "Network type (management, storage, vm, public)"},
 		},
 	})
 
@@ -187,7 +184,7 @@ func registerEntityKinds(s *Schema) {
 		Properties: []PropertyDefinition{
 			{Name: "default_action", Type: PropertyTypeString, Required: false, Default: "deny", Constraints: &Constraint{Enum: []string{"allow", "deny"}}, Description: "Default action when no rule matches"},
 			{Name: "direction", Type: PropertyTypeString, Required: false, Constraints: &Constraint{Enum: []string{"inbound", "outbound", "both"}}, Description: "Traffic direction"},
-			{Name: "protocol", Type: PropertyTypeString, Required: false, Default: "any", Description: "Protocol filter (tcp, udp, icmp, any)"},
+			{Name: "protocol", Type: PropertyTypeString, Required: false, Default: "any", Constraints: &Constraint{Enum: []string{"tcp", "udp", "icmp", "any"}}, Description: "Protocol filter (tcp, udp, icmp, any)"},
 		},
 		NestingDefs: []NestingDefinition{
 			{NestKey: "acl_rules", ChildKind: kinds.ACLRule, AutoRelationType: types.BelongsTo, AutoRelationSource: "child"},
@@ -212,7 +209,7 @@ func registerEntityKinds(s *Schema) {
 		Properties: []PropertyDefinition{
 			{Name: "cpu", Type: PropertyTypeList, Required: false, Description: "Virtual CPU configurations", Properties: []PropertyDefinition{
 				{Name: "cores", Type: PropertyTypeInteger, Required: false, Description: "Number of virtual CPU cores"},
-				{Name: "architecture", Type: PropertyTypeString, Required: false, Description: "CPU architecture (x86_64, arm64)"},
+				{Name: "architecture", Type: PropertyTypeString, Required: false, Constraints: &Constraint{Enum: []string{"x86_64", "arm64"}}, Description: "CPU architecture (x86_64, arm64)"},
 			}},
 			{Name: "memory", Type: PropertyTypeList, Required: false, Description: "Memory modules", Properties: []PropertyDefinition{
 				{Name: "size_gb", Type: PropertyTypeNumber, Required: true, Description: "Memory module size in GB"},
@@ -251,7 +248,7 @@ func registerEntityKinds(s *Schema) {
 		Properties: []PropertyDefinition{
 			{Name: "version", Type: PropertyTypeString, Required: false, Description: "Application version"},
 			{Name: "port", Type: PropertyTypeInteger, Required: false, Description: "Primary listening port"},
-			{Name: "protocol", Type: PropertyTypeString, Required: false, Description: "Network protocol (http, https, tcp, udp)"},
+			{Name: "protocol", Type: PropertyTypeString, Required: false, Constraints: &Constraint{Enum: []string{"http", "https", "tcp", "udp"}}, Description: "Network protocol (http, https, tcp, udp)"},
 			{Name: "url", Type: PropertyTypeString, Required: false, Description: "Application URL if applicable"},
 		},
 		NestingDefs: []NestingDefinition{
@@ -265,7 +262,7 @@ func registerEntityKinds(s *Schema) {
 		Properties: []PropertyDefinition{
 			{Name: "port", Type: PropertyTypeInteger, Required: true, Constraints: &Constraint{Min: intPtr(1), Max: intPtr(65535)}, Description: "Port number (1-65535)"},
 			{Name: "protocol", Type: PropertyTypeString, Required: true, Constraints: &Constraint{Enum: []string{"tcp", "udp"}}, Description: "Transport protocol (tcp, udp)"},
-			{Name: "state", Type: PropertyTypeString, Required: false, Default: "listening", Description: "Port state (listening, established, closed)"},
+			{Name: "state", Type: PropertyTypeString, Required: false, Default: "listening", Constraints: &Constraint{Enum: []string{"listening", "established", "closed"}}, Description: "Port state (listening, established, closed)"},
 			{Name: "address", Type: PropertyTypeString, Required: false, Default: "0.0.0.0", Description: "Listening IP address"},
 			{Name: "process", Type: PropertyTypeString, Required: false, Description: "Process or service name using this port"},
 			{Name: "pid", Type: PropertyTypeInteger, Required: false, Description: "Process ID if known"},
@@ -280,7 +277,7 @@ func registerEntityKinds(s *Schema) {
 			{Name: "total_capacity_gb", Type: PropertyTypeNumber, Required: false, Description: "Total raw capacity in GB"},
 			{Name: "usable_capacity_gb", Type: PropertyTypeNumber, Required: false, Description: "Usable capacity after redundancy"},
 			{Name: "raid_level", Type: PropertyTypeString, Required: false, Description: "RAID level if applicable"},
-			{Name: "protocol", Type: PropertyTypeString, Required: false, Description: "Storage protocol (nfs, iscsi, fc, local)"},
+			{Name: "protocol", Type: PropertyTypeString, Required: false, Constraints: &Constraint{Enum: []string{"nfs", "iscsi", "fc", "local"}}, Description: "Storage protocol (nfs, iscsi, fc, local)"},
 		},
 	})
 
@@ -297,7 +294,7 @@ func registerEntityKinds(s *Schema) {
 	s.AddEntityKind(kinds.Cluster, &EntityKindDefinition{
 		Description: "Logical grouping of compute resources",
 		Properties: []PropertyDefinition{
-			{Name: "cluster_type", Type: PropertyTypeString, Required: false, Description: "Cluster type (compute, storage, hyperconverged)"},
+			{Name: "cluster_type", Type: PropertyTypeString, Required: false, Constraints: &Constraint{Enum: []string{"compute", "storage", "hyperconverged"}}, Description: "Cluster type (compute, storage, hyperconverged)"},
 			{Name: "ha_enabled", Type: PropertyTypeBoolean, Required: false, Default: false, Description: "Whether HA is enabled"},
 			{Name: "drs_enabled", Type: PropertyTypeBoolean, Required: false, Default: false, Description: "Whether DRS is enabled"},
 		},

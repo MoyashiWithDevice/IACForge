@@ -133,8 +133,10 @@ func TestAWSGetEntityKindSchema(t *testing.T) {
 
 	relRes := callTool(t, s, "list_relation_types", map[string]interface{}{})
 	relText := toolResultText(t, relRes)
-	if !strings.Contains(relText, `"type": "aws.subscribes"`) {
-		t.Errorf("expected aws.subscribes in list_relation_types output:\n%s", relText)
+	for _, want := range []string{`"type": "aws.subscribes"`, `"type": "aws.registers"`} {
+		if !strings.Contains(relText, want) {
+			t.Errorf("expected %s in list_relation_types output:\n%s", want, relText)
+		}
 	}
 }
 

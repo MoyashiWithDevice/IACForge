@@ -14,12 +14,12 @@ func createTestGraph() *core.Graph {
 	region := core.NewEntity("region-ap-northeast-1", "region", "Tokyo Region")
 	region.SetStatus(core.StatusActive)
 	region.SetLabel("region", "ap-northeast-1")
-	g.AddEntity(region)
+	_ = g.AddEntity(region)
 
 	rack := core.NewEntity("rack-a01", "rack", "Rack A01")
 	rack.SetOwner("region-ap-northeast-1")
 	rack.SetStatus(core.StatusActive)
-	g.AddEntity(rack)
+	_ = g.AddEntity(rack)
 
 	server1 := core.NewEntity("srv-proxmox-01", "server", "Proxmox Node 01")
 	server1.SetOwner("rack-a01")
@@ -30,7 +30,7 @@ func createTestGraph() *core.Graph {
 		map[string]interface{}{"size_gb": 32, "speed": 3200, "type": "ddr4"},
 	})
 	server1.AddTag("production")
-	g.AddEntity(server1)
+	_ = g.AddEntity(server1)
 
 	server2 := core.NewEntity("srv-proxmox-02", "server", "Proxmox Node 02")
 	server2.SetOwner("rack-a01")
@@ -41,7 +41,7 @@ func createTestGraph() *core.Graph {
 		map[string]interface{}{"size_gb": 16, "speed": 3200, "type": "ddr4"},
 	})
 	server2.AddTag("development")
-	g.AddEntity(server2)
+	_ = g.AddEntity(server2)
 
 	vm1 := core.NewEntity("vm-web-01", "vm", "Web Server 01")
 	vm1.SetOwner("srv-proxmox-01")
@@ -51,7 +51,7 @@ func createTestGraph() *core.Graph {
 		map[string]interface{}{"size_gb": 8, "speed": 3200, "type": "ddr4"},
 	})
 	vm1.AddTag("production")
-	g.AddEntity(vm1)
+	_ = g.AddEntity(vm1)
 
 	vm2 := core.NewEntity("vm-api-01", "vm", "API Server 01")
 	vm2.SetOwner("srv-proxmox-01")
@@ -61,7 +61,7 @@ func createTestGraph() *core.Graph {
 		map[string]interface{}{"size_gb": 4, "speed": 3200, "type": "ddr4"},
 	})
 	vm2.AddTag("production")
-	g.AddEntity(vm2)
+	_ = g.AddEntity(vm2)
 
 	vm3 := core.NewEntity("vm-dev-01", "vm", "Dev Server 01")
 	vm3.SetOwner("srv-proxmox-02")
@@ -71,37 +71,37 @@ func createTestGraph() *core.Graph {
 		map[string]interface{}{"size_gb": 4, "speed": 3200, "type": "ddr4"},
 	})
 	vm3.AddTag("development")
-	g.AddEntity(vm3)
+	_ = g.AddEntity(vm3)
 
 	app1 := core.NewEntity("app-web", "application", "Web Application")
 	app1.SetOwner("vm-web-01")
 	app1.SetStatus(core.StatusActive)
-	g.AddEntity(app1)
+	_ = g.AddEntity(app1)
 
 	app2 := core.NewEntity("app-api", "application", "API Application")
 	app2.SetOwner("vm-api-01")
 	app2.SetStatus(core.StatusActive)
-	g.AddEntity(app2)
+	_ = g.AddEntity(app2)
 
 	// Build ownership paths
-	g.BuildOwnershipPaths()
+	_ = g.BuildOwnershipPaths()
 
 	// Create relations
 	rel1 := core.NewDirectedRelation("rel-hosts-1", "hosts", "srv-proxmox-01", "vm-web-01")
-	g.AddRelation(rel1)
+	_ = g.AddRelation(rel1)
 
 	rel2 := core.NewDirectedRelation("rel-hosts-2", "hosts", "srv-proxmox-01", "vm-api-01")
-	g.AddRelation(rel2)
+	_ = g.AddRelation(rel2)
 
 	rel3 := core.NewDirectedRelation("rel-hosts-3", "hosts", "srv-proxmox-02", "vm-dev-01")
-	g.AddRelation(rel3)
+	_ = g.AddRelation(rel3)
 
 	rel4 := core.NewDirectedRelation("rel-depends-1", "depends_on", "app-web", "app-api")
-	g.AddRelation(rel4)
+	_ = g.AddRelation(rel4)
 
 	rel5 := core.NewDirectedRelation("rel-connects-1", "connects", "srv-proxmox-01", "srv-proxmox-02")
 	rel5.SetProperty("connection_type", "network")
-	g.AddRelation(rel5)
+	_ = g.AddRelation(rel5)
 
 	return g
 }

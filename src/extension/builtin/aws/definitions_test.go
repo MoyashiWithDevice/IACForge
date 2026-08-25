@@ -94,15 +94,6 @@ func TestKindNamingConvention(t *testing.T) {
 	}
 }
 
-func TestIsValidKind(t *testing.T) {
-	if !IsValidKind(VPC) {
-		t.Error("expected VPC to be a valid kind")
-	}
-	if IsValidKind(core.EntityKind("aws.not_a_kind")) {
-		t.Error("unexpectedly accepted an undefined kind")
-	}
-}
-
 func TestKindDefinitionsSorted(t *testing.T) {
 	contribs := KindDefinitions()
 	for i := 1; i < len(contribs); i++ {
@@ -119,7 +110,14 @@ func TestNestingReferencesDefinedKinds(t *testing.T) {
 	for _, k := range AllKinds() {
 		valid[k] = true
 	}
-	for _, k := range kinds.AllKinds {
+	coreKinds := []core.EntityKind{
+		kinds.Region, kinds.Rack, kinds.Server, kinds.Interface, kinds.Cable,
+		kinds.PowerDistribution, kinds.Network, kinds.VLAN, kinds.Switch,
+		kinds.Router, kinds.Firewall, kinds.ACL, kinds.ACLRule, kinds.VM,
+		kinds.Container, kinds.Application, kinds.OpenPort, kinds.Storage,
+		kinds.Volume, kinds.Cluster, kinds.AvailabilityZone,
+	}
+	for _, k := range coreKinds {
 		valid[k] = true
 	}
 	for _, c := range KindDefinitions() {
@@ -311,17 +309,17 @@ func TestSpotCheckConstraints(t *testing.T) {
 
 func TestNewRelationTypesRegistered(t *testing.T) {
 	s, _, _ := newTestSetup(t)
-	for _, rt := range AllRelationTypes() {
-		def, ok := s.GetRelationTypeDef(rt)
+	for _, c := range RelationTypeDefinitions() {
+		def, ok := s.GetRelationTypeDef(c.Type)
 		if !ok {
-			t.Errorf("relation type %q not registered in schema", rt)
+			t.Errorf("relation type %q not registered in schema", c.Type)
 			continue
 		}
 		if def.Direction != schema.DirectionDirected {
-			t.Errorf("relation type %q expected directed direction, got %q", rt, def.Direction)
+			t.Errorf("relation type %q expected directed direction, got %q", c.Type, def.Direction)
 		}
 		if def.Participants == nil || def.Participants.MinParticipants != 2 || def.Participants.MaxParticipants != 2 {
-			t.Errorf("relation type %q must be a binary relation with min/max 2 participants", rt)
+			t.Errorf("relation type %q must be a binary relation with min/max 2 participants", c.Type)
 		}
 	}
 }

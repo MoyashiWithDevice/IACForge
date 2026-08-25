@@ -69,16 +69,16 @@ func (r *MarkdownRenderer) Render(v *view.ViewResult, opts *RenderOptions) (*Art
 			kindGroups[string(entity.Kind)] = append(kindGroups[string(entity.Kind)], entity.ID)
 		}
 		for kind, ids := range kindGroups {
-			md.WriteString(fmt.Sprintf("- [%s](#%s) (%d)\n", kind, strings.ToLower(kind), len(ids)))
+			fmt.Fprintf(&md, "- [%s](#%s) (%d)\n", kind, strings.ToLower(kind), len(ids))
 		}
 		md.WriteString("\n")
 	}
 
 	for _, group := range v.Groups {
-		md.WriteString(fmt.Sprintf("## %s\n\n", group.Name))
-		md.WriteString(fmt.Sprintf("**Kind:** %s\n\n", group.Kind))
+		fmt.Fprintf(&md, "## %s\n\n", group.Name)
+		fmt.Fprintf(&md, "**Kind:** %s\n\n", group.Kind)
 		if count, ok := group.Properties["count"]; ok {
-			md.WriteString(fmt.Sprintf("**Members:** %v\n\n", count))
+			fmt.Fprintf(&md, "**Members:** %v\n\n", count)
 		}
 	}
 
@@ -99,11 +99,11 @@ func (r *MarkdownRenderer) Render(v *view.ViewResult, opts *RenderOptions) (*Art
 		}
 
 		for kind, entities := range kindGroups {
-			md.WriteString(fmt.Sprintf("### %s\n\n", kind))
+			fmt.Fprintf(&md, "### %s\n\n", kind)
 			md.WriteString("| ID | Name | Status |\n")
 			md.WriteString("|----|------|--------|\n")
 			for _, e := range entities {
-				md.WriteString(fmt.Sprintf("| %s | %s | %s |\n", e.ID, e.Name, "-"))
+				fmt.Fprintf(&md, "| %s | %s | %s |\n", e.ID, e.Name, "-")
 			}
 			md.WriteString("\n")
 		}
@@ -114,7 +114,7 @@ func (r *MarkdownRenderer) Render(v *view.ViewResult, opts *RenderOptions) (*Art
 		md.WriteString("| ID | Type | Source | Target |\n")
 		md.WriteString("|----|------|--------|--------|\n")
 		for _, rel := range v.VisibleRelations {
-			md.WriteString(fmt.Sprintf("| %s | %s | %s | %s |\n", rel.ID, rel.Type, rel.Source(), rel.Target()))
+			fmt.Fprintf(&md, "| %s | %s | %s | %s |\n", rel.ID, rel.Type, rel.Source(), rel.Target())
 		}
 		md.WriteString("\n")
 	}
@@ -125,7 +125,7 @@ func (r *MarkdownRenderer) Render(v *view.ViewResult, opts *RenderOptions) (*Art
 		md.WriteString("|--------|----------|-------|\n")
 		for entityID, annotations := range v.Annotations {
 			for prop, value := range annotations {
-				md.WriteString(fmt.Sprintf("| %s | %s | %v |\n", entityID, prop, value))
+				fmt.Fprintf(&md, "| %s | %s | %v |\n", entityID, prop, value)
 			}
 		}
 		md.WriteString("\n")

@@ -38,16 +38,6 @@ func (e *Engine) AddAllowedRootKind(kind core.EntityKind) {
 	e.allowedRootKinds[kind] = true
 }
 
-// AllowedRootKinds returns the entity kinds granted root authority.
-func (e *Engine) AllowedRootKinds() []core.EntityKind {
-	result := make([]core.EntityKind, 0, len(e.allowedRootKinds))
-	for k := range e.allowedRootKinds {
-		result = append(result, k)
-	}
-	sort.Slice(result, func(i, j int) bool { return result[i] < result[j] })
-	return result
-}
-
 // IsAllowedRootKind reports whether the given kind has been granted root authority.
 func (e *Engine) IsAllowedRootKind(kind core.EntityKind) bool {
 	return e.allowedRootKinds[kind]
@@ -191,28 +181,24 @@ func registerGraphIntegrityRules(e *Engine) {
 		ID:       "unique-id",
 		Name:     "Unique Identifier",
 		Severity: SeverityError,
-		Scope:    ScopeGraph,
 	}, ruleUniqueID)
 
 	e.RegisterRule(&Rule{
 		ID:       "valid-reference",
 		Name:     "Valid Reference",
 		Severity: SeverityError,
-		Scope:    ScopeGraph,
 	}, ruleValidReference)
 
 	e.RegisterRule(&Rule{
 		ID:       "valid-owner",
 		Name:     "Valid Owner",
 		Severity: SeverityError,
-		Scope:    ScopeGraph,
 	}, ruleValidOwner)
 
 	e.RegisterRule(&Rule{
 		ID:       "single-owner",
 		Name:     "Single Owner",
 		Severity: SeverityError,
-		Scope:    ScopeOwnership,
 	}, e.ruleSingleOwner)
 
 	e.RegisterRule(&Rule{
@@ -220,7 +206,6 @@ func registerGraphIntegrityRules(e *Engine) {
 		Name:        "Valid Property",
 		Description: "entity spec and relation properties MUST conform to the schema property definitions (type, enum, required, min/max); undefined properties are reported",
 		Severity:    SeverityWarning,
-		Scope:       ScopeGraph,
 	}, ruleValidProperty)
 }
 
@@ -229,56 +214,48 @@ func registerEntityRules(e *Engine) {
 		ID:       "required-kind",
 		Name:     "Required Kind",
 		Severity: SeverityError,
-		Scope:    ScopeEntity,
 	}, ruleRequiredKind)
 
 	e.RegisterRule(&Rule{
 		ID:       "required-name",
 		Name:     "Required Name",
 		Severity: SeverityError,
-		Scope:    ScopeEntity,
 	}, ruleRequiredName)
 
 	e.RegisterRule(&Rule{
 		ID:       "valid-kind",
 		Name:     "Valid Kind",
 		Severity: SeverityError,
-		Scope:    ScopeEntity,
 	}, ruleValidKind)
 
 	e.RegisterRule(&Rule{
 		ID:       "valid-status",
 		Name:     "Valid Status",
 		Severity: SeverityWarning,
-		Scope:    ScopeEntity,
 	}, ruleValidStatus)
 
 	e.RegisterRule(&Rule{
 		ID:       "valid-port-range",
 		Name:     "Valid Port Range",
 		Severity: SeverityError,
-		Scope:    ScopeEntity,
 	}, ruleValidPortRange)
 
 	e.RegisterRule(&Rule{
 		ID:       "valid-acl-rule-parent",
 		Name:     "Valid ACL Rule Parent",
 		Severity: SeverityError,
-		Scope:    ScopeEntity,
 	}, ruleValidACLRULEParent)
 
 	e.RegisterRule(&Rule{
 		ID:       "no-slash-in-id",
 		Name:     "No Slash in Entity ID",
 		Severity: SeverityError,
-		Scope:    ScopeEntity,
 	}, ruleNoSlashInID)
 
 	e.RegisterRule(&Rule{
 		ID:       "valid-nesting-parent",
 		Name:     "Valid Nesting Parent",
 		Severity: SeverityError,
-		Scope:    ScopeOwnership,
 	}, ruleValidNestingParent)
 }
 
@@ -287,42 +264,36 @@ func registerRelationRules(e *Engine) {
 		ID:       "required-type",
 		Name:     "Required Type",
 		Severity: SeverityError,
-		Scope:    ScopeRelation,
 	}, ruleRequiredType)
 
 	e.RegisterRule(&Rule{
 		ID:       "required-participants",
 		Name:     "Required Participants",
 		Severity: SeverityError,
-		Scope:    ScopeRelation,
 	}, ruleRequiredParticipants)
 
 	e.RegisterRule(&Rule{
 		ID:       "valid-type",
 		Name:     "Valid Type",
 		Severity: SeverityError,
-		Scope:    ScopeRelation,
 	}, ruleValidType)
 
 	e.RegisterRule(&Rule{
 		ID:       "valid-direction",
 		Name:     "Valid Direction",
 		Severity: SeverityError,
-		Scope:    ScopeRelation,
 	}, ruleValidDirection)
 
 	e.RegisterRule(&Rule{
 		ID:       "valid-cardinality",
 		Name:     "Valid Cardinality",
 		Severity: SeverityError,
-		Scope:    ScopeRelation,
 	}, ruleValidCardinality)
 
 	e.RegisterRule(&Rule{
 		ID:       "valid-participant-kind",
 		Name:     "Valid Participant Kind",
 		Severity: SeverityWarning,
-		Scope:    ScopeRelation,
 	}, ruleValidParticipantKind)
 }
 
@@ -331,21 +302,18 @@ func registerOwnershipRules(e *Engine) {
 		ID:       "ownership-tree",
 		Name:     "Ownership Tree",
 		Severity: SeverityError,
-		Scope:    ScopeOwnership,
 	}, e.ruleOwnershipTree)
 
 	e.RegisterRule(&Rule{
 		ID:       "no-ownership-cycle",
 		Name:     "No Ownership Cycle",
 		Severity: SeverityError,
-		Scope:    ScopeOwnership,
 	}, ruleNoOwnershipCycle)
 
 	e.RegisterRule(&Rule{
 		ID:       "root-entity",
 		Name:     "Root Entity",
 		Severity: SeverityError,
-		Scope:    ScopeOwnership,
 	}, e.ruleRootEntity)
 }
 
@@ -354,14 +322,12 @@ func registerReferenceRules(e *Engine) {
 		ID:       "dangling-reference",
 		Name:     "Dangling Reference",
 		Severity: SeverityError,
-		Scope:    ScopeGraph,
 	}, ruleDanglingReference)
 
 	e.RegisterRule(&Rule{
 		ID:       "invalid-path",
 		Name:     "Invalid Path",
 		Severity: SeverityError,
-		Scope:    ScopeGraph,
 	}, ruleInvalidPath)
 }
 
@@ -371,7 +337,6 @@ func registerNetworkRules(e *Engine) {
 		Name:        "Valid IP Address Format",
 		Description: "interface ip_address values MUST be valid IP addresses or CIDR notation",
 		Severity:    SeverityWarning,
-		Scope:       ScopeEntity,
 	}, ruleValidIPFormat)
 
 	e.RegisterRule(&Rule{
@@ -379,7 +344,6 @@ func registerNetworkRules(e *Engine) {
 		Name:        "IP Requires Network",
 		Description: "interface with IP addresses SHOULD reference a network via the network property or a belongs_to relation",
 		Severity:    SeverityWarning,
-		Scope:       ScopeEntity,
 	}, ruleIPRequiresNetwork)
 
 	e.RegisterRule(&Rule{
@@ -387,7 +351,6 @@ func registerNetworkRules(e *Engine) {
 		Name:        "Network Reference Kind",
 		Description: "interface network reference MUST point to an entity of kind network",
 		Severity:    SeverityWarning,
-		Scope:       ScopeEntity,
 	}, ruleNetworkReferenceKind)
 
 	e.RegisterRule(&Rule{
@@ -395,7 +358,6 @@ func registerNetworkRules(e *Engine) {
 		Name:        "IP Within Network CIDR",
 		Description: "interface IP addresses SHOULD be within the CIDR of a referenced network",
 		Severity:    SeverityWarning,
-		Scope:       ScopeEntity,
 	}, ruleIPInCIDR)
 
 	e.RegisterRule(&Rule{
@@ -403,7 +365,6 @@ func registerNetworkRules(e *Engine) {
 		Name:        "Network CIDR Required",
 		Description: "network with member interfaces that have IP addresses SHOULD define a valid cidr",
 		Severity:    SeverityWarning,
-		Scope:       ScopeEntity,
 	}, ruleNetworkCIDRRequired)
 
 	e.RegisterRule(&Rule{
@@ -411,7 +372,6 @@ func registerNetworkRules(e *Engine) {
 		Name:        "Gateway Within Network CIDR",
 		Description: "network gateway SHOULD be within the network cidr",
 		Severity:    SeverityWarning,
-		Scope:       ScopeEntity,
 	}, ruleGatewayInCIDR)
 
 	e.RegisterRule(&Rule{
@@ -419,7 +379,6 @@ func registerNetworkRules(e *Engine) {
 		Name:        "Unique IP Within Network",
 		Description: "IP addresses SHOULD be unique within a network",
 		Severity:    SeverityWarning,
-		Scope:       ScopeGraph,
 	}, ruleIPUniqueInNetwork)
 }
 

@@ -35,25 +35,11 @@ func registerRenderMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 				return toolError(fmt.Sprintf("view application failed: %v", err)), nil
 			}
 
-			var r renderer.Renderer
-			switch req.GetString("format", "markdown") {
-			case "svg":
-				r = renderer.NewSVGRenderer()
-			case "mermaid":
-				r = renderer.NewMermaidRenderer()
-			case "json":
-				r = renderer.NewJSONRenderer()
-			case "markdown", "md":
-				r = renderer.NewMarkdownRenderer()
-			default:
-				return toolError(fmt.Sprintf("unknown format: %q (supported: markdown, mermaid, svg, json)", req.GetString("format", "markdown"))), nil
-			}
-
-			artifact, err := r.Render(vr, renderer.NewRenderOptions())
+			content, err := renderer.RenderFormat(vr, req.GetString("format", "markdown"))
 			if err != nil {
 				return toolError(fmt.Sprintf("render failed: %v", err)), nil
 			}
-			return toolResult(artifact.Content), nil
+			return toolResult(content), nil
 		},
 	)
 }

@@ -58,11 +58,11 @@ func (r *SVGRenderer) Render(v *view.ViewResult, opts *RenderOptions) (*Artifact
 
 	var svg strings.Builder
 
-	svg.WriteString(fmt.Sprintf(`<svg xmlns="http://www.w3.org/2000/svg" width="%.0f" height="%.0f" viewBox="0 0 %.0f %.0f">`, width, height, width, height))
+	fmt.Fprintf(&svg, `<svg xmlns="http://www.w3.org/2000/svg" width="%.0f" height="%.0f" viewBox="0 0 %.0f %.0f">`, width, height, width, height)
 	svg.WriteString("\n")
 
 	if opts.Theme != nil && opts.Theme.Colors != nil {
-		svg.WriteString(fmt.Sprintf(`<rect width="100%%" height="100%%" fill="%s"/>`, opts.Theme.Colors.Background))
+		fmt.Fprintf(&svg, `<rect width="100%%" height="100%%" fill="%s"/>`, opts.Theme.Colors.Background)
 		svg.WriteString("\n")
 	} else {
 		svg.WriteString(`<rect width="100%" height="100%" fill="#ffffff"/>`)
@@ -109,10 +109,10 @@ func (r *SVGRenderer) renderEdge(svg *strings.Builder, edge EdgePosition, opts *
 		}
 	}
 
-	svg.WriteString(fmt.Sprintf(`<line x1="%.0f" y1="%.0f" x2="%.0f" y2="%.0f" stroke="%s" stroke-width="%.1f"/>`,
+	fmt.Fprintf(svg, `<line x1="%.0f" y1="%.0f" x2="%.0f" y2="%.0f" stroke="%s" stroke-width="%.1f"/>`,
 		edge.Points[0].X, edge.Points[0].Y,
 		edge.Points[1].X, edge.Points[1].Y,
-		color, width))
+		color, width)
 	svg.WriteString("\n")
 }
 
@@ -128,10 +128,10 @@ func (r *SVGRenderer) renderNode(svg *strings.Builder, node NodePosition, v *vie
 		textColor = opts.Theme.Colors.Text
 	}
 
-	svg.WriteString(fmt.Sprintf(`<rect x="%.0f" y="%.0f" width="%.0f" height="%.0f" rx="4" fill="%s" stroke="%s"/>`,
+	fmt.Fprintf(svg, `<rect x="%.0f" y="%.0f" width="%.0f" height="%.0f" rx="4" fill="%s" stroke="%s"/>`,
 		node.Position.X, node.Position.Y,
 		node.Width, node.Height,
-		fill, stroke))
+		fill, stroke)
 	svg.WriteString("\n")
 
 	fontSize := 12
@@ -150,8 +150,8 @@ func (r *SVGRenderer) renderNode(svg *strings.Builder, node NodePosition, v *vie
 	textX := node.Position.X + node.Width/2
 	textY := node.Position.Y + node.Height/2 + float64(fontSize)/3
 
-	svg.WriteString(fmt.Sprintf(`<text x="%.0f" y="%.0f" text-anchor="middle" font-size="%d" fill="%s">%s</text>`,
-		textX, textY, fontSize, textColor, escapeXML(name)))
+	fmt.Fprintf(svg, `<text x="%.0f" y="%.0f" text-anchor="middle" font-size="%d" fill="%s">%s</text>`,
+		textX, textY, fontSize, textColor, escapeXML(name))
 	svg.WriteString("\n")
 }
 

@@ -66,7 +66,7 @@
   # すべてのEntityとRelationをここに記述</code></pre>
 
       <h2 id="comments">コメント</h2>
-      <p>Commentsはround-trip変換時に保持されます。</p>
+      <p>YAMLのコメントはパース時に破棄され、round-trip変換（parse → serialize）では保持されません。コメントに意味を持たせないでください。</p>
 <pre class="language-yaml"><code># Region情報
 objects:
   - id: region-ap-northeast-1

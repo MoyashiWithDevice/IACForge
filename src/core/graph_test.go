@@ -32,7 +32,9 @@ func TestGraphAddEntityDuplicate(t *testing.T) {
 	g := NewGraph()
 	e1 := NewEntity("srv-01", "server", "Server 01")
 	e2 := NewEntity("srv-01", "server", "Server 02")
-	g.AddEntity(e1)
+	if err := g.AddEntity(e1); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	err := g.AddEntity(e2)
 	if err == nil {
 		t.Error("expected duplicate entity error")
@@ -51,7 +53,9 @@ func TestGraphAddEntityInvalid(t *testing.T) {
 func TestGraphGetEntity(t *testing.T) {
 	g := NewGraph()
 	e := NewEntity("srv-01", "server", "Server 01")
-	g.AddEntity(e)
+	if err := g.AddEntity(e); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	found, ok := g.GetEntity("srv-01")
 	if !ok || found == nil {
@@ -70,7 +74,9 @@ func TestGraphGetEntity(t *testing.T) {
 func TestGraphRemoveEntity(t *testing.T) {
 	g := NewGraph()
 	e := NewEntity("srv-01", "server", "Server 01")
-	g.AddEntity(e)
+	if err := g.AddEntity(e); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	if !g.RemoveEntity("srv-01") {
 		t.Error("expected remove to return true")
@@ -86,7 +92,9 @@ func TestGraphRemoveEntity(t *testing.T) {
 func TestGraphUpdateEntity(t *testing.T) {
 	g := NewGraph()
 	e := NewEntity("srv-01", "server", "Server 01")
-	g.AddEntity(e)
+	if err := g.AddEntity(e); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	e.Name = "Updated Server"
 	if err := g.UpdateEntity(e); err != nil {
@@ -100,9 +108,15 @@ func TestGraphUpdateEntity(t *testing.T) {
 
 func TestGraphEntities(t *testing.T) {
 	g := NewGraph()
-	g.AddEntity(NewEntity("srv-01", "server", "Server 01"))
-	g.AddEntity(NewEntity("vm-01", "vm", "VM 01"))
-	g.AddEntity(NewEntity("rack-01", "rack", "Rack 01"))
+	if err := g.AddEntity(NewEntity("srv-01", "server", "Server 01")); err != nil {
+		t.Fatalf("failed to add entity: %v", err)
+	}
+	if err := g.AddEntity(NewEntity("vm-01", "vm", "VM 01")); err != nil {
+		t.Fatalf("failed to add entity: %v", err)
+	}
+	if err := g.AddEntity(NewEntity("rack-01", "rack", "Rack 01")); err != nil {
+		t.Fatalf("failed to add entity: %v", err)
+	}
 
 	entities := g.Entities()
 	if len(entities) != 3 {
@@ -112,9 +126,15 @@ func TestGraphEntities(t *testing.T) {
 
 func TestGraphEntitiesByKind(t *testing.T) {
 	g := NewGraph()
-	g.AddEntity(NewEntity("srv-01", "server", "Server 01"))
-	g.AddEntity(NewEntity("srv-02", "server", "Server 02"))
-	g.AddEntity(NewEntity("vm-01", "vm", "VM 01"))
+	if err := g.AddEntity(NewEntity("srv-01", "server", "Server 01")); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(NewEntity("srv-02", "server", "Server 02")); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(NewEntity("vm-01", "vm", "VM 01")); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	servers := g.EntitiesByKind("server")
 	if len(servers) != 2 {
@@ -124,8 +144,12 @@ func TestGraphEntitiesByKind(t *testing.T) {
 
 func TestGraphAddRelation(t *testing.T) {
 	g := NewGraph()
-	g.AddEntity(NewEntity("srv-01", "server", "Server 01"))
-	g.AddEntity(NewEntity("vm-01", "vm", "VM 01"))
+	if err := g.AddEntity(NewEntity("srv-01", "server", "Server 01")); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(NewEntity("vm-01", "vm", "VM 01")); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	r := NewDirectedRelation("rel-01", "hosts", "srv-01", "vm-01")
 	if err := g.AddRelation(r); err != nil {
@@ -138,7 +162,9 @@ func TestGraphAddRelation(t *testing.T) {
 
 func TestGraphAddRelationInvalidReference(t *testing.T) {
 	g := NewGraph()
-	g.AddEntity(NewEntity("srv-01", "server", "Server 01"))
+	if err := g.AddEntity(NewEntity("srv-01", "server", "Server 01")); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	r := NewDirectedRelation("rel-01", "hosts", "srv-01", "nonexistent")
 	err := g.AddRelation(r)
@@ -149,12 +175,18 @@ func TestGraphAddRelationInvalidReference(t *testing.T) {
 
 func TestGraphAddRelationDuplicate(t *testing.T) {
 	g := NewGraph()
-	g.AddEntity(NewEntity("srv-01", "server", "Server 01"))
-	g.AddEntity(NewEntity("vm-01", "vm", "VM 01"))
+	if err := g.AddEntity(NewEntity("srv-01", "server", "Server 01")); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(NewEntity("vm-01", "vm", "VM 01")); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	r1 := NewDirectedRelation("rel-01", "hosts", "srv-01", "vm-01")
 	r2 := NewDirectedRelation("rel-01", "hosts", "srv-01", "vm-01")
-	g.AddRelation(r1)
+	if err := g.AddRelation(r1); err != nil {
+		t.Fatalf("failed to addrelation: %v", err)
+	}
 	err := g.AddRelation(r2)
 	if err == nil {
 		t.Error("expected duplicate relation error")
@@ -163,10 +195,16 @@ func TestGraphAddRelationDuplicate(t *testing.T) {
 
 func TestGraphGetRelation(t *testing.T) {
 	g := NewGraph()
-	g.AddEntity(NewEntity("srv-01", "server", "Server 01"))
-	g.AddEntity(NewEntity("vm-01", "vm", "VM 01"))
+	if err := g.AddEntity(NewEntity("srv-01", "server", "Server 01")); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(NewEntity("vm-01", "vm", "VM 01")); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	r := NewDirectedRelation("rel-01", "hosts", "srv-01", "vm-01")
-	g.AddRelation(r)
+	if err := g.AddRelation(r); err != nil {
+		t.Fatalf("failed to addrelation: %v", err)
+	}
 
 	found, ok := g.GetRelation("rel-01")
 	if !ok || found == nil {
@@ -184,10 +222,16 @@ func TestGraphGetRelation(t *testing.T) {
 
 func TestGraphRemoveRelation(t *testing.T) {
 	g := NewGraph()
-	g.AddEntity(NewEntity("srv-01", "server", "Server 01"))
-	g.AddEntity(NewEntity("vm-01", "vm", "VM 01"))
+	if err := g.AddEntity(NewEntity("srv-01", "server", "Server 01")); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(NewEntity("vm-01", "vm", "VM 01")); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	r := NewDirectedRelation("rel-01", "hosts", "srv-01", "vm-01")
-	g.AddRelation(r)
+	if err := g.AddRelation(r); err != nil {
+		t.Fatalf("failed to addrelation: %v", err)
+	}
 
 	if !g.RemoveRelation("rel-01") {
 		t.Error("expected remove to return true")
@@ -199,12 +243,22 @@ func TestGraphRemoveRelation(t *testing.T) {
 
 func TestGraphRelationsForEntity(t *testing.T) {
 	g := NewGraph()
-	g.AddEntity(NewEntity("srv-01", "server", "Server 01"))
-	g.AddEntity(NewEntity("vm-01", "vm", "VM 01"))
-	g.AddEntity(NewEntity("vm-02", "vm", "VM 02"))
+	if err := g.AddEntity(NewEntity("srv-01", "server", "Server 01")); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(NewEntity("vm-01", "vm", "VM 01")); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(NewEntity("vm-02", "vm", "VM 02")); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
-	g.AddRelation(NewDirectedRelation("rel-01", "hosts", "srv-01", "vm-01"))
-	g.AddRelation(NewDirectedRelation("rel-02", "hosts", "srv-01", "vm-02"))
+	if err := g.AddRelation(NewDirectedRelation("rel-01", "hosts", "srv-01", "vm-01")); err != nil {
+		t.Fatalf("failed to add relation: %v", err)
+	}
+	if err := g.AddRelation(NewDirectedRelation("rel-02", "hosts", "srv-01", "vm-02")); err != nil {
+		t.Fatalf("failed to add relation: %v", err)
+	}
 
 	rels := g.RelationsForEntity("srv-01")
 	if len(rels) != 2 {
@@ -219,13 +273,25 @@ func TestGraphRelationsForEntity(t *testing.T) {
 
 func TestGraphRelationsByType(t *testing.T) {
 	g := NewGraph()
-	g.AddEntity(NewEntity("srv-01", "server", "Server 01"))
-	g.AddEntity(NewEntity("vm-01", "vm", "VM 01"))
-	g.AddEntity(NewEntity("intf-01", "interface", "intf-01"))
-	g.AddEntity(NewEntity("intf-02", "interface", "intf-02"))
+	if err := g.AddEntity(NewEntity("srv-01", "server", "Server 01")); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(NewEntity("vm-01", "vm", "VM 01")); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(NewEntity("intf-01", "interface", "intf-01")); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(NewEntity("intf-02", "interface", "intf-02")); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
-	g.AddRelation(NewDirectedRelation("rel-01", "hosts", "srv-01", "vm-01"))
-	g.AddRelation(NewSymmetricRelation("rel-02", "connects", []string{"intf-01", "intf-02"}))
+	if err := g.AddRelation(NewDirectedRelation("rel-01", "hosts", "srv-01", "vm-01")); err != nil {
+		t.Fatalf("failed to add relation: %v", err)
+	}
+	if err := g.AddRelation(NewSymmetricRelation("rel-02", "connects", []string{"intf-01", "intf-02"})); err != nil {
+		t.Fatalf("failed to add relation: %v", err)
+	}
 
 	hostsRels := g.RelationsByType("hosts")
 	if len(hostsRels) != 1 {
@@ -241,7 +307,9 @@ func TestGraphRelationsByType(t *testing.T) {
 func TestGraphResolveReference(t *testing.T) {
 	g := NewGraph()
 	e := NewEntity("srv-01", "server", "Server 01")
-	g.AddEntity(e)
+	if err := g.AddEntity(e); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 	r := NewDirectedRelation("rel-01", "hosts", "srv-01", "srv-01")
 	if err := g.AddRelation(r); err != nil {
 		t.Fatalf("unexpected error adding relation: %v", err)
@@ -317,10 +385,18 @@ func TestGraphOwnershipPaths(t *testing.T) {
 	server.SetOwner("rack-01")
 	intf.SetOwner("srv-01")
 
-	g.AddEntity(region)
-	g.AddEntity(rack)
-	g.AddEntity(server)
-	g.AddEntity(intf)
+	if err := g.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(rack); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(intf); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	if err := g.BuildOwnershipPaths(); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -347,8 +423,12 @@ func TestGraphOwnershipCycle(t *testing.T) {
 	e1.SetOwner("b")
 	e2.SetOwner("a")
 
-	g.AddEntity(e1)
-	g.AddEntity(e2)
+	if err := g.AddEntity(e1); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(e2); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	err := g.BuildOwnershipPaths()
 	if err == nil {
@@ -360,7 +440,9 @@ func TestGraphOwnershipMissingOwner(t *testing.T) {
 	g := NewGraph()
 	e := NewEntity("srv-01", "server", "Server 01")
 	e.SetOwner("nonexistent")
-	g.AddEntity(e)
+	if err := g.AddEntity(e); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	err := g.BuildOwnershipPaths()
 	if err == nil {
@@ -376,9 +458,15 @@ func TestGraphChildren(t *testing.T) {
 	rack1.SetOwner("region-01")
 	rack2.SetOwner("region-01")
 
-	g.AddEntity(region)
-	g.AddEntity(rack1)
-	g.AddEntity(rack2)
+	if err := g.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(rack1); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(rack2); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	children := g.Children("region-01")
 	if len(children) != 2 {
@@ -392,8 +480,12 @@ func TestGraphParent(t *testing.T) {
 	rack := NewEntity("rack-01", "rack", "Rack 01")
 	rack.SetOwner("region-01")
 
-	g.AddEntity(region)
-	g.AddEntity(rack)
+	if err := g.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(rack); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	parent, ok := g.Parent("rack-01")
 	if !ok || parent == nil {
@@ -417,9 +509,15 @@ func TestGraphAncestors(t *testing.T) {
 	rack.SetOwner("region-01")
 	server.SetOwner("rack-01")
 
-	g.AddEntity(region)
-	g.AddEntity(rack)
-	g.AddEntity(server)
+	if err := g.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(rack); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	ancestors := g.Ancestors("srv-01")
 	if len(ancestors) != 2 {
@@ -441,103 +539,18 @@ func TestGraphDescendants(t *testing.T) {
 	rack.SetOwner("region-01")
 	server.SetOwner("rack-01")
 
-	g.AddEntity(region)
-	g.AddEntity(rack)
-	g.AddEntity(server)
+	if err := g.AddEntity(region); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(rack); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
+	if err := g.AddEntity(server); err != nil {
+		t.Fatalf("failed to addentity: %v", err)
+	}
 
 	descendants := g.Descendants("region-01")
 	if len(descendants) != 2 {
 		t.Errorf("expected 2 descendants, got %d", len(descendants))
 	}
-}
-
-func TestGraphValidateIntegrity(t *testing.T) {
-	g := NewGraph()
-	region := NewEntity("region-01", "region", "Region 01")
-	rack := NewEntity("rack-01", "rack", "Rack 01")
-	server := NewEntity("srv-01", "server", "Server 01")
-	vm := NewEntity("vm-01", "vm", "VM 01")
-
-	rack.SetOwner("region-01")
-	server.SetOwner("rack-01")
-	vm.SetOwner("srv-01")
-
-	g.AddEntity(region)
-	g.AddEntity(rack)
-	g.AddEntity(server)
-	g.AddEntity(vm)
-
-	rel := NewDirectedRelation("rel-01", "hosts", "srv-01", "vm-01")
-	if err := g.AddRelation(rel); err != nil {
-		t.Fatalf("unexpected error adding relation: %v", err)
-	}
-
-	g.RemoveEntity("vm-01")
-
-	errs := g.ValidateIntegrity()
-	foundInvalidRef := false
-	for _, err := range errs {
-		if containsString(err.Error(), "non-existent entity vm-01") {
-			foundInvalidRef = true
-		}
-	}
-	if !foundInvalidRef {
-		t.Error("expected invalid reference error for vm-01")
-	}
-}
-
-func TestGraphValidateIntegrityValid(t *testing.T) {
-	g := NewGraph()
-	region := NewEntity("region-01", "region", "Region 01")
-	server := NewEntity("srv-01", "server", "Server 01")
-	vm := NewEntity("vm-01", "vm", "VM 01")
-	server.SetOwner("region-01")
-	vm.SetOwner("srv-01")
-
-	g.AddEntity(region)
-	g.AddEntity(server)
-	g.AddEntity(vm)
-
-	rel := NewDirectedRelation("rel-01", "hosts", "srv-01", "vm-01")
-	if err := g.AddRelation(rel); err != nil {
-		t.Fatalf("unexpected error adding relation: %v", err)
-	}
-
-	errs := g.ValidateIntegrity()
-	if len(errs) != 0 {
-		t.Errorf("expected no errors, got %d: %v", len(errs), errs)
-	}
-}
-
-func TestGraphOwnershipTreeBroken(t *testing.T) {
-	g := NewGraph()
-	region1 := NewEntity("region-01", "region", "Region 01")
-	region2 := NewEntity("region-02", "region", "Region 02")
-
-	g.AddEntity(region1)
-	g.AddEntity(region2)
-
-	errs := g.ValidateIntegrity()
-	foundBrokenTree := false
-	for _, err := range errs {
-		if err == ErrOwnershipTreeBroken {
-			foundBrokenTree = true
-		}
-	}
-	if !foundBrokenTree {
-		t.Error("expected ownership tree broken error for multiple roots")
-	}
-}
-
-func containsString(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsSubstr(s, substr))
-}
-
-func containsSubstr(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }

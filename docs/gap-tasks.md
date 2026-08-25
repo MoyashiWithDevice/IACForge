@@ -14,10 +14,10 @@
 | # | 対象 | 優先度 | 内容 | 根拠 |
 |---|------|--------|------|------|
 | B1 | aws | 高 | `aws.registers` が生スキーマに存在しない。コード(`src/extension/builtin/aws/relations.go:97`)と仕様(`22-aws-extension.md:982`)には定義済みだが、MCPの `list_relation_types` に出力されない。実行中サーバが古いビルドの可能性が高いため、バイナリ再ビルド/再起動で検証し、解消しない場合は登録処理を調査する | コードと生スキーマの乖離 |
-| B2 | common | 高 | `pattern` 制約が実装されていない。`src/schema/schema.go:415-418` で `_ = c.Pattern` として破棄されているため、宣言しても検証されない。正規表現コンパイルによる検証を実装する | 16-core-schema.md の Constraint Types |
-| B3 | core | 中 | enumを宣言しているのに未検証の文字列プロパティが多い。`server.platform`, `network.network_type`, `storage.protocol`, `cluster.cluster_type`, `storage.raid_level` などは説明文にのみ列挙され、enum制約として定義されていないため誤入力が通る | 14-entity-kinds.md の Property 定義 |
-| B4 | core | 低 | `map` 型は要素スキーマを定義できない(`PropertyDefinition.Properties` は list 専用)。検証可能な map 要素スキーマを検討 | 16-core-schema.md の Property Types |
-| B5 | core | 低 | `list[object]` の要素に未知キーがあっても弾かれない(`ValidateProperty` は定義済みサブプロパティのみ検証) | 16-core-schema.md の Structured Lists |
+| B2 | common | 高 | `pattern` 制約が実装されていない。`src/schema/schema.go` で `_ = c.Pattern` として破棄されていたため、宣言しても検証されなかった。正規表現コンパイルによる検証を実装した | 16-core-schema.md の Constraint Types |
+| B3 | core | 中 | enumを宣言しているのに未検証の文字列プロパティが多かった。`server.platform`, `network.network_type`, `storage.protocol`, `cluster.cluster_type` などにenum制約を定義した | 14-entity-kinds.md の Property 定義 |
+| B4 | core | 低 | `map` 型は要素スキーマを定義できなかった。`ValueProperty` を追加し map 要素のスキーマ検証を実装した | 16-core-schema.md の Property Types |
+| B5 | core | 低 | `list[object]` の要素に未知キーがあっても弾かれなかった。定義済みサブプロパティ以外のキーを弾くよう `ValidateProperty` を拡張した | 16-core-schema.md の Structured Lists |
 
 ---
 
@@ -153,7 +153,7 @@
 
 ## 対応の優先順位(提案)
 
-1. **B1, B2** — 仕様と実装の乖離なので最優先で修正する
+1. **B1** — 仕様と実装の乖離なので最優先で修正する
 2. **2-2(load_balancer / route_table), 2-3(database / snapshot / backup_schedule), 3-1(hostname/fqdn), 4-R1** — モデリング上よく遭遇する不足
 3. その他は「コアに追加するか、拡張(例: onprem, kubernetes)として追加するか」を判断してから着手する
 

@@ -3,6 +3,7 @@ package view
 import (
 	"fmt"
 
+	"IACForge/src/condition"
 	"IACForge/src/core"
 )
 
@@ -44,6 +45,9 @@ func (e *Engine) Apply(v *View) (*ViewResult, error) {
 	for _, ar := range v.Annotations {
 		e.applyAnnotations(ar, visibleEntities, result.Annotations)
 	}
+
+	result.LiftedGroups, result.LiftedRelations = LiftRelations(
+		e.source, visibleEntities, visibleRelations, e.source.Relations())
 
 	return result, nil
 }
@@ -176,7 +180,6 @@ func (e *Engine) applyGrouping(rule *GroupingRule, entities []*core.Entity) ([]*
 			Kind:    rule.GroupKind,
 			Name:    fmt.Sprintf("Group %s", key),
 			Members: members,
-			Owner:   rule.Owner,
 			Properties: map[string]interface{}{
 				"group_key": key,
 				"count":     len(members),
@@ -277,93 +280,9 @@ func getEntityField(entity *core.Entity, field string) interface{} {
 
 // evaluateCondition evaluates a condition against a value.
 func evaluateCondition(value interface{}, cond *Condition) bool {
-	switch cond.Operator {
-	case "eq":
-		return fmt.Sprintf("%v", value) == fmt.Sprintf("%v", cond.Value)
-	case "ne":
-		return fmt.Sprintf("%v", value) != fmt.Sprintf("%v", cond.Value)
-	case "contains":
-		if str, ok := value.(string); ok {
-			if expected, ok := cond.Value.(string); ok {
-				return len(str) >= len(expected) && containsSubstring(str, expected)
-			}
-		}
-		return false
-	case "gt":
-		v, vok := toFloat64(value)
-		c, cok := toFloat64(cond.Value)
-		if vok && cok {
-			return v > c
-		}
-		return false
-	case "lt":
-		v, vok := toFloat64(value)
-		c, cok := toFloat64(cond.Value)
-		if vok && cok {
-			return v < c
-		}
-		return false
-	case "ge":
-		v, vok := toFloat64(value)
-		c, cok := toFloat64(cond.Value)
-		if vok && cok {
-			return v >= c
-		}
-		return false
-	case "le":
-		v, vok := toFloat64(value)
-		c, cok := toFloat64(cond.Value)
-		if vok && cok {
-			return v <= c
-		}
-		return false
-	case "in":
-		if list, ok := cond.Value.([]interface{}); ok {
-			for _, item := range list {
-				if fmt.Sprintf("%v", value) == fmt.Sprintf("%v", item) {
-					return true
-				}
-			}
-		}
-		return false
-	default:
+	result, err := condition.Evaluate(value, cond.Value, cond.Operator)
+	if err != nil {
 		return false
 	}
-}
-
-// toFloat64 converts a value to float64.
-func toFloat64(v interface{}) (float64, bool) {
-	switch val := v.(type) {
-	case int:
-		return float64(val), true
-	case int64:
-		return float64(val), true
-	case float64:
-		return val, true
-	case float32:
-		return float64(val), true
-	default:
-		return 0, false
-	}
-}
-
-// containsSubstring checks if s contains substr.
-func containsSubstring(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
-}
-
-// ValidateView validates a view definition.
-func ValidateView(v *View) error {
-	if v.ID == "" {
-		return fmt.Errorf("view must have an id")
-	}
-	if v.Name == "" {
-		return fmt.Errorf("view must have a name")
-	}
-	return nil
+	return result
 }

@@ -15,7 +15,8 @@ objects:
 
 ## コメント
 
-Commentsはround-trip変換時に保持されます。
+YAMLのコメントはパース時に破棄され、round-trip変換（parse → serialize）では
+保持されません。コメントに意味を持たせないでください。
 
 ```yaml
 # Region情報
@@ -27,6 +28,8 @@ objects:
       # プライマリロケーション
       status: active
 ```
+
+上記をparseして再serializeすると、コメント行は出力に含まれません。
 
 ## 記述順序
 

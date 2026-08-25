@@ -106,6 +106,44 @@ Visibility affects presentation only.
 
 ---
 
+## Relation Lifting
+
+When a View hides Objects, Relations anchored on hidden Objects MUST NOT be
+silently lost: their connectivity knowledge is lifted onto visible Objects.
+
+A Relation participant that is not visible is mapped to visible anchor
+Objects:
+
+1. If the participant itself is visible, it is its own anchor.
+2. Otherwise every visible Object inside its ownership subtree becomes an
+   anchor (a hidden node maps to the applications it hosts; a hidden cluster
+   maps to all applications beneath it).
+3. If neither applies, the nearest visible ancestor is used (e.g. a hidden
+   port maps to the application owning it).
+
+The two sides of a Relation are then collapsed so that one Relation yields at
+most one derived edge:
+
+- A single anchor is used directly.
+- Multiple anchors sharing a common hidden ancestor whose visible subtree is
+  exactly the anchor set collapse onto a structural group keyed by that
+  ancestor.
+- Otherwise the first anchor (ordered by ID) acts as a deterministic
+  representative.
+
+Derived edges:
+
+- inherit the type and direction of the source Relation,
+- are marked as derived and record the source Relation identifiers,
+- never form self loops,
+- are suppressed when a direct Relation between the same endpoints is already
+  visible.
+
+Lifting is deterministic and never modifies the Graph. It produces no output
+when all Objects are visible.
+
+---
+
 ## Grouping
 
 A View MAY organize Objects into logical groups.

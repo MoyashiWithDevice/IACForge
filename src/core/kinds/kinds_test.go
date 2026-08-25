@@ -6,51 +6,6 @@ import (
 	"IACForge/src/core"
 )
 
-func TestAllKindsCount(t *testing.T) {
-	if len(AllKinds) != 21 {
-		t.Errorf("expected 21 entity kinds, got %d", len(AllKinds))
-	}
-}
-
-func TestIsValidKind(t *testing.T) {
-	tests := []struct {
-		kind  core.EntityKind
-		valid bool
-	}{
-		{Region, true},
-		{Rack, true},
-		{Server, true},
-		{Interface, true},
-		{Cable, true},
-		{PowerDistribution, true},
-		{Network, true},
-		{VLAN, true},
-		{Switch, true},
-		{Router, true},
-		{Firewall, true},
-		{ACL, true},
-		{ACLRule, true},
-		{VM, true},
-		{Container, true},
-		{Application, true},
-		{OpenPort, true},
-		{Storage, true},
-		{Volume, true},
-		{Cluster, true},
-		{AvailabilityZone, true},
-		{"invalid", false},
-		{"", false},
-	}
-
-	for _, tt := range tests {
-		t.Run(string(tt.kind), func(t *testing.T) {
-			if got := IsValidKind(tt.kind); got != tt.valid {
-				t.Errorf("IsValidKind(%s) = %v, want %v", tt.kind, got, tt.valid)
-			}
-		})
-	}
-}
-
 func TestIsValidStatus(t *testing.T) {
 	tests := []struct {
 		status core.Status

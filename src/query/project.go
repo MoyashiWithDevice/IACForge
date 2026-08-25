@@ -3,6 +3,7 @@ package query
 import (
 	"fmt"
 
+	"IACForge/src/condition"
 	"IACForge/src/core"
 )
 
@@ -236,13 +237,13 @@ func (e *Engine) applyTransform(value interface{}, transform string) (interface{
 		if !ok {
 			return value, nil
 		}
-		return fmt.Sprintf("%s", str), nil
+		return str, nil
 	case "to_lower":
 		str, ok := value.(string)
 		if !ok {
 			return value, nil
 		}
-		return fmt.Sprintf("%s", str), nil
+		return str, nil
 	default:
 		return value, nil
 	}
@@ -256,7 +257,7 @@ func (e *Engine) calculateSum(items []*ResultItem, field string) (float64, error
 		if value == nil {
 			continue
 		}
-		f, ok := toFloat64(value)
+		f, ok := condition.ToFloat64(value)
 		if !ok {
 			return 0, fmt.Errorf("cannot sum non-numeric value: %v", value)
 		}
@@ -274,7 +275,7 @@ func (e *Engine) calculateAvg(items []*ResultItem, field string) (float64, error
 		if value == nil {
 			continue
 		}
-		f, ok := toFloat64(value)
+		f, ok := condition.ToFloat64(value)
 		if !ok {
 			return 0, fmt.Errorf("cannot average non-numeric value: %v", value)
 		}
@@ -296,7 +297,7 @@ func (e *Engine) calculateMin(items []*ResultItem, field string) (float64, error
 		if value == nil {
 			continue
 		}
-		f, ok := toFloat64(value)
+		f, ok := condition.ToFloat64(value)
 		if !ok {
 			return 0, fmt.Errorf("cannot find min of non-numeric value: %v", value)
 		}
@@ -317,7 +318,7 @@ func (e *Engine) calculateMax(items []*ResultItem, field string) (float64, error
 		if value == nil {
 			continue
 		}
-		f, ok := toFloat64(value)
+		f, ok := condition.ToFloat64(value)
 		if !ok {
 			return 0, fmt.Errorf("cannot find max of non-numeric value: %v", value)
 		}

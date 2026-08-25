@@ -102,13 +102,3 @@ func AllKinds() []core.EntityKind {
 		Route53Zone, Route53Record,
 	}
 }
-
-// IsValidKind reports whether the given kind is defined by the AWS extension.
-func IsValidKind(k core.EntityKind) bool {
-	for _, kind := range AllKinds() {
-		if kind == k {
-			return true
-		}
-	}
-	return false
-}

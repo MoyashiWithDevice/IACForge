@@ -53,12 +53,3 @@ func (ep *ValidationRulesExtensionPoint) GetExtensionForRule(ruleID string) (str
 	extID, ok := ep.rules[ruleID]
 	return extID, ok
 }
-
-// AllExtendedRules returns all rule IDs added by extensions.
-func (ep *ValidationRulesExtensionPoint) AllExtendedRules() map[string]string {
-	result := make(map[string]string, len(ep.rules))
-	for k, v := range ep.rules {
-		result[k] = v
-	}
-	return result
-}

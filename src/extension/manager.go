@@ -14,7 +14,6 @@ import (
 
 var (
 	ErrExtensionAlreadyLoaded = errors.New("extension already loaded")
-	ErrExtensionNotFound      = errors.New("extension not found")
 	ErrDependencyMissing      = errors.New("missing dependency")
 	ErrCircularDependency     = errors.New("circular dependency detected")
 	ErrCoreConflict           = errors.New("extension conflicts with core definition")

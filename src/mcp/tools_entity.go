@@ -96,7 +96,10 @@ func registerEntityMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 			if !ok {
 				return toolError(fmt.Sprintf("entity not found: %s", id)), nil
 			}
-			data, _ := json.MarshalIndent(query.EntityJSONMap(e), "", "  ")
+			data, err := json.MarshalIndent(query.EntityJSONMap(e), "", "  ")
+			if err != nil {
+				return toolError(fmt.Sprintf("failed to marshal response: %v", err)), nil
+			}
 			return toolResult(string(data)), nil
 		},
 	)
@@ -215,7 +218,10 @@ func registerEntityMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 					ID: e.ID, Kind: e.Kind, Name: e.Name, Owner: e.Owner,
 				}
 			}
-			data, _ := json.MarshalIndent(summaries, "", "  ")
+			data, err := json.MarshalIndent(summaries, "", "  ")
+			if err != nil {
+				return toolError(fmt.Sprintf("failed to marshal response: %v", err)), nil
+			}
 			return toolResult(string(data)), nil
 		},
 	)

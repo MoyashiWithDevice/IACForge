@@ -64,19 +64,6 @@ func TestNewArtifact(t *testing.T) {
 	}
 }
 
-func TestNewTheme(t *testing.T) {
-	theme := NewTheme("dark", "Dark Theme")
-	if theme.ID != "dark" {
-		t.Errorf("expected ID 'dark', got '%s'", theme.ID)
-	}
-	if theme.Colors == nil {
-		t.Error("expected non-nil colors")
-	}
-	if theme.Typography == nil {
-		t.Error("expected non-nil typography")
-	}
-}
-
 func TestNewRenderOptions(t *testing.T) {
 	opts := NewRenderOptions()
 	if opts.Width != 800 {
@@ -90,9 +77,14 @@ func TestNewRenderOptions(t *testing.T) {
 func TestSVGRendererRender(t *testing.T) {
 	g := core.NewGraph()
 	e1 := core.NewEntity("srv-1", "server", "Server 1")
-	g.AddEntity(e1)
+	if err := g.AddEntity(e1); err != nil {
+		t.Fatalf("failed to add: %v", err)
+	}
+
 	e2 := core.NewEntity("srv-2", "server", "Server 2")
-	g.AddEntity(e2)
+	if err := g.AddEntity(e2); err != nil {
+		t.Fatalf("failed to add: %v", err)
+	}
 
 	v := view.NewView("test-view", "Test View")
 	engine := view.NewEngine(g)
@@ -118,11 +110,19 @@ func TestSVGRendererRender(t *testing.T) {
 func TestMermaidRendererRender(t *testing.T) {
 	g := core.NewGraph()
 	e1 := core.NewEntity("srv-1", "server", "Server 1")
-	g.AddEntity(e1)
+	if err := g.AddEntity(e1); err != nil {
+		t.Fatalf("failed to add: %v", err)
+	}
+
 	e2 := core.NewEntity("srv-2", "server", "Server 2")
-	g.AddEntity(e2)
+	if err := g.AddEntity(e2); err != nil {
+		t.Fatalf("failed to add: %v", err)
+	}
+
 	r1 := core.NewDirectedRelation("rel-1", "connects", "srv-1", "srv-2")
-	g.AddRelation(r1)
+	if err := g.AddRelation(r1); err != nil {
+		t.Fatalf("failed to add: %v", err)
+	}
 
 	v := view.NewView("test-view", "Test View")
 	engine := view.NewEngine(g)
@@ -148,11 +148,19 @@ func TestMermaidRendererRender(t *testing.T) {
 func TestMermaidRendererSymmetricRelation(t *testing.T) {
 	g := core.NewGraph()
 	e1 := core.NewEntity("eth0-01", "interface", "eth0")
-	g.AddEntity(e1)
+	if err := g.AddEntity(e1); err != nil {
+		t.Fatalf("failed to add: %v", err)
+	}
+
 	e2 := core.NewEntity("eth0-02", "interface", "eth0")
-	g.AddEntity(e2)
+	if err := g.AddEntity(e2); err != nil {
+		t.Fatalf("failed to add: %v", err)
+	}
+
 	r1 := core.NewSymmetricRelation("rel-conn", "connects", []string{"eth0-01", "eth0-02"})
-	g.AddRelation(r1)
+	if err := g.AddRelation(r1); err != nil {
+		t.Fatalf("failed to add relation: %v", err)
+	}
 
 	v := view.NewView("test-view", "Test View")
 	engine := view.NewEngine(g)
@@ -179,7 +187,9 @@ func TestMermaidRendererSymmetricRelation(t *testing.T) {
 func TestMarkdownRendererRender(t *testing.T) {
 	g := core.NewGraph()
 	e1 := core.NewEntity("srv-1", "server", "Server 1")
-	g.AddEntity(e1)
+	if err := g.AddEntity(e1); err != nil {
+		t.Fatalf("failed to add: %v", err)
+	}
 
 	v := view.NewView("test-view", "Test View")
 	engine := view.NewEngine(g)
@@ -205,7 +215,9 @@ func TestMarkdownRendererRender(t *testing.T) {
 func TestJSONRendererRender(t *testing.T) {
 	g := core.NewGraph()
 	e1 := core.NewEntity("srv-1", "server", "Server 1")
-	g.AddEntity(e1)
+	if err := g.AddEntity(e1); err != nil {
+		t.Fatalf("failed to add: %v", err)
+	}
 
 	v := view.NewView("test-view", "Test View")
 	engine := view.NewEngine(g)
@@ -231,10 +243,15 @@ func TestJSONRendererRender(t *testing.T) {
 func TestLayoutEngineHierarchical(t *testing.T) {
 	g := core.NewGraph()
 	e1 := core.NewEntity("region-1", "region", "Region 1")
-	g.AddEntity(e1)
+	if err := g.AddEntity(e1); err != nil {
+		t.Fatalf("failed to add: %v", err)
+	}
+
 	e2 := core.NewEntity("rack-1", "rack", "Rack 1")
 	e2.SetOwner("region-1")
-	g.AddEntity(e2)
+	if err := g.AddEntity(e2); err != nil {
+		t.Fatalf("failed to add: %v", err)
+	}
 
 	v := view.NewView("test-view", "Test View")
 	engine := view.NewEngine(g)
@@ -265,9 +282,14 @@ func TestLayoutEngineHierarchical(t *testing.T) {
 func TestLayoutEngineForceDirected(t *testing.T) {
 	g := core.NewGraph()
 	e1 := core.NewEntity("srv-1", "server", "Server 1")
-	g.AddEntity(e1)
+	if err := g.AddEntity(e1); err != nil {
+		t.Fatalf("failed to add: %v", err)
+	}
+
 	e2 := core.NewEntity("srv-2", "server", "Server 2")
-	g.AddEntity(e2)
+	if err := g.AddEntity(e2); err != nil {
+		t.Fatalf("failed to add: %v", err)
+	}
 
 	v := view.NewView("test-view", "Test View")
 	engine := view.NewEngine(g)
@@ -291,7 +313,9 @@ func TestLayoutEngineForceDirected(t *testing.T) {
 func TestSVGRendererRenderWithTheme(t *testing.T) {
 	g := core.NewGraph()
 	e1 := core.NewEntity("srv-1", "server", "Server 1")
-	g.AddEntity(e1)
+	if err := g.AddEntity(e1); err != nil {
+		t.Fatalf("failed to add: %v", err)
+	}
 
 	v := view.NewView("test-view", "Test View")
 	engine := view.NewEngine(g)
@@ -300,7 +324,13 @@ func TestSVGRendererRenderWithTheme(t *testing.T) {
 		t.Fatalf("failed to apply view: %v", err)
 	}
 
-	theme := NewTheme("dark", "Dark Theme")
+	theme := &Theme{
+		ID:   "dark",
+		Name: "Dark Theme",
+		Colors: &ColorPalette{
+			Background: "#ffffff",
+		},
+	}
 	opts := &RenderOptions{
 		Width:  1024,
 		Height: 768,
@@ -374,7 +404,9 @@ func TestEscapeMermaid(t *testing.T) {
 
 func TestRenderFormat(t *testing.T) {
 	g := core.NewGraph()
-	g.AddEntity(core.NewEntity("srv-1", "server", "Server 1"))
+	if err := g.AddEntity(core.NewEntity("srv-1", "server", "Server 1")); err != nil {
+		t.Fatalf("failed to add: %v", err)
+	}
 
 	v := view.NewView("test-view", "Test View")
 	engine := view.NewEngine(g)

@@ -42,7 +42,6 @@ Relations are classified by directionality.
 |------|-------------|
 | directed | Has a source and target participant |
 | symmetric | All participants are equal |
-| undirected | Connection with no inherent direction |
 
 ---
 

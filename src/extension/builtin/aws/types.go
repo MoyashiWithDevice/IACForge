@@ -17,11 +17,3 @@ const (
 	Assumes    core.RelationType = "aws.assumes"
 	Registers  core.RelationType = "aws.registers"
 )
-
-// AllRelationTypes returns every relation type introduced by the AWS extension.
-func AllRelationTypes() []core.RelationType {
-	return []core.RelationType{
-		Associates, Attaches, Launches, Routes, Serves, Forwards,
-		Triggers, Subscribes, Invokes, Grants, Assumes, Registers,
-	}
-}

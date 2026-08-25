@@ -3,6 +3,8 @@ package schema
 import (
 	"fmt"
 	"math"
+	"regexp"
+	"sort"
 
 	"IACForge/src/core"
 )
@@ -18,7 +20,6 @@ const (
 	PropertyTypeList      PropertyType = "list"
 	PropertyTypeMap       PropertyType = "map"
 	PropertyTypeReference PropertyType = "reference"
-	PropertyTypeEnum      PropertyType = "enum"
 )
 
 // Constraint represents a validation constraint on a property.
@@ -34,22 +35,22 @@ type Constraint struct {
 
 // PropertyDefinition defines a property within an entity kind or relation type.
 type PropertyDefinition struct {
-	Name        string               `yaml:"name"`
-	Type        PropertyType         `yaml:"type"`
-	Required    bool                 `yaml:"required"`
-	Default     interface{}          `yaml:"default,omitempty"`
-	Description string               `yaml:"description,omitempty"`
-	Constraints *Constraint          `yaml:"constraints,omitempty"`
-	Properties  []PropertyDefinition `yaml:"properties,omitempty"`
+	Name          string               `yaml:"name"`
+	Type          PropertyType         `yaml:"type"`
+	Required      bool                 `yaml:"required"`
+	Default       interface{}          `yaml:"default,omitempty"`
+	Description   string               `yaml:"description,omitempty"`
+	Constraints   *Constraint          `yaml:"constraints,omitempty"`
+	Properties    []PropertyDefinition `yaml:"properties,omitempty"`
+	ValueProperty *PropertyDefinition  `yaml:"value_property,omitempty"`
 }
 
 // DirectionType represents the directionality of a relation type.
 type DirectionType string
 
 const (
-	DirectionDirected   DirectionType = "directed"
-	DirectionSymmetric  DirectionType = "symmetric"
-	DirectionUndirected DirectionType = "undirected"
+	DirectionDirected  DirectionType = "directed"
+	DirectionSymmetric DirectionType = "symmetric"
 )
 
 // ParticipantConstraints defines which entity kinds can participate in a relation.
@@ -222,6 +223,13 @@ func (s *Schema) ValidateProperty(propDef *PropertyDefinition, value interface{}
 			return fmt.Errorf("property %q: expected list value, got %T", propDef.Name, value)
 		}
 		if len(propDef.Properties) > 0 {
+			allowedKeys := make(map[string]bool, len(propDef.Properties))
+			names := make([]string, 0, len(propDef.Properties))
+			for _, subProp := range propDef.Properties {
+				allowedKeys[subProp.Name] = true
+				names = append(names, subProp.Name)
+			}
+			sort.Strings(names)
 			for i, item := range list {
 				itemMap, ok := item.(map[string]interface{})
 				if !ok {
@@ -239,6 +247,29 @@ func (s *Schema) ValidateProperty(propDef *PropertyDefinition, value interface{}
 						return fmt.Errorf("property %q[%d]: %w", propDef.Name, i, err)
 					}
 				}
+				for key := range itemMap {
+					if !allowedKeys[key] {
+						return fmt.Errorf("property %q[%d]: unknown key %q (allowed keys: %v)", propDef.Name, i, key, names)
+					}
+				}
+			}
+		}
+	}
+
+	// Validate map values against an optional element schema (B4).
+	if propDef.Type == PropertyTypeMap && propDef.ValueProperty != nil {
+		values, ok := mapValues(value)
+		if !ok {
+			return fmt.Errorf("property %q: expected map value, got %T", propDef.Name, value)
+		}
+		keys := make([]string, 0, len(values))
+		for k := range values {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			if err := s.ValidateProperty(propDef.ValueProperty, values[k]); err != nil {
+				return fmt.Errorf("property %q[%s]: %w", propDef.Name, k, err)
 			}
 		}
 	}
@@ -340,6 +371,22 @@ func numericValue(v interface{}) (float64, bool) {
 	}
 }
 
+// mapValues coerces a map value to map[string]interface{} for element validation.
+func mapValues(value interface{}) (map[string]interface{}, bool) {
+	switch m := value.(type) {
+	case map[string]interface{}:
+		return m, true
+	case map[string]string:
+		out := make(map[string]interface{}, len(m))
+		for k, v := range m {
+			out[k] = v
+		}
+		return out, true
+	default:
+		return nil, false
+	}
+}
+
 func validateConstraints(propDef *PropertyDefinition, value interface{}) error {
 	c := propDef.Constraints
 
@@ -413,8 +460,13 @@ func validateStringConstraints(c *Constraint, value interface{}) error {
 		return fmt.Errorf("string length %d is greater than maximum %d", len(sval), *c.MaxLength)
 	}
 	if c.Pattern != nil {
-		// Pattern validation would require regex compilation; basic check
-		_ = c.Pattern
+		re, err := regexp.Compile(*c.Pattern)
+		if err != nil {
+			return fmt.Errorf("invalid pattern %q: %v", *c.Pattern, err)
+		}
+		if !re.MatchString(sval) {
+			return fmt.Errorf("value %q does not match pattern %q", sval, *c.Pattern)
+		}
 	}
 	if len(c.Enum) > 0 {
 		found := false

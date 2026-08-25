@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"IACForge/src/core"
 	"IACForge/src/view"
 )
 
@@ -58,13 +59,24 @@ func (r *MermaidRenderer) Render(v *view.ViewResult, opts *RenderOptions) (*Arti
 	mermaid.WriteString("\n")
 
 	for _, entity := range v.VisibleEntities {
-		mermaid.WriteString(fmt.Sprintf("    %s[\"%s\"]\n", sanitizeID(entity.ID), escapeMermaid(entity.Name)))
+		fmt.Fprintf(&mermaid, "    %s[\"%s\"]\n", sanitizeID(entity.ID), escapeMermaid(entity.Name))
 	}
 
 	for _, group := range v.Groups {
-		mermaid.WriteString(fmt.Sprintf("    subgraph %s[\"%s\"]\n", sanitizeID(group.ID), escapeMermaid(group.Name)))
+		fmt.Fprintf(&mermaid, "    subgraph %s[\"%s\"]\n", sanitizeID(group.ID), escapeMermaid(group.Name))
 		for _, memberID := range group.Members {
-			mermaid.WriteString(fmt.Sprintf("        %s\n", sanitizeID(memberID)))
+			fmt.Fprintf(&mermaid, "        %s\n", sanitizeID(memberID))
+		}
+		mermaid.WriteString("    end\n")
+	}
+
+	// Lifted groups are structural containers (e.g. hidden clusters hosting
+	// visible applications) introduced by the relation lift step. They must be
+	// declared before edges reference them.
+	for _, group := range v.LiftedGroups {
+		fmt.Fprintf(&mermaid, "    subgraph %s[\"%s\"]\n", sanitizeID(group.ID), escapeMermaid(group.Name))
+		for _, memberID := range group.Members {
+			fmt.Fprintf(&mermaid, "        %s\n", sanitizeID(memberID))
 		}
 		mermaid.WriteString("    end\n")
 	}
@@ -102,8 +114,10 @@ func (r *MermaidRenderer) Render(v *view.ViewResult, opts *RenderOptions) (*Arti
 		if rel.Description != "" {
 			edgeLabel = rel.Description
 		}
-		mermaid.WriteString(fmt.Sprintf("    %s -->|%s| %s\n", source, escapeMermaid(edgeLabel), target))
+		fmt.Fprintf(&mermaid, "    %s -->|%s| %s\n", source, escapeMermaid(edgeLabel), target)
 	}
+
+	r.writeLiftedRelations(&mermaid, v)
 
 	artifact := NewArtifact(
 		fmt.Sprintf("artifact-%s-%s", r.id, v.ViewID),
@@ -124,6 +138,47 @@ func sanitizeID(id string) string {
 	result = strings.ReplaceAll(result, ".", "_")
 	result = strings.ReplaceAll(result, "/", "_")
 	return result
+}
+
+// writeLiftedRelations emits the derived edges produced by the relation lift
+// step. Lifted edges are drawn dashed to distinguish them from explicitly
+// modeled relations. Endpoints may reference visible entities or lifted
+// structural groups; references that resolve to nothing are skipped.
+func (r *MermaidRenderer) writeLiftedRelations(mermaid *strings.Builder, v *view.ViewResult) {
+	if len(v.LiftedRelations) == 0 {
+		return
+	}
+
+	refs := make(map[string]struct{}, len(v.VisibleEntities)+len(v.Groups)+len(v.LiftedGroups))
+	for _, entity := range v.VisibleEntities {
+		refs[entity.ID] = struct{}{}
+	}
+	for _, group := range v.Groups {
+		refs[group.ID] = struct{}{}
+	}
+	for _, group := range v.LiftedGroups {
+		refs[group.ID] = struct{}{}
+	}
+
+	for _, lr := range v.LiftedRelations {
+		if _, ok := refs[lr.SourceRef]; !ok {
+			continue
+		}
+		if _, ok := refs[lr.TargetRef]; !ok {
+			continue
+		}
+		source := sanitizeID(lr.SourceRef)
+		target := sanitizeID(lr.TargetRef)
+		label := string(lr.Type)
+		if lr.AggregatedCount > 1 {
+			label = fmt.Sprintf("%s ×%d", label, lr.AggregatedCount)
+		}
+		arrow := "-.->"
+		if lr.Direction == core.DirectionSymmetric {
+			arrow = "-.-"
+		}
+		fmt.Fprintf(mermaid, "    %s %s|%s| %s\n", source, arrow, escapeMermaid(label), target)
+	}
 }
 
 // escapeMermaid escapes special Mermaid characters.

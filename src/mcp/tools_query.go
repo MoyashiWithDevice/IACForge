@@ -114,7 +114,10 @@ func registerQueryMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 			if !ok {
 				return toolError(fmt.Sprintf("reference %q could not be resolved", ref)), nil
 			}
-			data, _ := json.MarshalIndent(query.EntityJSONMap(e), "", "  ")
+			data, err := json.MarshalIndent(query.EntityJSONMap(e), "", "  ")
+			if err != nil {
+				return toolError(fmt.Sprintf("failed to marshal response: %v", err)), nil
+			}
 			return toolResult(string(data)), nil
 		},
 	)
@@ -172,7 +175,10 @@ func registerQueryMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 				"property_references": propertyRefs,
 			}
 
-			data, _ := json.MarshalIndent(result, "", "  ")
+			data, err := json.MarshalIndent(result, "", "  ")
+			if err != nil {
+				return toolError(fmt.Sprintf("failed to marshal response: %v", err)), nil
+			}
 			return toolResult(string(data)), nil
 		},
 	)

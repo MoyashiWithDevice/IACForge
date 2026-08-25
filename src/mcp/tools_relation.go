@@ -101,7 +101,10 @@ func registerRelationMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 			if !ok {
 				return toolError(fmt.Sprintf("relation not found: %s", id)), nil
 			}
-			data, _ := json.MarshalIndent(r, "", "  ")
+			data, err := json.MarshalIndent(r, "", "  ")
+			if err != nil {
+				return toolError(fmt.Sprintf("failed to marshal response: %v", err)), nil
+			}
 			return toolResult(string(data)), nil
 		},
 	)
@@ -212,7 +215,10 @@ func registerRelationMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 					Direction: r.Direction,
 				}
 			}
-			data, _ := json.MarshalIndent(summaries, "", "  ")
+			data, err := json.MarshalIndent(summaries, "", "  ")
+			if err != nil {
+				return toolError(fmt.Sprintf("failed to marshal response: %v", err)), nil
+			}
 			return toolResult(string(data)), nil
 		},
 	)

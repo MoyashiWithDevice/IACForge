@@ -397,8 +397,12 @@ func TestEntityKindsAllExtendedKinds(t *testing.T) {
 		},
 	}
 
-	ep.Register(ext1)
-	ep.Register(ext2)
+	if err := ep.Register(ext1); err != nil {
+		t.Fatalf("failed to register: %v", err)
+	}
+	if err := ep.Register(ext2); err != nil {
+		t.Fatalf("failed to register: %v", err)
+	}
 
 	allKinds := ep.AllExtendedKinds()
 	if len(allKinds) != 3 {
@@ -777,7 +781,6 @@ func TestValidationRulesExtensionPointRegister(t *testing.T) {
 					ID:       "custom-rule-1",
 					Name:     "Custom Rule 1",
 					Severity: validation.SeverityWarning,
-					Scope:    validation.ScopeGraph,
 				},
 				Fn: func(ctx *validation.Context) []validation.Finding {
 					return nil
@@ -827,24 +830,28 @@ func TestValidationRulesAllExtendedRules(t *testing.T) {
 		Manifest: &Manifest{ID: "ext1", Namespace: "ns1"},
 		ValidationRules: []ValidationRuleContribution{
 			{
-				Rule: &validation.Rule{ID: "rule-a", Name: "Rule A", Severity: validation.SeverityWarning, Scope: validation.ScopeGraph},
+				Rule: &validation.Rule{ID: "rule-a", Name: "Rule A", Severity: validation.SeverityWarning},
 				Fn:   func(ctx *validation.Context) []validation.Finding { return nil },
 			},
 			{
-				Rule: &validation.Rule{ID: "rule-b", Name: "Rule B", Severity: validation.SeverityError, Scope: validation.ScopeEntity},
+				Rule: &validation.Rule{ID: "rule-b", Name: "Rule B", Severity: validation.SeverityError},
 				Fn:   func(ctx *validation.Context) []validation.Finding { return nil },
 			},
 		},
 	}
 
-	ep.Register(ext1)
-
-	allRules := ep.AllExtendedRules()
-	if len(allRules) != 2 {
-		t.Errorf("expected 2 extended rules, got %d", len(allRules))
+	if err := ep.Register(ext1); err != nil {
+		t.Fatalf("failed to register: %v", err)
 	}
-	if allRules["rule-a"] != "ext1" || allRules["rule-b"] != "ext1" {
-		t.Errorf("unexpected rule extension mapping: %v", allRules)
+
+	if extID, ok := ep.GetExtensionForRule("rule-a"); !ok || extID != "ext1" {
+		t.Errorf("expected ext1 for rule-a, got %q (%v)", extID, ok)
+	}
+	if extID, ok := ep.GetExtensionForRule("rule-b"); !ok || extID != "ext1" {
+		t.Errorf("expected ext1 for rule-b, got %q (%v)", extID, ok)
+	}
+	if _, ok := ep.GetExtensionForRule("unknown"); ok {
+		t.Error("expected no extension for unknown rule")
 	}
 }
 
@@ -886,11 +893,6 @@ func TestRootKindsExtensionPointRegister(t *testing.T) {
 	if !ok || extID != "test-ext" {
 		t.Errorf("expected test-ext for aws.organization, got %q (%v)", extID, ok)
 	}
-
-	all := ep.AllRootKinds()
-	if len(all) != 2 || all["aws.organization"] != "test-ext" {
-		t.Errorf("unexpected all root kinds map: %v", all)
-	}
 }
 
 func TestRootKindsExtensionPointDuplicate(t *testing.T) {
@@ -909,7 +911,7 @@ func TestRootKindsExtensionPointDuplicate(t *testing.T) {
 	if err := ep.Register(ext); err != nil {
 		t.Fatalf("Register failed: %v", err)
 	}
-	if got := len(ep.AllRootKinds()); got != 1 {
+	if got := len(ep.GetRootKindsByExtension("test-ext")); got != 1 {
 		t.Errorf("expected 1 unique root kind after duplicate registration, got %d", got)
 	}
 }
@@ -926,8 +928,8 @@ func TestRootKindsExtensionPointNoRootKinds(t *testing.T) {
 	if err := ep.Register(ext); err != nil {
 		t.Fatalf("Register failed: %v", err)
 	}
-	if len(ep.AllRootKinds()) != 0 {
-		t.Errorf("expected no root kinds, got %v", ep.AllRootKinds())
+	if got := len(ep.GetRootKindsByExtension("test-ext")); got != 0 {
+		t.Errorf("expected no root kinds, got %v", got)
 	}
 }
 
@@ -997,8 +999,8 @@ func TestRendererExtensionPointNilRenderer(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if len(ep.AllExtendedRenderers()) != 0 {
-		t.Error("nil renderer should not be registered")
+	if got := len(ep.GetRenderersByExtension("test-ext")); got != 0 {
+		t.Errorf("nil renderer should not be registered, got %d", got)
 	}
 }
 
@@ -1066,9 +1068,15 @@ func TestIntegrationMultipleExtensions(t *testing.T) {
 	extB := newTestRelationExtension("ext-b", "ns-b")
 	extC := newTestExtension("ext-c", "ns-c", []string{"ext-a"})
 
-	m.Register(extA)
-	m.Register(extB)
-	m.Register(extC)
+	if err := m.Register(extA); err != nil {
+		t.Fatalf("failed to register: %v", err)
+	}
+	if err := m.Register(extB); err != nil {
+		t.Fatalf("failed to register: %v", err)
+	}
+	if err := m.Register(extC); err != nil {
+		t.Fatalf("failed to register: %v", err)
+	}
 
 	if err := m.LoadAll(); err != nil {
 		t.Fatalf("LoadAll failed: %v", err)
@@ -1131,8 +1139,12 @@ func TestLoadAllIdempotent(t *testing.T) {
 	extA := newTestExtension("ext-a", "ns-a", nil)
 	extB := newTestRelationExtension("ext-b", "ns-b")
 
-	m.Register(extA)
-	m.Register(extB)
+	if err := m.Register(extA); err != nil {
+		t.Fatalf("failed to register: %v", err)
+	}
+	if err := m.Register(extB); err != nil {
+		t.Fatalf("failed to register: %v", err)
+	}
 
 	if err := m.LoadAll(); err != nil {
 		t.Fatalf("first LoadAll failed: %v", err)

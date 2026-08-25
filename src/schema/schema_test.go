@@ -381,6 +381,103 @@ func TestValidatePropertyEnumConstraints(t *testing.T) {
 	}
 }
 
+func TestValidatePropertyPatternConstraints(t *testing.T) {
+	s := NewSchema("1.0.0", "1.0")
+	pattern := `^srv-[a-z0-9-]+$`
+	prop := &PropertyDefinition{
+		Name: "hostname",
+		Type: PropertyTypeString,
+		Constraints: &Constraint{
+			Pattern: &pattern,
+		},
+	}
+
+	// Valid match
+	if err := s.ValidateProperty(prop, "srv-web-01"); err != nil {
+		t.Errorf("expected no error for matching string, got %v", err)
+	}
+
+	// Invalid match
+	if err := s.ValidateProperty(prop, "web_server!"); err == nil {
+		t.Error("expected error for string not matching pattern")
+	}
+
+	// Invalid pattern (schema definition error)
+	bad := `[`
+	badProp := &PropertyDefinition{
+		Name: "hostname",
+		Type: PropertyTypeString,
+		Constraints: &Constraint{
+			Pattern: &bad,
+		},
+	}
+	if err := s.ValidateProperty(badProp, "anything"); err == nil {
+		t.Error("expected error for invalid pattern")
+	}
+}
+
+func TestValidatePropertyListUnknownKey(t *testing.T) {
+	s := NewSchema("1.0.0", "1.0")
+	prop := &PropertyDefinition{
+		Name: "cpu",
+		Type: PropertyTypeList,
+		Properties: []PropertyDefinition{
+			{Name: "cores", Type: PropertyTypeInteger},
+			{Name: "architecture", Type: PropertyTypeString},
+		},
+	}
+
+	// Valid item
+	valid := []interface{}{
+		map[string]interface{}{"cores": 4, "architecture": "x86_64"},
+	}
+	if err := s.ValidateProperty(prop, valid); err != nil {
+		t.Errorf("expected no error for valid list item, got %v", err)
+	}
+
+	// Item with unknown key
+	invalid := []interface{}{
+		map[string]interface{}{"cores": 4, "sockets": 2},
+	}
+	if err := s.ValidateProperty(prop, invalid); err == nil {
+		t.Error("expected error for list item with unknown key")
+	}
+}
+
+func TestValidatePropertyMapValueProperty(t *testing.T) {
+	s := NewSchema("1.0.0", "1.0")
+	valueProp := &PropertyDefinition{Name: "entry", Type: PropertyTypeInteger}
+	prop := &PropertyDefinition{
+		Name:          "ports",
+		Type:          PropertyTypeMap,
+		ValueProperty: valueProp,
+	}
+
+	// Valid map values
+	valid := map[string]interface{}{"web": 8080, "db": 5432}
+	if err := s.ValidateProperty(prop, valid); err != nil {
+		t.Errorf("expected no error for valid map values, got %v", err)
+	}
+
+	// map[string]string values must fail against integer value schema
+	invalid := map[string]string{"web": "8080"}
+	if err := s.ValidateProperty(prop, invalid); err == nil {
+		t.Error("expected error for map value not matching value property type")
+	}
+
+	// Non-numeric value in a numeric map
+	badVal := map[string]interface{}{"web": "8080"}
+	if err := s.ValidateProperty(prop, badVal); err == nil {
+		t.Error("expected error for non-integer map value")
+	}
+
+	// Map without value property still validates as a map
+	plain := &PropertyDefinition{Name: "tags", Type: PropertyTypeMap}
+	if err := s.ValidateProperty(plain, map[string]interface{}{"a": 1, "b": "two"}); err != nil {
+		t.Errorf("expected no error for map without value property, got %v", err)
+	}
+}
+
 func TestValidatePropertyNumericConstraints(t *testing.T) {
 	s := NewSchema("1.0.0", "1.0")
 	min := float64(1)
@@ -416,8 +513,7 @@ func TestProfile(t *testing.T) {
 		t.Errorf("expected name 'test-profile', got %q", p.Name)
 	}
 
-	p.AddRule("unique-id")
-	p.AddRule("valid-reference")
+	p.Rules = append(p.Rules, "unique-id", "valid-reference")
 
 	if !p.HasRule("unique-id") {
 		t.Error("expected profile to have rule 'unique-id'")
@@ -430,21 +526,13 @@ func TestProfile(t *testing.T) {
 	}
 
 	p.AddRequiredKind("server")
-	if !p.HasRequiredKind("server") {
+	if len(p.RequiredKinds) != 1 || p.RequiredKinds[0] != "server" {
 		t.Error("expected profile to require kind 'server'")
-	}
-	if p.HasRequiredKind("vm") {
-		t.Error("expected profile not to require kind 'vm'")
 	}
 
 	p.AddRequiredRelation("connects")
-	if !p.HasRequiredRelation("connects") {
+	if len(p.RequiredRelations) != 1 || p.RequiredRelations[0] != "connects" {
 		t.Error("expected profile to require relation 'connects'")
-	}
-
-	p.SetRequiredProperties("server", []string{"name", "platform"})
-	if len(p.RequiredProperties["server"]) != 2 {
-		t.Errorf("expected 2 required properties for server, got %d", len(p.RequiredProperties["server"]))
 	}
 }
 
@@ -656,11 +744,12 @@ func TestValidateNumericConstraintsUnsigned(t *testing.T) {
 }
 
 func TestValidatePropertyStringReferenceValue(t *testing.T) {
+	minLength := 1
 	s := CoreSchema()
 	def := &PropertyDefinition{
 		Name:        "gateway",
 		Type:        PropertyTypeString,
-		Constraints: &Constraint{MinLength: intPtrInt(1)},
+		Constraints: &Constraint{MinLength: &minLength},
 	}
 	if err := s.ValidateProperty(def, core.NewReferenceValue("@gw-01")); err != nil {
 		t.Errorf("string property with ReferenceValue should be accepted, got %v", err)

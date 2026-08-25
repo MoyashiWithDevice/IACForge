@@ -1,5 +1,11 @@
 # Projection Model
 
+> **Implementation status:** The `src/projection/` implementation has been
+> removed. Projection functionality is planned to be integrated into the Query
+> model in a future release rather than maintained as a standalone package.
+> This document describes the design intent; refer to the Query model
+> (`spec/07-query-model.md`) for the currently supported behavior.
+
 ## Overview
 
 A Projection transforms one Graph into another Graph.

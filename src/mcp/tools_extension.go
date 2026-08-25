@@ -63,7 +63,10 @@ func registerExtensionMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 				})
 			}
 
-			data, _ := json.MarshalIndent(infos, "", "  ")
+			data, err := json.MarshalIndent(infos, "", "  ")
+			if err != nil {
+				return toolError(fmt.Sprintf("failed to marshal response: %v", err)), nil
+			}
 			return toolResult(string(data)), nil
 		},
 	)
@@ -98,7 +101,10 @@ func registerExtensionMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 				sort.Strings(byExt[extID])
 			}
 
-			data, _ := json.MarshalIndent(byExt, "", "  ")
+			data, err := json.MarshalIndent(byExt, "", "  ")
+			if err != nil {
+				return toolError(fmt.Sprintf("failed to marshal response: %v", err)), nil
+			}
 			return toolResult(string(data)), nil
 		},
 	)

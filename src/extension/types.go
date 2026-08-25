@@ -12,10 +12,7 @@ type Manifest struct {
 	ID              string   `yaml:"id"`
 	Name            string   `yaml:"name"`
 	Version         string   `yaml:"version"`
-	Author          string   `yaml:"author,omitempty"`
 	Description     string   `yaml:"description,omitempty"`
-	SpecVersion     string   `yaml:"spec_version,omitempty"`
-	SchemaVersion   string   `yaml:"schema_version,omitempty"`
 	Namespace       string   `yaml:"namespace"`
 	Dependencies    []string `yaml:"dependencies,omitempty"`
 	ExtensionPoints []string `yaml:"extension_points"`

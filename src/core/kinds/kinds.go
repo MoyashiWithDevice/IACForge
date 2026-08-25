@@ -26,34 +26,16 @@ const (
 	AvailabilityZone  core.EntityKind = "availability_zone"
 )
 
-var AllKinds = []core.EntityKind{
-	Region, Rack, Server, Interface, Cable, PowerDistribution,
-	Network, VLAN, Switch, Router, Firewall, ACL, ACLRule,
-	VM, Container, Application, OpenPort,
-	Storage, Volume,
-	Cluster, AvailabilityZone,
-}
-
-var ValidStatuses = []core.Status{
-	core.StatusPlanned,
-	core.StatusActive,
-	core.StatusMaintenance,
-	core.StatusDeprecated,
-	core.StatusOffline,
-	core.StatusStandby,
-}
-
-func IsValidKind(k core.EntityKind) bool {
-	for _, kind := range AllKinds {
-		if kind == k {
-			return true
-		}
-	}
-	return false
-}
-
 func IsValidStatus(s core.Status) bool {
-	for _, status := range ValidStatuses {
+	validStatuses := []core.Status{
+		core.StatusPlanned,
+		core.StatusActive,
+		core.StatusMaintenance,
+		core.StatusDeprecated,
+		core.StatusOffline,
+		core.StatusStandby,
+	}
+	for _, status := range validStatuses {
 		if status == s {
 			return true
 		}
