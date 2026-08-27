@@ -101,6 +101,7 @@ type NodePosition struct {
 	Position Position
 	Width    float64
 	Height   float64
+	Children []string
 }
 
 // EdgePosition represents a positioned edge in the layout.

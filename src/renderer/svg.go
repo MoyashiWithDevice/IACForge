@@ -2,6 +2,7 @@ package renderer
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"IACForge/src/view"
@@ -46,15 +47,16 @@ func (r *SVGRenderer) Render(v *view.ViewResult, opts *RenderOptions) (*Artifact
 
 	width := opts.Width
 	height := opts.Height
-	if width == 0 {
-		width = 800
-	}
-	if height == 0 {
-		height = 600
-	}
 
 	layoutEngine := NewLayoutEngine(opts.Layout)
 	layout := layoutEngine.ComputeLayout(v)
+
+	if layout.Width > 0 {
+		width = layout.Width
+	}
+	if layout.Height > 0 {
+		height = layout.Height
+	}
 
 	var svg strings.Builder
 
@@ -73,8 +75,21 @@ func (r *SVGRenderer) Render(v *view.ViewResult, opts *RenderOptions) (*Artifact
 		r.renderEdge(&svg, edge, opts)
 	}
 
+	// Draw containers before their contents so child nodes render on top.
+	nodesByDepth := make([]NodePosition, len(layout.Nodes))
+	copy(nodesByDepth, layout.Nodes)
+	depths := make(map[string]int, len(layout.Nodes))
 	for _, node := range layout.Nodes {
-		r.renderNode(&svg, node, v, opts)
+		for _, childID := range node.Children {
+			depths[childID] = depths[node.ID] + 1
+		}
+	}
+	sort.SliceStable(nodesByDepth, func(i, j int) bool {
+		return depths[nodesByDepth[i].ID] < depths[nodesByDepth[j].ID]
+	})
+
+	for _, node := range nodesByDepth {
+		r.renderNode(&svg, node, v, opts, len(node.Children) > 0)
 	}
 
 	svg.WriteString("</svg>")
@@ -116,14 +131,23 @@ func (r *SVGRenderer) renderEdge(svg *strings.Builder, edge EdgePosition, opts *
 	svg.WriteString("\n")
 }
 
-// renderNode renders a single node.
-func (r *SVGRenderer) renderNode(svg *strings.Builder, node NodePosition, v *view.ViewResult, opts *RenderOptions) {
+// renderNode renders a single node. Containers (nodes with children) are
+// drawn as large labeled boxes; leaves as compact boxes with centered text.
+func (r *SVGRenderer) renderNode(svg *strings.Builder, node NodePosition, v *view.ViewResult, opts *RenderOptions, container bool) {
 	fill := "#e5e7eb"
 	stroke := "#9ca3af"
 	textColor := "#111827"
 
+	if container {
+		fill = "#f3f4f6"
+	}
+
 	if opts.Theme != nil && opts.Theme.Colors != nil {
-		fill = opts.Theme.Colors.Surface
+		if container && opts.Theme.Colors.Background != "" {
+			fill = opts.Theme.Colors.Background
+		} else if !container && opts.Theme.Colors.Surface != "" {
+			fill = opts.Theme.Colors.Surface
+		}
 		stroke = opts.Theme.Colors.Border
 		textColor = opts.Theme.Colors.Text
 	}
@@ -147,11 +171,19 @@ func (r *SVGRenderer) renderNode(svg *strings.Builder, node NodePosition, v *vie
 		}
 	}
 
-	textX := node.Position.X + node.Width/2
-	textY := node.Position.Y + node.Height/2 + float64(fontSize)/3
+	var textX, textY float64
+	anchor := "middle"
+	if container {
+		anchor = "start"
+		textX = node.Position.X + 8
+		textY = node.Position.Y + float64(fontSize)
+	} else {
+		textX = node.Position.X + node.Width/2
+		textY = node.Position.Y + node.Height/2 + float64(fontSize)/3
+	}
 
-	fmt.Fprintf(svg, `<text x="%.0f" y="%.0f" text-anchor="middle" font-size="%d" fill="%s">%s</text>`,
-		textX, textY, fontSize, textColor, escapeXML(name))
+	fmt.Fprintf(svg, `<text x="%.0f" y="%.0f" text-anchor="%s" font-size="%d" fill="%s">%s</text>`,
+		textX, textY, anchor, fontSize, textColor, escapeXML(name))
 	svg.WriteString("\n")
 }
 

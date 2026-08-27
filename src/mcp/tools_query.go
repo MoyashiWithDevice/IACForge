@@ -19,7 +19,7 @@ func registerQueryMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 			mcp.WithDescription("Query entities by kind and optional conditions. Conditions are a JSON list of {\"field\",\"operator\",\"value\"}; operators include eq, ne, in, nin, gt, ge, lt, le, contains, starts_with, ends_with, matches, defined, undefined."),
 			mcp.WithString("kind", mcp.Description("Entity kind to filter by (e.g. server)")),
 			mcp.WithString("where_json", mcp.Description("JSON list of conditions, e.g. [{\"field\":\"status\",\"operator\":\"eq\",\"value\":\"active\"}]")),
-			mcp.WithString("format", mcp.Description("Output format (json, mermaid, markdown). Default: json")),
+			mcp.WithString("format", mcp.Description("Output format (json, mermaid, markdown, svg). Default: json")),
 			mcp.WithNumber("limit", mcp.Description("Maximum number of results")),
 			mcp.WithNumber("offset", mcp.Description("Number of results to skip")),
 		),
@@ -61,7 +61,7 @@ func registerQueryMCPTools(s *mcpserver.MCPServer, sm *SessionManager) {
 			mcp.WithString("from", mcp.Required(), mcp.Description("Starting entity ID")),
 			mcp.WithString("operation", mcp.Required(), mcp.Description("Traversal operation (children, parent, ancestors, descendants, related, sources, targets, outgoing, incoming, reverse_ownership)")),
 			mcp.WithString("relation_type", mcp.Description("Optional relation type filter for relation traversals")),
-			mcp.WithString("format", mcp.Description("Output format (json, mermaid, markdown). Default: json")),
+			mcp.WithString("format", mcp.Description("Output format (json, mermaid, markdown, svg). Default: json")),
 			mcp.WithNumber("depth", mcp.Description("Traversal depth limit")),
 		),
 		func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -211,14 +211,14 @@ func renderQueryResult(eng *query.Engine, result *query.Result, format string) *
 	switch format {
 	case "json", "":
 		return toolResult(string(result.JSON()))
-	case "mermaid", "markdown", "md":
+	case "mermaid", "markdown", "md", "svg":
 		content, err := renderer.RenderFormat(eng.ToViewResult(result, true), format)
 		if err != nil {
 			return toolError(fmt.Sprintf("render failed: %v", err))
 		}
 		return toolResult(content)
 	default:
-		return toolError(fmt.Sprintf("unknown format: %q (supported: json, mermaid, markdown)", format))
+		return toolError(fmt.Sprintf("unknown format: %q (supported: json, mermaid, markdown, svg)", format))
 	}
 }
 

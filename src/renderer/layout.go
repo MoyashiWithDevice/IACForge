@@ -34,9 +34,16 @@ func (le *LayoutEngine) ComputeLayout(result *view.ViewResult) *LayoutResult {
 	}
 }
 
-// computeHierarchicalLayout arranges nodes in a tree-like structure.
+// nodeBox holds the measured size of a subtree in the containment layout.
+type nodeBox struct {
+	width  float64
+	height float64
+}
+
+// computeHierarchicalLayout arranges nodes as nested containers following
+// the ownership hierarchy. Child nodes are placed inside the bounding box of
+// their parents; roots are laid out side by side.
 func (le *LayoutEngine) computeHierarchicalLayout(result *view.ViewResult) *LayoutResult {
-	levels := le.buildLevels(result)
 	spacing := le.config.Spacing
 	padding := le.config.Padding
 
@@ -47,35 +54,90 @@ func (le *LayoutEngine) computeHierarchicalLayout(result *view.ViewResult) *Layo
 		padding = 20
 	}
 
-	nodeWidth := 120.0
-	nodeHeight := 40.0
+	const (
+		nodeWidth    = 120.0
+		nodeHeight   = 40.0
+		headerHeight = 24.0
+		innerPad     = 8.0
+	)
+
+	roots := buildOwnershipTree(result.VisibleEntities)
+
+	// measure returns the bounding box needed to draw the node and its
+	// descendants. Leaves are drawn at their natural size; containers wrap
+	// their children laid out side by side below a label header.
+	var measure func(node *OwnershipNode) *nodeBox
+	measure = func(node *OwnershipNode) *nodeBox {
+		if len(node.Children) == 0 {
+			return &nodeBox{width: nodeWidth, height: nodeHeight}
+		}
+		width := 2*innerPad - spacing
+		maxChildHeight := 0.0
+		for _, child := range node.Children {
+			childBox := measure(child)
+			width += childBox.width + spacing
+			if childBox.height > maxChildHeight {
+				maxChildHeight = childBox.height
+			}
+		}
+		if width < nodeWidth {
+			width = nodeWidth
+		}
+		return &nodeBox{
+			width:  width,
+			height: headerHeight + maxChildHeight + innerPad,
+		}
+	}
+
+	boxes := make(map[string]*nodeBox, len(result.VisibleEntities))
+	for _, root := range roots {
+		collectBoxes(root, measure, boxes)
+	}
 
 	var layoutResult LayoutResult
 	layoutResult.Nodes = make([]NodePosition, 0)
 	layoutResult.Edges = make([]EdgePosition, 0)
 
-	maxWidth := 0.0
-	for levelIdx, level := range levels {
-		y := padding + float64(levelIdx)*(nodeHeight+spacing)
-		for nodeIdx, entity := range level {
-			x := padding + float64(nodeIdx)*(nodeWidth+spacing)
+	var place func(node *OwnershipNode, x, y float64)
+	place = func(node *OwnershipNode, x, y float64) {
+		box := boxes[node.Entity.ID]
+		children := make([]string, 0, len(node.Children))
+		for _, child := range node.Children {
+			children = append(children, child.Entity.ID)
+		}
+		layoutResult.Nodes = append(layoutResult.Nodes, NodePosition{
+			ID:       node.Entity.ID,
+			Position: Position{X: x, Y: y},
+			Width:    box.width,
+			Height:   box.height,
+			Children: children,
+		})
 
-			layoutResult.Nodes = append(layoutResult.Nodes, NodePosition{
-				ID: entity.ID,
-				Position: Position{
-					X: x,
-					Y: y,
-				},
-				Width:  nodeWidth,
-				Height: nodeHeight,
-			})
-
-			right := x + nodeWidth
-			if right > maxWidth {
-				maxWidth = right
-			}
+		childX := x + innerPad
+		childY := y + headerHeight
+		for _, child := range node.Children {
+			place(child, childX, childY)
+			childX += boxes[child.Entity.ID].width + spacing
 		}
 	}
+
+	x := padding
+	for _, root := range roots {
+		place(root, x, padding)
+		x += boxes[root.Entity.ID].width + spacing
+	}
+
+	for i := range layoutResult.Nodes {
+		node := &layoutResult.Nodes[i]
+		if right := node.Position.X + node.Width; right > layoutResult.Width {
+			layoutResult.Width = right
+		}
+		if bottom := node.Position.Y + node.Height; bottom > layoutResult.Height {
+			layoutResult.Height = bottom
+		}
+	}
+	layoutResult.Width += padding
+	layoutResult.Height += padding
 
 	for _, rel := range result.VisibleRelations {
 		sourcePos := le.findNodePosition(layoutResult.Nodes, rel.Source())
@@ -94,57 +156,15 @@ func (le *LayoutEngine) computeHierarchicalLayout(result *view.ViewResult) *Layo
 		}
 	}
 
-	layoutResult.Width = maxWidth + padding
-	layoutResult.Height = padding + float64(len(levels))*(nodeHeight+spacing)
-
 	return &layoutResult
 }
 
-// buildLevels builds hierarchical levels from entities.
-func (le *LayoutEngine) buildLevels(result *view.ViewResult) [][]*view.Group {
-	groups := make(map[string][]string)
-	entityMap := make(map[string]interface{})
-	levelMap := make(map[string]int)
-
-	for _, entity := range result.VisibleEntities {
-		entityMap[entity.ID] = entity
-		levelMap[entity.ID] = 0
+// collectBoxes records the measured size of every node in the subtree.
+func collectBoxes(node *OwnershipNode, measure func(*OwnershipNode) *nodeBox, boxes map[string]*nodeBox) {
+	boxes[node.Entity.ID] = measure(node)
+	for _, child := range node.Children {
+		collectBoxes(child, measure, boxes)
 	}
-
-	for _, group := range result.Groups {
-		for _, memberID := range group.Members {
-			groups[memberID] = append(groups[memberID], group.ID)
-		}
-	}
-
-	maxLevel := 0
-	for _, entity := range result.VisibleEntities {
-		level := 0
-		if groupIDs, ok := groups[entity.ID]; ok && len(groupIDs) > 0 {
-			level = 1
-		}
-		levelMap[entity.ID] = level
-		if level > maxLevel {
-			maxLevel = level
-		}
-	}
-
-	levels := make([][]*view.Group, maxLevel+1)
-	for i := range levels {
-		levels[i] = make([]*view.Group, 0)
-	}
-
-	for _, entity := range result.VisibleEntities {
-		level := levelMap[entity.ID]
-		levels[level] = append(levels[level], &view.Group{
-			ID:      entity.ID,
-			Kind:    string(entity.Kind),
-			Name:    entity.Name,
-			Members: []string{entity.ID},
-		})
-	}
-
-	return levels
 }
 
 // computeForceDirectedLayout arranges nodes using a physics simulation.

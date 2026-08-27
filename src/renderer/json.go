@@ -94,6 +94,12 @@ func (r *JSONRenderer) Render(v *view.ViewResult, opts *RenderOptions) (*Artifac
 	}
 	data["entities"] = entities
 
+	hierarchy := make([]map[string]interface{}, 0, len(v.VisibleEntities))
+	for _, root := range buildOwnershipTree(v.VisibleEntities) {
+		hierarchy = append(hierarchy, entityHierarchyNode(root))
+	}
+	data["hierarchy"] = hierarchy
+
 	relations := make([]map[string]interface{}, 0, len(v.VisibleRelations))
 	for _, rel := range v.VisibleRelations {
 		r := map[string]interface{}{
@@ -184,4 +190,21 @@ func (r *JSONRenderer) Render(v *view.ViewResult, opts *RenderOptions) (*Artifac
 	artifact.Metadata["description"] = v.Description
 
 	return artifact, nil
+}
+
+// entityHierarchyNode converts an OwnershipNode into a nested JSON structure.
+func entityHierarchyNode(node *OwnershipNode) map[string]interface{} {
+	out := map[string]interface{}{
+		"id":   node.Entity.ID,
+		"kind": node.Entity.Kind,
+		"name": node.Entity.Name,
+	}
+	if len(node.Children) > 0 {
+		children := make([]map[string]interface{}, 0, len(node.Children))
+		for _, child := range node.Children {
+			children = append(children, entityHierarchyNode(child))
+		}
+		out["children"] = children
+	}
+	return out
 }

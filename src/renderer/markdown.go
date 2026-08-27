@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"IACForge/src/core"
 	"IACForge/src/view"
 )
 
@@ -84,29 +85,7 @@ func (r *MarkdownRenderer) Render(v *view.ViewResult, opts *RenderOptions) (*Art
 
 	if len(v.VisibleEntities) > 0 {
 		md.WriteString("## Entities\n\n")
-
-		kindGroups := make(map[string][]*view.Group)
-		for _, entity := range v.VisibleEntities {
-			key := string(entity.Kind)
-			if _, ok := kindGroups[key]; !ok {
-				kindGroups[key] = make([]*view.Group, 0)
-			}
-			kindGroups[key] = append(kindGroups[key], &view.Group{
-				ID:   entity.ID,
-				Kind: key,
-				Name: entity.Name,
-			})
-		}
-
-		for kind, entities := range kindGroups {
-			fmt.Fprintf(&md, "### %s\n\n", kind)
-			md.WriteString("| ID | Name | Status |\n")
-			md.WriteString("|----|------|--------|\n")
-			for _, e := range entities {
-				fmt.Fprintf(&md, "| %s | %s | %s |\n", e.ID, e.Name, "-")
-			}
-			md.WriteString("\n")
-		}
+		r.writeEntityHierarchy(&md, v.VisibleEntities)
 	}
 
 	if len(v.VisibleRelations) > 0 {
@@ -142,4 +121,25 @@ func (r *MarkdownRenderer) Render(v *view.ViewResult, opts *RenderOptions) (*Art
 	artifact.Metadata["description"] = v.Description
 
 	return artifact, nil
+}
+
+// writeEntityHierarchy writes visible entities as a nested list reflecting
+// the ownership hierarchy. Children are indented inside their parents.
+func (r *MarkdownRenderer) writeEntityHierarchy(md *strings.Builder, entities []*core.Entity) {
+	roots := buildOwnershipTree(entities)
+
+	var write func(nodes []*OwnershipNode, depth int)
+	write = func(nodes []*OwnershipNode, depth int) {
+		indent := strings.Repeat("  ", depth)
+		for _, node := range nodes {
+			fmt.Fprintf(md, "%s- **%s** (`%s`, %s)\n",
+				indent, node.Entity.Name, node.Entity.ID, node.Entity.Kind)
+			if len(node.Children) > 0 {
+				write(node.Children, depth+1)
+			}
+		}
+	}
+
+	write(roots, 0)
+	md.WriteString("\n")
 }

@@ -82,11 +82,11 @@ func TestRenderGraphKindFilter(t *testing.T) {
 		t.Fatalf("expected success, got: %+v", res)
 	}
 	text := toolResultText(t, res)
-	if !strings.Contains(text, "### server") {
-		t.Errorf("expected server section in filtered render:\n%s", text)
+	if !strings.Contains(text, "- **Server 01** (`srv-01`, server)") {
+		t.Errorf("expected server entity in filtered render:\n%s", text)
 	}
-	if strings.Contains(text, "### vm") {
-		t.Errorf("did not expect vm entity section in server-only render:\n%s", text)
+	if strings.Contains(text, "(`vm-01`") {
+		t.Errorf("did not expect vm entity in server-only render:\n%s", text)
 	}
 }
 

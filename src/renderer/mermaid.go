@@ -58,9 +58,7 @@ func (r *MermaidRenderer) Render(v *view.ViewResult, opts *RenderOptions) (*Arti
 	mermaid.WriteString(direction)
 	mermaid.WriteString("\n")
 
-	for _, entity := range v.VisibleEntities {
-		fmt.Fprintf(&mermaid, "    %s[\"%s\"]\n", sanitizeID(entity.ID), escapeMermaid(entity.Name))
-	}
+	r.writeOwnershipTree(&mermaid, v.VisibleEntities)
 
 	for _, group := range v.Groups {
 		fmt.Fprintf(&mermaid, "    subgraph %s[\"%s\"]\n", sanitizeID(group.ID), escapeMermaid(group.Name))
@@ -130,6 +128,29 @@ func (r *MermaidRenderer) Render(v *view.ViewResult, opts *RenderOptions) (*Arti
 	artifact.Metadata["description"] = v.Description
 
 	return artifact, nil
+}
+
+// writeOwnershipTree declares visible entities as Mermaid nodes nested in
+// subgraphs according to the ownership hierarchy. Parents are declared
+// before their children so containment renders correctly.
+func (r *MermaidRenderer) writeOwnershipTree(mermaid *strings.Builder, entities []*core.Entity) {
+	var write func(nodes []*OwnershipNode, depth int)
+	write = func(nodes []*OwnershipNode, depth int) {
+		indent := strings.Repeat("    ", depth+1)
+		for _, node := range nodes {
+			id := sanitizeID(node.Entity.ID)
+			name := escapeMermaid(node.Entity.Name)
+			if len(node.Children) > 0 {
+				fmt.Fprintf(mermaid, "%ssubgraph %s[\"%s\"]\n", indent, id, name)
+				write(node.Children, depth+1)
+				fmt.Fprintf(mermaid, "%send\n", indent)
+			} else {
+				fmt.Fprintf(mermaid, "%s%s[\"%s\"]\n", indent, id, name)
+			}
+		}
+	}
+
+	write(buildOwnershipTree(entities), 0)
 }
 
 // sanitizeID replaces special characters for Mermaid IDs.

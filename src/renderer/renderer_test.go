@@ -472,3 +472,125 @@ func TestMermaidRendererSkipsDanglingEdge(t *testing.T) {
 		t.Errorf("found dangling edge referencing missing node:\n%s", content)
 	}
 }
+
+func ownershipViewResult() *view.ViewResult {
+	region := core.NewEntity("region-1", "region", "Region 1")
+	rack := core.NewEntity("rack-1", "rack", "Rack 1")
+	rack.SetOwner("region-1")
+	server := core.NewEntity("srv-1", "server", "Server 1")
+	server.SetOwner("rack-1")
+
+	return &view.ViewResult{
+		ViewID:          "hierarchy",
+		Title:           "Hierarchy",
+		VisibleEntities: []*core.Entity{region, rack, server},
+		Annotations:     make(map[string]map[string]interface{}),
+	}
+}
+
+func TestMarkdownRendererOwnershipHierarchy(t *testing.T) {
+	vr := ownershipViewResult()
+
+	artifact, err := NewMarkdownRenderer().Render(vr, nil)
+	if err != nil {
+		t.Fatalf("failed to render: %v", err)
+	}
+
+	content := artifact.Content
+	if !strings.Contains(content, "- **Region 1** (`region-1`, region)\n") {
+		t.Errorf("expected region as root bullet:\n%s", content)
+	}
+	if !strings.Contains(content, "\n  - **Rack 1** (`rack-1`, rack)\n") {
+		t.Errorf("expected rack nested inside region:\n%s", content)
+	}
+	if !strings.Contains(content, "\n    - **Server 1** (`srv-1`, server)\n") {
+		t.Errorf("expected server nested inside rack:\n%s", content)
+	}
+}
+
+func TestMermaidRendererOwnershipSubgraphs(t *testing.T) {
+	vr := ownershipViewResult()
+
+	artifact, err := NewMermaidRenderer().Render(vr, nil)
+	if err != nil {
+		t.Fatalf("failed to render: %v", err)
+	}
+
+	content := artifact.Content
+	regionIdx := strings.Index(content, `subgraph region_1["Region 1"]`)
+	rackIdx := strings.Index(content, `subgraph rack_1["Rack 1"]`)
+	serverIdx := strings.Index(content, `srv_1["Server 1"]`)
+	endIdx := strings.Index(content, "end")
+	if regionIdx < 0 || rackIdx < 0 || serverIdx < 0 || endIdx < 0 {
+		t.Fatalf("expected nested subgraphs and node declarations:\n%s", content)
+	}
+	if !(regionIdx < rackIdx && rackIdx < serverIdx && serverIdx < endIdx) {
+		t.Errorf("expected parents declared before children:\n%s", content)
+	}
+}
+
+func TestSVGRendererContainment(t *testing.T) {
+	vr := ownershipViewResult()
+
+	layout := NewLayoutEngine(nil).ComputeLayout(vr)
+	if len(layout.Nodes) != 3 {
+		t.Fatalf("expected 3 nodes, got %d", len(layout.Nodes))
+	}
+
+	var region, rack NodePosition
+	for _, node := range layout.Nodes {
+		switch node.ID {
+		case "region-1":
+			region = node
+		case "rack-1":
+			rack = node
+		case "srv-1":
+			node.Children = nil
+		}
+	}
+	if len(region.Children) == 0 {
+		t.Error("expected region to contain children")
+	}
+	if rack.Position.X <= region.Position.X || rack.Position.Y <= region.Position.Y {
+		t.Errorf("expected rack inside region box: region=%+v rack=%+v", region.Position, rack.Position)
+	}
+	if right := rack.Position.X + rack.Width; right > region.Position.X+region.Width {
+		t.Errorf("rack exceeds region width: %f > %f", right, region.Position.X+region.Width)
+	}
+
+	artifact, err := NewSVGRenderer().Render(vr, nil)
+	if err != nil {
+		t.Fatalf("failed to render: %v", err)
+	}
+
+	content := artifact.Content
+	regionRect := strings.Index(content, `fill="#f3f4f6"`)
+	if regionRect < 0 {
+		t.Fatalf("expected region container rect at origin:\n%s", content)
+	}
+	regionText := strings.Index(content, ">Region 1</text>")
+	rackText := strings.Index(content, ">Rack 1</text>")
+	serverText := strings.Index(content, ">Server 1</text>")
+	if !(regionText < rackText && rackText < serverText) {
+		t.Errorf("expected containers drawn before children:\n%s", content)
+	}
+}
+
+func TestJSONRendererHierarchy(t *testing.T) {
+	vr := ownershipViewResult()
+
+	artifact, err := NewJSONRenderer().Render(vr, nil)
+	if err != nil {
+		t.Fatalf("failed to render: %v", err)
+	}
+
+	content := artifact.Content
+	if !strings.Contains(content, `"hierarchy"`) {
+		t.Fatalf("expected hierarchy field:\n%s", content)
+	}
+	regionIdx := strings.Index(content, `"id": "region-1"`)
+	serverIdx := strings.Index(content, `"children"`)
+	if regionIdx < 0 || serverIdx < 0 || regionIdx > serverIdx {
+		t.Errorf("expected nested children under root:\n%s", content)
+	}
+}
